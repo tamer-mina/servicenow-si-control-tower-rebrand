@@ -420,6 +420,8 @@ def make_si_short_target(cur_text, full_target_text, allow_tagline_short=False):
         ("Torre di controllo della superintelligenza", "Torre di controllo SI"),
         ("torre di controllo della Super Intelligenza", "torre di controllo SI"),
         ("torre di controllo della superintelligenza", "torre di controllo SI"),
+        ("Scopri l'SI Control Tower", "Scopri SI Control Tower"),
+        ("Scopri l'Super Intelligence Control Tower", "Scopri SI Control Tower"),
         ("Superintelligentie-controletoren", "SI-controletoren"),
         ("superintelligentie-controletoren", "SI-controletoren"),
         ("controletoren voor Superintelligentie", "controletoren voor SI"),
@@ -433,6 +435,21 @@ def make_si_short_target(cur_text, full_target_text, allow_tagline_short=False):
         short_t = short_t.replace(full_loc, short_loc)
     return short_t
 
+CTA_BUTTON_TEXT_RE = re.compile(
+    r"^(?:See|Explore|Extend|Discover|Try|Get|Watch|View|Learn\s+about|Infos\s+zu|Voir|D[ée]couvrir|Ver|Explorar|Veja|Scopri|Bekijk)\s+.*"
+    r"|(?:を見る|보기)$",
+    re.I
+)
+
+def is_cta_button_instance(cur_text, loc_str):
+    cur_s = (cur_text or "").strip()
+    loc_s = (loc_str or "")
+    if any(k in loc_s.lower() for k in ("arc-button", "cta", "button")):
+        return True
+    if len(cur_s) <= 36 and CTA_BUTTON_TEXT_RE.search(cur_s) and "Heading" not in loc_s and "Question" not in loc_s and "Document <title>" not in loc_s:
+        return True
+    return False
+
 def audit_wwsg_instance(inst, page_url=""):
     loc = inst.get("location", "")
     cat = inst.get("category", "")
@@ -440,9 +457,24 @@ def audit_wwsg_instance(inst, page_url=""):
     cur = inst.get("current_text", "").strip()
     is_flagship_page = ("ai-control-tower.html" in page_url)
 
+    is_cta_btn = is_cta_button_instance(cur, loc)
+    display_loc = loc
+    if is_cta_btn:
+        if "arc-heading-block" in loc:
+            display_loc = loc.replace("Section Intro Copy (<arc-heading-block> > <p>)", "Hero / Section CTA Button (<arc-button> inside <arc-heading-block>)")
+        elif "arc-universal-group" in loc:
+            display_loc = loc.replace("Benefits Card Copy (<arc-universal-group> > <p>)", "Card CTA Button (<arc-button> inside <arc-universal-group>)")
+        elif "arc-feature" in loc:
+            display_loc = loc.replace("Interactive Feature Tab Copy (<arc-feature> > <p>)", "Feature Tab CTA Button (<arc-button> inside <arc-feature>)")
+        elif "<action-item>" in loc:
+            display_loc = loc.replace("Body Copy / Cross-Sell Card (<p> / <action-item>)", "Cross-Sell CTA Button (<arc-button> / <action-item>)")
+
     limit = None
     comp_name = "Body copy"
-    if "arc-secondary-nav" in loc:
+    if is_cta_btn:
+        limit = 25
+        comp_name = "CTA button (<arc-button>, WWSG ≤25 chars max / 15 target)"
+    elif "arc-secondary-nav" in loc:
         limit = 50
         comp_name = "Secondary nav title"
     elif "arc-marquee-large" in loc and ("heading" in loc.lower() or "Eyebrow" in loc):
@@ -523,6 +555,9 @@ def audit_wwsg_instance(inst, page_url=""):
     flags = []
     rewrite = recommended_auto_target
 
+    if is_cta_btn and used_si_short:
+        flags.append(f'[CTA BUTTON: WWSG 2026 Q3 limits CTA buttons to 15 chars target / 25 chars max for clarity — auto-swaps to "{si_short}" ({si_len} chars) so the <arc-button> pill does not overflow]')
+
     if re.search(r"\b(?:AICT|SICT)\b", cur):
         flags.append('[ABBREVIATION: Replace "AICT" with "SI Control Tower" (16 chars) or "Super Intelligence Control Tower"]')
 
@@ -591,6 +626,8 @@ def audit_wwsg_instance(inst, page_url=""):
         "manual_reason": manual_reason,
         "comp_name": comp_name,
         "limit": limit,
+        "display_loc": display_loc,
+        "is_cta_btn": is_cta_btn,
     }
 
 # ---------------------------------------------------------------------------
@@ -951,6 +988,7 @@ def build_split_page_breakdowns(r):
             b_old = b.get("current_text", "")
             b_new = b.get("target_text", "")
             w_res = audit_wwsg_instance(b, u)
+            b_loc = w_res.get("display_loc", b_loc)
             if w_res["used_si_short"]:
                 si_short_cnt += 1
             si_opt = w_res["si_short_target"]
@@ -966,11 +1004,13 @@ def build_split_page_breakdowns(r):
                 wwsg_csv_notes.append(f"Body #{b_idx}: {w_res['char_check']}")
 
             si_line = ""
-            if si_opt != b_new and "business reinvention" not in b_old.lower():
+            if w_res["used_si_short"] and b_new != si_opt:
+                si_line = f"<br><span style='color:var(--muted);'>Full 32-char Candidate (overflows {w_res['limit']}-char cap):</span> <code>\"{html.escape(b_new)}\"</code> ({len(b_new)}/{w_res['limit']} chars ⚠️)"
+            elif si_opt != b_new and "business reinvention" not in b_old.lower():
                 si_line = f"<br><span style='color:var(--blue);'>Short Option (<code>SI Control Tower</code> — 0 char expansion):</span> <code>\"{html.escape(si_opt)}\"</code>"
 
             rw_html = ""
-            if w_res["wwsg_rewrite"]:
+            if w_res["wwsg_rewrite"] and (w_res["needs_manual_copy"] or w_res["wwsg_rewrite"] != w_res["recommended_auto_target"]):
                 rw_html = (
                     f"<br><span style='color:var(--green);font-weight:600;'>Recommended WWSG Rewrite {html.escape(w_res['wwsg_rewrite_badge'])}:</span> "
                     f"<strong style='color:#93c5fd;'>\"{html.escape(w_res['wwsg_rewrite'])}\"</strong>"
@@ -2901,7 +2941,17 @@ RewriteRule ^/content/dam/servicenow-assets/public/(.*)/(.*)ai-control-tower(.*)
               </td>
             </tr>
             <tr>
-              <td data-label="Placement"><strong>8. Secondary Nav, Feature Cards, Action Items &amp; Former <code>AICT</code> Acronyms</strong></td>
+              <td data-label="Placement"><strong>8. CTA Buttons (<code>&lt;arc-button&gt;</code> Pill &amp; Link CTAs)</strong><br>({a_link('https://www.servicenow.com/')} Hero Marquee, Feature Tabs, Cards)</td>
+              <td data-label="Limit">15 chars target<br>(&le; 25 chars max)</td>
+              <td data-label="Target Form"><span class="badge b-warn">SI Control Tower</span><br>(16 chars)</td>
+              <td data-label="Track"><span class="badge b-ok">🤖 Auto Swap</span><br>(Groovy <code>maxCap = 25</code>)</td>
+              <td data-label="Example &amp; Rationale">
+                • <strong>Homepage Hero CTA ({a_link('https://www.servicenow.com/')}):</strong> <code>See SI Control Tower</code> <span class="badge b-ok">[20/25 chars ✓]</span> (exact same 20-char width as <code>See AI Control Tower</code>; full name <code>See Super Intelligence Control Tower</code> is 36/25 chars ⚠️ and overflows the green pill button).<br>
+                • <strong>Feature Tab / Card CTA:</strong> <code>Explore SI Control Tower</code> <span class="badge b-ok">[24/25 chars ✓]</span> + automated link swap to <code>/products/super-intelligence-control-tower.html</code>.
+              </td>
+            </tr>
+            <tr>
+              <td data-label="Placement"><strong>9. Secondary Nav, Feature Cards, Action Items &amp; Former <code>AICT</code> Acronyms</strong></td>
               <td data-label="Limit">Nav/Heading: &le; 50<br>Card/Action: &le; 100</td>
               <td data-label="Target Form"><span class="badge b-warn">SI Control Tower</span><br>(when Full overflows)</td>
               <td data-label="Track"><span class="badge b-ok">🤖 Auto Swap</span></td>
@@ -2912,7 +2962,7 @@ RewriteRule ^/content/dam/servicenow-assets/public/(.*)/(.*)ai-control-tower(.*)
               </td>
             </tr>
             <tr>
-              <td data-label="Placement"><strong>9. HTML Image <code>alt</code> Attributes</strong><br>(<code>&lt;arc-image alt="..."&gt;</code>)</td>
+              <td data-label="Placement"><strong>10. HTML Image <code>alt</code> Attributes</strong><br>(<code>&lt;arc-image alt="..."&gt;</code>)</td>
               <td data-label="Limit">&le; 125 chars<br>(WWSG Accessibility)</td>
               <td data-label="Target Form"><span class="badge b-warn">SI Control Tower</span><br>(when Full &gt; 125 chars)</td>
               <td data-label="Track"><span class="badge b-ok">🤖 Auto Swap</span></td>
@@ -2999,7 +3049,7 @@ RewriteRule ^/content/dam/servicenow-assets/public/(.*)/(.*)ai-control-tower(.*)
 
     <div class="card">
       <h2>Part 4: Ready-to-Run AEM Groovy Console Script (Executes All {total_auto_instances:,} Automated Swaps Across US + 13 Regional Locales)</h2>
-      <p class="desc">Automatically updates JCR text, meta, link, and alt properties across US and all 13 regional sites, using <code>Super Intelligence Control Tower</code> by default and automatically falling back to <code>SI Control Tower</code> when a component property has a strict character cap.</p>
+      <p class="desc">Automatically updates JCR text, meta, link, CTA button, and alt properties across US and all 13 regional sites, using <code>Super Intelligence Control Tower</code> by default and automatically falling back to <code>SI Control Tower</code> when a component property has a strict character cap (such as &le;25 chars on <code>&lt;arc-button&gt;</code> CTAs).</p>
       <pre>// AEM Groovy Console Script — Global + Regional Automated Swap with WWSG Length-Aware "SI Control Tower" Fallback
 import javax.jcr.Node
 
@@ -3029,7 +3079,8 @@ paths.each {{ rootPath -&gt;
 
                 // 2. Determine if property has a tight WWSG / SERP character cap
                 int maxCap = 0
-                if (pName.contains("jcr:title") || pName.contains("navtitle") || pName.contains("heading")) maxCap = 50
+                if (pName.contains("cta") || pName.contains("button") || pName.contains("linktext") || pName.contains("action") || (orig.trim().length() &lt;= 36 &amp;&amp; orig.trim().matches("(?i)^(See|Explore|Extend|Discover|Try|Get|Watch|View|Infos zu|Voir|D[\\u00e9e]couvrir|Ver|Explorar|Veja|Scopri|Bekijk)\\\\s+.*|.*(\\u3092\\u898b\\u308b|\\ubcf4\\uae30)$"))) maxCap = 25
+                else if (pName.contains("jcr:title") || pName.contains("navtitle") || pName.contains("heading")) maxCap = 50
                 else if (pName.contains("pagetitle") || pName.contains("seotitle")) maxCap = 60
                 else if (pName.contains("alt")) maxCap = 125
 
