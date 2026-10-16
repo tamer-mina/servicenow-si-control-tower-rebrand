@@ -652,9 +652,31 @@ if os.path.exists(MASTER_IMAGE_OCR_PATH):
         for _im_url, _im_info in _m_ocr.get("images", {}).items():
             if _im_url.lower().endswith(".pdf") or "logo-aicte.svg" in _im_url.lower():
                 continue
-            MASTER_IMAGES_MAP[_im_url] = _im_info
+            _full_im = full_url(_im_url)
+            _im_info["url"] = _full_im
+            _im_info["has_aict_slug"] = bool(
+                ("ai-control-tower" in _full_im.lower() or "aict" in _full_im.lower())
+                and "logo-aicte" not in _full_im.lower()
+            )
+            _raw_pages = [full_url(p) for p in _im_info.get("pages", [])]
+            _raw_pages.sort(key=lambda p: (0 if get_page_locale(p) == "us" else 1, p))
+            _im_info["host_pages"] = _raw_pages
+            _im_info["page_count"] = len(_raw_pages)
+            _dims_str = str(_im_info.get("dimensions", ""))
+            if "x" in _dims_str.lower():
+                try:
+                    _w, _h = _dims_str.lower().split("x", 1)
+                    _im_info["width"] = int(_w.strip())
+                    _im_info["height"] = int(_h.strip())
+                except Exception:
+                    _im_info["width"] = 0
+                    _im_info["height"] = 0
+            else:
+                _im_info["width"] = _im_info.get("width", 0)
+                _im_info["height"] = _im_info.get("height", 0)
+            MASTER_IMAGES_MAP[_full_im] = _im_info
         for _pg_url, _im_list in _m_ocr.get("page_to_images", {}).items():
-            _clean_list = [u for u in _im_list if not u.lower().endswith(".pdf") and "logo-aicte.svg" not in u.lower()]
+            _clean_list = [full_url(u) for u in _im_list if not u.lower().endswith(".pdf") and "logo-aicte.svg" not in u.lower()]
             if _clean_list:
                 MASTER_PAGE_TO_IMAGES[full_url(_pg_url)] = _clean_list
 
@@ -669,9 +691,9 @@ def clean_ocr_display(ocr_lines):
     return " | ".join(cleaned[:3]) if cleaned else "AI Control Tower"
 
 total_baked_images_count = sum(1 for v in MASTER_IMAGES_MAP.values() if v.get("has_baked_aict_pixels"))
-total_auto_slug_images_count = sum(1 for v in MASTER_IMAGES_MAP.values() if not v.get("has_baked_aict_pixels"))
+total_auto_slug_images_count = sum(1 for v in MASTER_IMAGES_MAP.values() if not v.get("has_baked_aict_pixels") and v.get("has_aict_slug"))
 total_zero_pixel_images_count = total_auto_slug_images_count
-total_impacted_images_count = len(MASTER_IMAGES_MAP)
+total_impacted_images_count = total_baked_images_count + total_zero_pixel_images_count
 
 crawled_map = {}
 if os.path.exists(PREV_JSON):
@@ -1266,17 +1288,28 @@ def build_split_page_breakdowns(r):
             dims = f"{minfo.get('width', 0)}×{minfo.get('height', 0)}" if minfo.get("width") else "Image"
             kb = f"{minfo.get('bytes', 0)//1024:,} KB" if minfo.get("bytes") else ""
             spec_str = f"{dims}{', ' + kb if kb else ''}"
-            slug_note = "Re-render graphic text + rename DAM slug (301)" if minfo.get("has_aict_slug") else "Re-render graphic text in-place (keep generic filename)"
+            has_slug = bool(minfo.get("has_aict_slug") or "ai-control-tower" in fim.lower() or "aict" in fim.lower())
+            if has_slug:
+                new_fim = re.sub(r"(?i)ai-control-tower|aict", "super-intelligence-control-tower", fim)
+                target_col_html = (
+                    f"<div class='mono'><code>{html.escape(new_fim)}</code></div>"
+                    f"<div class='sub-note' style='margin-top:2px;'>Update graphic text to <strong>Super Intelligence Control Tower</strong> (or <strong>SI Control Tower</strong>)</div>"
+                )
+                slug_note = "Re-render graphic text + rename DAM filename (HTTP 301)"
+                baked_csv_parts.append(f"{fim} -> {new_fim} (OCR: \"{ocr_disp}\")")
+            else:
+                target_col_html = "Update graphic text to <strong>Super Intelligence Control Tower</strong> (or <strong>SI Control Tower</strong>)"
+                slug_note = "Re-render graphic text at same DAM path"
+                baked_csv_parts.append(f"{fim} (OCR: \"{ocr_disp}\")")
             drawer_manual_rows.append(
                 f"<tr class='detail-item-manual'>"
                 f"<td><span class='badge b-manual'>Manual</span></td>"
                 f"<td><strong>Baked-In Graphic #{idx}</strong><div class='sub-note'>{html.escape(spec_str)}</div></td>"
                 f"<td class='mono'>{a_link(fim)}<div class='sub-note'>OCR: \"{html.escape(ocr_disp)}\"</div></td>"
-                f"<td>Update graphic text to <strong>Super Intelligence Control Tower</strong> (or <strong>SI Control Tower</strong>)</td>"
+                f"<td>{target_col_html}</td>"
                 f"<td>{html.escape(slug_note)}</td>"
                 f"</tr>"
             )
-            baked_csv_parts.append(f"{fim} (OCR: \"{ocr_disp}\")")
         manual_csv_items.append(f"[MANUAL: BAKED-IN IMAGES ({len(baked_imgs)})] " + " | ".join(baked_csv_parts))
 
     # F. Linked Non-FAQ PDFs with Internal Matches (Manual)
@@ -1284,23 +1317,36 @@ def build_split_page_breakdowns(r):
     if live_pdfs:
         manual_reasons.append(f"PDF Update ({len(live_pdfs)})")
         manual_filter_tags.add("m-pdf")
+        pdf_csv_parts = []
         for idx, p in enumerate(live_pdfs, 1):
-            m_info = pdf_match_lookup.get(p)
+            fp = full_url(p)
+            m_info = pdf_match_lookup.get(fp) or pdf_match_lookup.get(p)
+            has_pdf_slug = bool("ai-control-tower" in fp.lower() or "aict" in fp.lower())
+            if has_pdf_slug:
+                new_fp = re.sub(r"(?i)ai-control-tower|aict", "super-intelligence-control-tower", fp)
+                pdf_target_html = (
+                    f"<div class='mono'><code>{html.escape(new_fp)}</code></div>"
+                    f"<div class='sub-note' style='margin-top:2px;'>Update internal PDF text &amp; metadata to <strong>Super Intelligence Control Tower</strong></div>"
+                )
+                pdf_csv_parts.append(f"{fp} -> {new_fp}")
+            else:
+                pdf_target_html = "Update internal PDF text &amp; metadata to <strong>Super Intelligence Control Tower</strong>"
+                pdf_csv_parts.append(fp)
             if m_info and m_info[0] > 0:
                 m_cnt, p_pages, _ = m_info
-                p_note = f"{m_cnt} matches across {p_pages} PDF pages • Re-export & 301"
+                p_note = f"{m_cnt} matches across {p_pages} PDF pages • Re-export" + (" + rename filename (HTTP 301)" if has_pdf_slug else "")
             else:
-                p_note = "Update datasheet copy & filename slug"
+                p_note = "Update datasheet copy + rename filename (HTTP 301)"
             drawer_manual_rows.append(
                 f"<tr class='detail-item-manual'>"
                 f"<td><span class='badge b-manual'>Manual</span></td>"
                 f"<td><strong>Linked PDF Document #{idx}</strong></td>"
-                f"<td class='mono'>{a_link(p)}</td>"
-                f"<td>Update internal PDF text &amp; metadata to <strong>Super Intelligence Control Tower</strong></td>"
+                f"<td class='mono'>{a_link(fp)}</td>"
+                f"<td>{pdf_target_html}</td>"
                 f"<td>{html.escape(p_note)}</td>"
                 f"</tr>"
             )
-        manual_csv_items.append(f"[MANUAL: LINKED PDFS ({len(live_pdfs)})] " + ", ".join(live_pdfs))
+        manual_csv_items.append(f"[MANUAL: LINKED PDFS ({len(live_pdfs)})] " + ", ".join(pdf_csv_parts))
 
     # G. Localized Flagship Native Grammar Review (Manual L10n Task on 10 non-English flagship pages)
     if loc_code in ("de", "fr", "fr-ca", "es", "latam", "br", "it", "nl", "jp", "kr") and "products/ai-control-tower.html" in u:
@@ -1598,7 +1644,10 @@ for im, host_list in sorted(img_map.items()):
     minfo = MASTER_IMAGES_MAP.get(fim, {})
     is_false_pos = "logo-aicte.svg" in fim.lower()
     is_baked = minfo.get("has_baked_aict_pixels", False) or "now-ai-control-tower" in fim or "secure-any-ai-action" in fim
-    hosts_full = ", ".join(full_url(u) for u, _ in host_list[:4]) if host_list else "Brand 3.0 DAM Inventory"
+    has_slug = bool(minfo.get("has_aict_slug") or (("ai-control-tower" in fim.lower() or "aict" in fim.lower()) and not is_false_pos))
+    if not is_false_pos and not is_baked and not has_slug:
+        continue
+    hosts_full = ", ".join(full_url(u) for u, _ in host_list[:4]) if host_list else fim
     alts = []
     for _, a_list in host_list:
         for a in a_list:
@@ -1608,6 +1657,7 @@ for im, host_list in sorted(img_map.items()):
     dims = f"{minfo.get('width', 0)}×{minfo.get('height', 0)}" if minfo.get("width") else "Image"
     kb = f"{minfo.get('bytes', 0)//1024} KB" if minfo.get("bytes") else ""
     asset_type_str = f"DAM Image ({dims}{', ' + kb if kb else ''})" if dims != "Image" else "DAM Image"
+    new_fim = re.sub(r"(?i)ai-control-tower|aict", "super-intelligence-control-tower", fim) if has_slug else fim
     if is_false_pos:
         note = "[FALSE POSITIVE — DO NOT RENAME] All India Council for Technical Education (AICTE) partner logo"
         prio = "False Positive - Exclude"
@@ -1617,15 +1667,17 @@ for im, host_list in sorted(img_map.items()):
         auto_bd, man_bd = "None", "None"
     elif is_baked:
         ocr_disp = clean_ocr_display(minfo.get("matched_ocr_lines", []))
-        slug_act = " + 301 Rename DAM Slug" if minfo.get("has_aict_slug") else ""
-        note = f"[MANUAL: BAKED-IN PIXELS — RE-RENDER GRAPHIC{slug_act}] Vision OCR confirmed baked-in text: \"{ocr_disp}\" | Used on {len(host_list)} pages ({hosts_full}) | Alt: {alt_str}"
+        slug_act = f" + 301 Rename DAM Filename ({fim} -> {new_fim})" if has_slug else ""
+        used_str = f" | Used on {len(host_list)} pages ({hosts_full})" if host_list else ""
+        note = f"[MANUAL: BAKED-IN PIXELS — RE-RENDER GRAPHIC{slug_act}] Vision OCR confirmed baked-in text: \"{ocr_disp}\"{used_str} | Alt: {alt_str}"
         prio = "P0 - Baked-In Image Pixels"
         wave_lbl = "Wave 1"
-        exec_m = f"Manual Update (Design Re-render{slug_act})"
+        exec_m = "Manual Update (Design Re-render + Rename Filename 301)" if has_slug else "Manual Update (Design Re-render)"
         auto_c, man_c = 0, 1
         auto_bd, man_bd = "None", note
     else:
-        note = f"[AUTO: DAM IMAGE RENAME + ALT TEXT] 0 baked-in pixels; rename file slug ai-control-tower -> super-intelligence-control-tower & update alt text | Used on {len(host_list)} pages ({hosts_full})"
+        used_str = f" | Used on {len(host_list)} pages ({hosts_full})" if host_list else ""
+        note = f"[AUTO: DAM IMAGE RENAME + ALT TEXT] 0 baked-in pixels; rename filename {fim} -> {new_fim} (HTTP 301) & update alt text{used_str}"
         prio = "P1 - DAM Image Slug + Alt Text"
         wave_lbl = "Wave 2"
         exec_m = "100% Automated (DAM Move + Alt Swap)"
@@ -1999,7 +2051,19 @@ def _design_sort_key(item):
 for d_idx, (bkey, rlist) in enumerate(sorted(baked_design_groups.items(), key=_design_sort_key), 1):
     rlist.sort(key=lambda x: x["url"])
     primary = rlist[0]
-    url_links_html = "<br>".join(a_link(x["url"]) for x in rlist)
+    rendition_blocks = []
+    for x in rlist:
+        old_u = x["url"]
+        if x.get("has_aict_slug"):
+            new_u = re.sub(r"(?i)ai-control-tower|aict", "super-intelligence-control-tower", old_u)
+            rendition_blocks.append(
+                f"<div style='margin-bottom:4px;'><strong>Current:</strong> {a_link(old_u)}<br>"
+                f"<strong>New Target:</strong> <code>{html.escape(new_u)}</code></div>"
+            )
+        else:
+            rendition_blocks.append(f"<div style='margin-bottom:4px;'>{a_link(old_u)}</div>")
+    url_links_html = "".join(rendition_blocks)
+
     all_hosts = []
     for x in rlist:
         for hp in x.get("host_pages", []):
@@ -2010,7 +2074,7 @@ for d_idx, (bkey, rlist) in enumerate(sorted(baked_design_groups.items(), key=_d
         more_hosts = f" (+ {len(all_hosts)-3} regional/other pages)" if len(all_hosts) > 3 else ""
         hosts_html = f"<div class='sub-note' style='margin-top:4px;'><strong>Used on {len(all_hosts)} page{'s' if len(all_hosts)!=1 else ''}:</strong> {sample_hosts}{more_hosts}</div>"
     else:
-        hosts_html = "<div class='sub-note' style='margin-top:4px;'><strong>Source:</strong> Brand 3.0 DAM Inventory (Unlinked on crawled pages — update in DAM if active)</div>"
+        hosts_html = ""
 
     specs_parts = []
     for x in rlist:
@@ -2020,8 +2084,12 @@ for d_idx, (bkey, rlist) in enumerate(sorted(baked_design_groups.items(), key=_d
 
     ocr_disp = clean_ocr_display(primary.get("matched_ocr_lines", []))
     has_slug = any(x.get("has_aict_slug") for x in rlist)
-    slug_badge = '<span class="badge b-loc" style="margin-top:4px;display:inline-block;">+ 301 DAM Slug</span>' if has_slug else '<span class="badge b-neutral" style="margin-top:4px;display:inline-block;">Keep Generic Filename</span>'
-    action_tail = "and rename DAM filename slug with HTTP 301 redirect." if has_slug else "and republish in-place (filename has no AICT slug)."
+    slug_badge = '<span class="badge b-loc" style="margin-top:4px;display:inline-block;">Rename Filename + 301</span>' if has_slug else ''
+    action_tail = (
+        "rename DAM filename (<code>ai-control-tower</code> &rarr; <code>super-intelligence-control-tower</code>), and add HTTP 301 redirect."
+        if has_slug
+        else "and republish at same DAM path."
+    )
 
     media_rows_html.append(f"""
 <tr data-mfilter="baked">
@@ -2032,42 +2100,58 @@ for d_idx, (bkey, rlist) in enumerate(sorted(baked_design_groups.items(), key=_d
   </td>
   <td data-label="Specs">{specs_html}</td>
   <td data-label="Detected Text (OCR)"><code>"{html.escape(ocr_disp)}"</code></td>
-  <td data-label="Required Action">Re-render or retouch baked-in <code>AI Control Tower</code> pixel text to <strong>Super Intelligence Control Tower</strong> (or <strong>SI Control Tower</strong>) {action_tail}</td>
+  <td data-label="Required Action">Re-render or retouch baked-in <code>AI Control Tower</code> pixel text to <strong>Super Intelligence Control Tower</strong> (or <strong>SI Control Tower</strong>), {action_tail}</td>
 </tr>""")
 
-zero_pixel_links_html = "<br>".join(a_link(x["url"]) for x in zero_pixel_slug_imgs[:10])
-if len(zero_pixel_slug_imgs) > 10:
-    zero_pixel_links_html += f"<div class='sub-note' style='margin-top:4px;'>+ {len(zero_pixel_slug_imgs)-10} additional `.sm`/`.xs` renditions (all {len(zero_pixel_slug_imgs)} listed in 301 Redirects tab &amp; CSV)</div>"
+zero_pixel_pair_lines = []
+for x in zero_pixel_slug_imgs:
+    old_u = x["url"]
+    new_u = re.sub(r"(?i)ai-control-tower|aict", "super-intelligence-control-tower", old_u)
+    zero_pixel_pair_lines.append(
+        f"<div style='margin-bottom:5px;'><strong>Current:</strong> {a_link(old_u)}<br>"
+        f"<strong>New Target:</strong> <code>{html.escape(new_u)}</code></div>"
+    )
+zero_pixel_links_html = "".join(zero_pixel_pair_lines[:6])
+if len(zero_pixel_pair_lines) > 6:
+    zero_pixel_links_html += (
+        f"<details style='margin-top:6px;'>"
+        f"<summary style='cursor:pointer;color:var(--blue);font-weight:600;font-size:11.5px;'>"
+        f"View all {len(zero_pixel_pair_lines)} automated DAM filename renames (Current &rarr; New Target)"
+        f"</summary>"
+        f"<div style='margin-top:6px;padding-top:6px;border-top:1px solid var(--border);'>"
+        f"{''.join(zero_pixel_pair_lines[6:])}"
+        f"</div></details>"
+    )
 
 media_rows_html.append(f"""
 <tr data-mfilter="auto-img">
-  <td data-label="Track &amp; Group"><span class="badge b-auto">Auto DAM Rename</span><div class="sub-note" style="margin-top:4px;">{len(zero_pixel_slug_imgs)} image files (0 baked pixels)</div></td>
+  <td data-label="Track &amp; Group"><span class="badge b-auto">Auto DAM Rename</span><div class="sub-note" style="margin-top:4px;">{len(zero_pixel_slug_imgs)} image files (0 baked pixels)</div><span class="badge b-loc" style="margin-top:4px;display:inline-block;">Rename Filename + 301</span></td>
   <td data-label="DAM Asset URL &amp; Host Pages" class="mono">
     {zero_pixel_links_html}
   </td>
   <td data-label="Specs">PNG / JPG / WebP<br>({len(zero_pixel_slug_imgs)} files)</td>
   <td data-label="Detected Text (OCR)">0 baked-in text matches (verified clean by OCR)</td>
-  <td data-label="Required Action"><strong>Zero graphic design work needed.</strong> Script renames DAM file slugs (<code>ai-control-tower</code> &rarr; <code>super-intelligence-control-tower</code>) with 301 redirect and updates HTML <code>alt</code> attributes.</td>
+  <td data-label="Required Action"><strong>Zero graphic design work needed.</strong> Script renames DAM filenames (<code>ai-control-tower</code> &rarr; <code>super-intelligence-control-tower</code>) with HTTP 301 redirect and updates HTML <code>alt</code> attributes.</td>
 </tr>
 <tr data-mfilter="pdf">
-  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual PDF</span><div class="sub-note" style="margin-top:4px;">6 OCR / Meta Matches</div></td>
+  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual PDF</span><div class="sub-note" style="margin-top:4px;">6 OCR / Meta Matches</div><span class="badge b-loc" style="margin-top:4px;display:inline-block;">Rename Filename + 301</span></td>
   <td data-label="DAM Asset URL &amp; Host Pages" class="mono">
-    {a_link('https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/resource-center/e-book/ebk-aict-discovery-playbook.pdf')}
+    <div><strong>Current:</strong> {a_link('https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/resource-center/e-book/ebk-aict-discovery-playbook.pdf')}<br><strong>New Target:</strong> <code>https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/resource-center/e-book/ebk-super-intelligence-control-tower-discovery-playbook.pdf</code></div>
     <div class="sub-note" style="margin-top:4px;"><strong>Linked from:</strong> {a_link('https://www.servicenow.com/standard/resource-center/ebook/ebk-aict-discovery-playbook.html')}</div>
   </td>
   <td data-label="Specs">11 Pages, PDF<br>(231 MB)</td>
   <td data-label="Detected Text (OCR)">Meta title <code>AICT-DISCOVERY-PLAYBOOK-02</code> + 5 vector text matches on Pages 5, 8, 9</td>
-  <td data-label="Required Action">Re-export InDesign source with <strong>Super Intelligence Control Tower</strong> / <strong>SI Control Tower</strong> and update metadata title.</td>
+  <td data-label="Required Action">Re-export InDesign source with <strong>Super Intelligence Control Tower</strong> / <strong>SI Control Tower</strong>, update metadata title, rename PDF filename, and add HTTP 301 redirect.</td>
 </tr>
 <tr data-mfilter="pdf">
-  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual Legal PDF</span><div class="sub-note" style="margin-top:4px;">7 Text Matches</div></td>
+  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual Legal PDF</span><div class="sub-note" style="margin-top:4px;">7 Text Matches</div><span class="badge b-loc" style="margin-top:4px;display:inline-block;">Rename Filename + 301</span></td>
   <td data-label="DAM Asset URL &amp; Host Pages" class="mono">
-    {a_link('https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/legal/ai-control-tower-servicenow-subscription-unit-overview.pdf')}
+    <div><strong>Current:</strong> {a_link('https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/legal/ai-control-tower-servicenow-subscription-unit-overview.pdf')}<br><strong>New Target:</strong> <code>https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/legal/super-intelligence-control-tower-servicenow-subscription-unit-overview.pdf</code></div>
     <div class="sub-note" style="margin-top:4px;"><strong>Linked from:</strong> {a_link('https://www.servicenow.com/products/entitlements-packages.html')}</div>
   </td>
   <td data-label="Specs">4 Pages, PDF<br>(109.7 KB)</td>
   <td data-label="Detected Text (OCR)">Page 1 Title/TOC + Page 3 Section Header &amp; 4 Legal clauses</td>
-  <td data-label="Required Action">Coordinate with Legal to publish updated Subscription Unit Overview PDF and configure 301 redirect.</td>
+  <td data-label="Required Action">Coordinate with Legal to publish updated Subscription Unit Overview PDF at renamed DAM filename and configure HTTP 301 redirect.</td>
 </tr>
 """)
 
@@ -2082,13 +2166,23 @@ for p in audited_pdfs:
     host_links = ", ".join(a_link(h) for h in hosts[:3]) if hosts else a_link("https://www.servicenow.com/standard/resource-center.html")
     sn = html.escape(" | ".join(p.get("snippets", [])[:2]))
     mt = html.escape(p.get("meta_title", "") or "(None)")
+    has_pdf_slug = bool("ai-control-tower" in purl.lower() or "aict" in purl.lower())
+    if has_pdf_slug:
+        new_purl = re.sub(r"(?i)ai-control-tower|aict", "super-intelligence-control-tower", purl)
+        pdf_url_block = f"<div><strong>Current:</strong> {a_link(purl)}<br><strong>New Target:</strong> <code>{html.escape(new_purl)}</code></div>"
+        pdf_slug_badge = '<span class="badge b-loc" style="margin-top:4px;display:inline-block;">Rename Filename + 301</span>'
+        pdf_act_tail = "rename PDF filename (<code>ai-control-tower</code> &rarr; <code>super-intelligence-control-tower</code>), and add HTTP 301 redirect."
+    else:
+        pdf_url_block = f"<div>{a_link(purl)}</div>"
+        pdf_slug_badge = ""
+        pdf_act_tail = "and republish at same DAM path."
     media_rows_html.append(f"""
 <tr data-mfilter="pdf">
-  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual PDF</span><div class="sub-note" style="margin-top:4px;">{m_cnt} Text Matches</div></td>
-  <td data-label="DAM Asset URL &amp; Host Pages" class="mono">{a_link(purl)}<div class="sub-note" style="margin-top:4px;"><strong>Linked from:</strong> {host_links}</div></td>
+  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual PDF</span><div class="sub-note" style="margin-top:4px;">{m_cnt} Text Matches</div>{pdf_slug_badge}</td>
+  <td data-label="DAM Asset URL &amp; Host Pages" class="mono">{pdf_url_block}<div class="sub-note" style="margin-top:4px;"><strong>Linked from:</strong> {host_links}</div></td>
   <td data-label="Specs">{p.get('pages', 0)} Pages, PDF<br>({p.get('bytes', 0)//1024:,} KB)</td>
   <td data-label="Detected Text (OCR)"><strong>Meta Title:</strong> <code>{mt}</code><br><strong>Snippet:</strong> <code>{sn}</code></td>
-  <td data-label="Required Action">Update source PDF text &amp; metadata title to <strong>Super Intelligence Control Tower</strong> / <strong>SI Control Tower</strong> and republish.</td>
+  <td data-label="Required Action">Update source PDF text &amp; metadata title to <strong>Super Intelligence Control Tower</strong> / <strong>SI Control Tower</strong>, {pdf_act_tail}</td>
 </tr>""")
 
 # ---------------------------------------------------------------------------
@@ -3086,9 +3180,10 @@ RewriteRule ^/docs/r/intelligent-experiences/ai-control-tower/ai-control-tower-l
 RewriteRule ^/content/dam/servicenow-assets/public/(.*)/ebk-aict-discovery-playbook\\.pdf(\\.coredownload)?$ /content/dam/servicenow-assets/public/$1/ebk-super-intelligence-control-tower-discovery-playbook.pdf$2 [R=301,L,NC]
 RewriteRule ^/content/dam/servicenow-assets/public/(.*)/(.*)ai-control-tower(.*)\\.pdf(\\.coredownload)?$ /content/dam/servicenow-assets/public/$1/$2super-intelligence-control-tower$3.pdf$4 [R=301,L,NC]
 
-# 7. DAM Images (.png, .jpg, .webp — excludes partner logo-aicte.svg)
+# 7. DAM Images &amp; Adobe Dynamic Media (.png, .jpg, .webp, .svg — excludes partner logo-aicte.svg)
 RewriteCond %{{REQUEST_URI}} !logo-aicte\\.svg$ [NC]
-RewriteRule ^/content/dam/servicenow-assets/public/(.*)/(.*)ai-control-tower(.*)\\.(png|jpg|jpeg|webp)$ /content/dam/servicenow-assets/public/$1/$2super-intelligence-control-tower$3.$4 [R=301,L,NC]</pre>
+RewriteRule ^/content/dam/servicenow-assets/public/(.*)/(.*)(ai-control-tower|aict)(.*)\\.(png|jpg|jpeg|webp|svg)$ /content/dam/servicenow-assets/public/$1/$2super-intelligence-control-tower$4.$5 [R=301,L,NC]
+RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)(ai-control-tower|aict)(.*)\\.(png|jpg|jpeg|webp|svg)$ /adobe/assets/urn:aaid:aem:$1/as/$2super-intelligence-control-tower$4.$5 [R=301,L,NC]</pre>
       </div>
     </details>
 
@@ -3129,7 +3224,7 @@ RewriteRule ^/content/dam/servicenow-assets/public/(.*)/(.*)ai-control-tower(.*)
       <div>
         <strong>DAM Image &amp; PDF Asset Handoff ({total_baked_images_count} Baked-In Image Files Across {total_baked_designs_count} Visual Designs + {total_zero_pixel_images_count} Zero-Pixel Images + 13 PDFs)</strong>
         <div style="color:var(--muted);font-size:12.5px;margin-top:2px;">
-          Verified via 4-layer discovery (388 live pages + 8,113 Brand 3.0 DAM assets + responsive variant probing + Apple Vision OCR). Includes <code>welcome-ai-control-tower-.sm.png</code> on <code>/platform/responsible-ai.html</code>.
+          Verified via 4-layer discovery (388 live pages + 8,113 Brand 3.0 DAM assets + responsive variant probing + Apple Vision OCR). All DAM filenames containing <code>ai-control-tower</code> or <code>aict</code> are renamed to <code>super-intelligence-control-tower</code> with HTTP 301 redirects.
         </div>
       </div>
     </div>
@@ -3138,7 +3233,7 @@ RewriteRule ^/content/dam/servicenow-assets/public/(.*)/(.*)ai-control-tower(.*)
       <input type="text" id="mediaSearch" class="search-input" placeholder="Search asset filename, host page URL, or detected OCR text..." onkeyup="filterMediaTable()">
       <select id="mediaTypeSelect" class="select-input" onchange="filterMediaTable()">
         <option value="all">All Media &amp; PDF Assets</option>
-        <option value="baked-img">Manual: Baked-In Pixel Images ({total_baked_designs_count} Design Groups / {total_baked_images_count} Files)</option>
+        <option value="baked">Manual: Baked-In Pixel Images ({total_baked_designs_count} Design Groups / {total_baked_images_count} Files)</option>
         <option value="pdf">Manual: Live/Vector PDFs (13 Files)</option>
         <option value="auto-img">Automated: Zero-Pixel Filename Moves ({total_zero_pixel_images_count} Files)</option>
       </select>
