@@ -307,136 +307,60 @@ def map_filter_group(cat):
     return "cat-customers"
 
 # ---------------------------------------------------------------------------
-# 2. WWSG 2026 Q3 Copy Engine + "SI Control Tower" vs "Super Intelligence Control Tower"
-#    + Automated vs. Manual Update Classifier (Clean Cutover — Zero Legacy Eyebrows)
+# 2. Product Marketing Naming Standard:
+#    - Default Everywhere: "Super Intelligence Control Tower" (32 chars, Title Case "Control Tower")
+#    - CTA Buttons Only: "Control Tower" (13 chars, e.g. "See Control Tower", "Explore Control Tower")
+#    - Skip WWSG body copy character-limit trims; ONLY flag constrained UI headings / <title> tags
+#      where "Super Intelligence Control Tower" is way too long so humans can manually decide replacement.
 # ---------------------------------------------------------------------------
-BUZZWORDS_MAP = [
-    (r"\bleveraging\b", "using", "leveraging → using"),
-    (r"\bleverage\b", "use", "leverage → use"),
-    (r"\butilizing\b", "using", "utilizing → using"),
-    (r"\butilize\b", "use", "utilize → use"),
-    (r"\boptimizing\b", "improving", "optimizing → improving"),
-    (r"\boptimize\b", "improve", "optimize → improve"),
-    (r"\baccelerating\b", "speeding up", "accelerating → speeding up"),
-    (r"\baccelerate\b", "speed up", "accelerate → speed up"),
-    (r"\brobust\b", "powerful", "robust → powerful"),
-    (r"\bseamlessly\b", "smoothly", "seamlessly → smoothly"),
-    (r"\bseamless\b", "smooth", "seamless → smooth"),
-    (r"\bsingle pane of glass\b", "central hub", "single pane of glass → central hub"),
-    (r"\bempowering\b", "helping", "empowering → helping"),
-    (r"\bempowers\b", "helps", "empowers → helps"),
-    (r"\bempower\b", "help", "empower → help"),
-]
 
-ABSOLUTE_MAP = [
-    (r"\bevery AI agent, model, and identity\b", "AI agents, models, and identities", "every AI agent... → AI agents..."),
-    (r"\bevery AI asset\b", "AI assets", "every AI asset → AI assets"),
-    (r"\bevery AI use case\b", "AI use cases", "every AI use case → AI use cases"),
-    (r"\bevery AI initiative\b", "AI initiatives", "every AI initiative → AI initiatives"),
-    (r"\bevery cloud and vendor\b", "clouds and vendors", "every cloud and vendor → clouds and vendors"),
-    (r"\bevery use case\b", "all use cases", "every use case → enterprise use cases"),
-    (r"\balways\b", "consistently", "always → consistently"),
-    (r"\bensures\b", "helps ensure", "ensures → helps ensure"),
-    (r"\bensure\b", "help ensure", "ensure → help ensure"),
-    (r"\bcompletely\b", "thoroughly", "completely → thoroughly"),
-    (r"\bentirely\b", "fully", "entirely → fully"),
-    (r"\beliminate\b", "reduce", "eliminate → reduce"),
-]
-
-CURATED_FLAGSHIP_REWRITES = {
-    "Enforce runtime governance for AI at scale. ServiceNow Super Intelligence Control Tower gives you a central hub to discover, secure, govern, observe, and measure any AI across your enterprise.":
-        "Enforce runtime governance for AI at scale. Super Intelligence Control Tower gives you a central hub to discover, secure, govern, observe, and measure enterprise AI.",
-    "How is Super Intelligence Control Tower different from other AI governance solutions?":
-        "How is SI Control Tower unique?",
-    "Can Super Intelligence Control Tower help discover AI agents we don't know about?":
-        "Can SI Control Tower discover shadow AI agents?",
-    "How does Super Intelligence Control Tower handle regulatory compliance?":
-        "How does SI Control Tower handle compliance?",
-    "Does Super Intelligence Control Tower work with our existing ServiceNow investments?":
-        "Does SI Control Tower work with ServiceNow?",
-    "Most vendors focus on a single area like governance or security or limit capabilities to AI within their own cloud ecosystems. Super Intelligence Control Tower is the only platform that unifies AI discovery, observability, governance, security, and value calculation, to provide you with a single source of truth for every AI asset across every cloud and vendor.":
-        "Most vendors only cover one area or their own cloud. Super Intelligence Control Tower unifies AI discovery, observability, governance, security, and value metrics to give you one source of truth for AI assets across clouds and vendors.",
-    "Super Intelligence Control Tower provides you with flexible, automated, auditable, and traceable compliance gates. It has out-of-the-box governance workflows and content packs for EU AI Act, NIST AI RMF, and state regulations such as the California AI Transparency Act.":
-        "SI Control Tower provides automated, auditable compliance gates with out-of-the-box governance workflows and content packs for the EU AI Act, NIST AI RMF, and state regulations like the California AI Transparency Act.",
-    "Absolutely. Super Intelligence Control Tower is fully integrated into the ServiceNow AI Platform and exists within your CMDB. Reach out to your account team to learn more about the compounding benefits of Super Intelligence Control Tower with your existing ServiceNow investments.":
-        "Yes. SI Control Tower is built into the ServiceNow AI Platform and your CMDB. Contact your account team to see how it compounds the value of your existing ServiceNow investments.",
-    "Review our product doc to learn more about what you’ll get from ServiceNow Super Intelligence Control Tower.":
-        "Review our product doc to learn what you’ll get from SI Control Tower.",
-    "ServiceNow Super Intelligence Control Tower dashboard showing top action items, inventory of AI assets, and governance posture.":
-        "SI Control Tower dashboard showing top action items, inventory of AI assets, and governance posture.",
-    "Video showing Super Intelligence Control Tower dashboard showing inventory metrics, agent cards, MCP server list, and revenue tracking.":
-        "SI Control Tower dashboard with inventory metrics, agent cards, MCP server list, and revenue tracking.",
-    "Video showing Super Intelligence Control Tower security dashboard with 89% score gauge, access controls, least-privilege enforcement, and threat monitoring tiles.":
-        "SI Control Tower security dashboard with 89% score gauge, access controls, and threat monitoring tiles.",
-    "Video showing Super Intelligence Control Tower governance view with architecture diagrams, policy enforcement tiles, compliance controls, and more.":
-        "SI Control Tower governance view with architecture diagrams, policy enforcement, and compliance controls.",
-    "Video showing Super Intelligence Control Tower monitoring dashboard with performance gauges, agent metrics, thresholds, and real-time activity tracking tiles.":
-        "SI Control Tower monitoring dashboard with performance gauges, agent metrics, and activity tracking tiles.",
-    "Video showing Super Intelligence Control Tower business metrics dashboard showing revenue impact ($726K, $92.2K, $23.0K), adoption rates, and ROI trends.":
-        "SI Control Tower business metrics dashboard showing revenue impact, adoption rates, and ROI trends.",
-    "ServiceNow Super Intelligence Control Tower gives Chief AI Officers the tools to connect AI strategy, governance, and performance enterprise-wide.":
-        "SI Control Tower gives Chief AI Officers tools to connect AI strategy, governance, and performance.",
-    "ServiceNow Super Intelligence Control Tower gives CIOs and CTOs the real-time insights they need to prove the ROI of any AI .":
-        "SI Control Tower gives CIOs and CTOs real-time insights to prove the ROI of enterprise AI.",
-    "ServiceNow Super Intelligence Control Tower enables robust AI governance to proactively manage risks, and safeguard operations and reputation.":
-        "SI Control Tower enables powerful AI governance to manage risk and safeguard operations and reputation.",
-    "Two ServiceNow practitioners explaining how Super Intelligence Control Tower manages AI as an enterprise capability across every use case.":
-        "Two ServiceNow practitioners explaining how SI Control Tower manages AI across enterprise use cases.",
-}
-
-def make_si_short_target(cur_text, full_target_text, allow_tagline_short=False):
+def make_button_target(cur_text, full_target_text):
     """
-    Produces the 16-char 'SI Control Tower' short variant (exact same 16-char length as 'AI Control Tower'),
-    plus localized SI short variants across all 10 non-English locales.
-    Note: Always keep company positioning taglines ('the Super Intelligence Control Tower for business/government reinvention')
-    in full 'Super Intelligence Control Tower' with capitalized 'Control Tower'.
+    Produces the Product Marketing approved CTA button target using 'Control Tower'
+    (e.g., 'See AI Control Tower' -> 'See Control Tower', 'Explore AI Control Tower' -> 'Explore Control Tower',
+    'Extend AI control tower' -> 'Extend Control Tower'), plus localized button equivalents.
     """
     full_t = re.sub(r"(?i)\bsuper\s+intelligence\s+control\s+tower\b", "Super Intelligence Control Tower", full_target_text)
-    full_t = re.sub(r"(?i)\bsi\s+control\s+tower\b", "SI Control Tower", full_t)
-    if cur_text.strip().startswith("The ") and full_t.startswith("the "):
-        full_t = "T" + full_t[1:]
-    if "business reinvention" in cur_text.lower() or "government reinvention" in cur_text.lower():
-        return full_t
-    short_t = full_t.replace("ServiceNow Super Intelligence Control Tower", "SI Control Tower")
-    short_t = short_t.replace("Super Intelligence Control Tower", "SI Control Tower")
-    localized_short_swaps = [
-        ("Super-Intelligenz-Kontrollturm", "SI-Kontrollturm"),
-        ("Superintelligenz-Kontrollturm", "SI-Kontrollturm"),
-        ("superintelligenz-kontrollturm", "SI-Kontrollturm"),
-        ("Tour de contrôle de la Super Intelligence", "Tour de contrôle SI"),
-        ("Tour de contrôle de la superintelligence", "Tour de contrôle SI"),
-        ("Tour de contrôle Super Intelligence", "Tour de contrôle SI"),
-        ("Tour de contrôle superintelligence", "Tour de contrôle SI"),
-        ("tour de contrôle de la Super Intelligence", "tour de contrôle SI"),
-        ("tour de contrôle de la superintelligence", "tour de contrôle SI"),
-        ("tour de contrôle Super Intelligence", "tour de contrôle SI"),
-        ("tour de contrôle superintelligence", "tour de contrôle SI"),
-        ("Torre de control de Superinteligencia", "Torre de control de SI"),
-        ("Torre de control de superinteligencia", "Torre de control de SI"),
-        ("torre de control de Superinteligencia", "torre de control de SI"),
-        ("torre de control de superinteligencia", "torre de control de SI"),
-        ("Torre de controle de Superinteligência", "Torre de controle de SI"),
-        ("Torre de controle de superinteligência", "Torre de controle de SI"),
-        ("torre de controle de Superinteligência", "torre de controle de SI"),
-        ("torre de controle de superinteligência", "torre de controle de SI"),
-        ("Torre di controllo della Super Intelligenza", "Torre di controllo SI"),
-        ("Torre di controllo della superintelligenza", "Torre di controllo SI"),
-        ("torre di controllo della Super Intelligenza", "Torre di controllo SI"),
-        ("torre di controllo della superintelligenza", "Torre di controllo SI"),
-        ("Scopri l'SI Control Tower", "Scopri SI Control Tower"),
-        ("Scopri l'Super Intelligence Control Tower", "Scopri SI Control Tower"),
-        ("Superintelligentie-controletoren", "SI-controletoren"),
-        ("superintelligentie-controletoren", "SI-controletoren"),
-        ("controletoren voor Superintelligentie", "controletoren voor SI"),
-        ("controletoren voor superintelligentie", "controletoren voor SI"),
-        ("スーパーインテリジェンス・コントロールタワー", "SI コントロールタワー"),
-        ("スーパーインテリジェンス コントロールタワー", "SI コントロールタワー"),
-        ("슈퍼 인텔리전스 컨트롤 타워", "SI 컨트롤 타워"),
-        ("슈퍼 인텔리전스 컨트롤타워", "SI 컨트롤타워"),
+    btn_t = re.sub(r"(?i)\b(?:ServiceNow\s+)?Super\s+Intelligence\s+Control\s+Tower\b", "Control Tower", full_t)
+    btn_t = re.sub(r"(?i)\b(?:ServiceNow\s+)?AI\s+Control\s+Tower\b", "Control Tower", btn_t)
+    localized_btn_swaps = [
+        ("Super-Intelligenz-Kontrollturm", "Control Tower"),
+        ("Superintelligenz-Kontrollturm", "Control Tower"),
+        ("KI-Kontrollturm", "Control Tower"),
+        ("Tour de contrôle de la Super Intelligence", "Tour de contrôle"),
+        ("Tour de contrôle de la superintelligence", "Tour de contrôle"),
+        ("Tour de contrôle Super Intelligence", "Tour de contrôle"),
+        ("Tour de contrôle superintelligence", "Tour de contrôle"),
+        ("tour de contrôle de la Super Intelligence", "tour de contrôle"),
+        ("tour de contrôle de la superintelligence", "tour de contrôle"),
+        ("tour de contrôle Super Intelligence", "tour de contrôle"),
+        ("tour de contrôle superintelligence", "tour de contrôle"),
+        ("Torre de control de Superinteligencia", "Torre de control"),
+        ("Torre de control de superinteligencia", "Torre de control"),
+        ("torre de control de Superinteligencia", "torre de control"),
+        ("torre de control de superinteligencia", "torre de control"),
+        ("Torre de controle de Superinteligência", "Torre de controle"),
+        ("Torre de controle de superinteligência", "Torre de controle"),
+        ("torre de controle de Superinteligência", "torre de controle"),
+        ("torre de controle de superinteligência", "torre de controle"),
+        ("Torre di controllo della Super Intelligenza", "Torre di controllo"),
+        ("Torre di controllo della superintelligenza", "Torre di controllo"),
+        ("torre di controllo della Super Intelligenza", "torre di controllo"),
+        ("torre di controllo della superintelligenza", "torre di controllo"),
+        ("Scopri l'Super Intelligence Control Tower", "Scopri Control Tower"),
+        ("Scopri Super Intelligence Control Tower", "Scopri Control Tower"),
+        ("Superintelligentie-controletoren", "Controletoren"),
+        ("superintelligentie-controletoren", "controletoren"),
+        ("controletoren voor Superintelligentie", "controletoren"),
+        ("controletoren voor superintelligentie", "controletoren"),
+        ("スーパーインテリジェンス・コントロールタワー", "コントロールタワー"),
+        ("スーパーインテリジェンス コントロールタワー", "コントロールタワー"),
+        ("슈퍼 인텔리전스 컨트롤 타워", "컨트롤 타워"),
+        ("슈퍼 인텔리전스 컨트롤타워", "컨트롤 타워"),
     ]
-    for full_loc, short_loc in localized_short_swaps:
-        short_t = short_t.replace(full_loc, short_loc)
-    return short_t
+    for full_loc, short_loc in localized_btn_swaps:
+        btn_t = btn_t.replace(full_loc, short_loc)
+    return btn_t
 
 CTA_BUTTON_TEXT_RE = re.compile(
     r"^(?:See|Explore|Extend|Discover|Try|Get|Watch|View|Learn\s+about|Infos\s+zu|Voir|D[ée]couvrir|Ver|Explorar|Veja|Scopri|Bekijk)\s+.*"
@@ -444,12 +368,33 @@ CTA_BUTTON_TEXT_RE = re.compile(
     re.I
 )
 
+TAGLINE_PATTERNS = (
+    "business reinvention",
+    "government reinvention",
+    "geschäftliche neuausrichtung",
+    "réinvention",
+    "reinvención",
+    "reinvenção",
+    "reinvenzione",
+    "heruitvinding",
+    "ビジネス変革",
+    "비즈니스 혁신",
+)
+
+def is_tagline_instance(cur_text, tgt_text=""):
+    combined = ((cur_text or "") + " " + (tgt_text or "")).lower()
+    return any(p in combined for p in TAGLINE_PATTERNS)
+
 def is_cta_button_instance(cur_text, loc_str):
     cur_s = (cur_text or "").strip()
     loc_s = (loc_str or "")
-    if any(k in loc_s.lower() for k in ("arc-button", "cta", "button")):
+    if len(cur_s) > 40:
+        return False
+    if any(k in loc_s for k in ("Heading", "Question", "Document <title>", "CTA Banner")):
+        return False
+    if "arc-button" in loc_s.lower():
         return True
-    if len(cur_s) <= 36 and CTA_BUTTON_TEXT_RE.search(cur_s) and "Heading" not in loc_s and "Question" not in loc_s and "Document <title>" not in loc_s:
+    if CTA_BUTTON_TEXT_RE.search(cur_s):
         return True
     return False
 
@@ -458,17 +403,17 @@ def audit_wwsg_instance(inst, page_url=""):
     cat = inst.get("category", "")
     tgt = inst.get("target_text", "").strip()
     cur = inst.get("current_text", "").strip()
-    is_flagship_page = ("ai-control-tower.html" in page_url)
 
     # Always enforce Title Case 'Control Tower' in target text, even when live copy had lowercase 'AI control tower'
     tgt = re.sub(r"(?i)\bsuper\s+intelligence\s+control\s+tower\b", "Super Intelligence Control Tower", tgt)
-    tgt = re.sub(r"(?i)\bsi\s+control\s+tower\b", "SI Control Tower", tgt)
+    tgt = re.sub(r"(?i)\bsi\s+control\s+tower\b", "Super Intelligence Control Tower", tgt)
     tgt = re.sub(r"\ban\s+Super\s+Intelligence\s+Control\s+Tower\b", "a Super Intelligence Control Tower", tgt)
     if cur.startswith("The ") and tgt.startswith("the "):
         tgt = "T" + tgt[1:]
     had_lowercase_ct = bool(re.search(r"control\s+tower", cur))
 
     is_cta_btn = is_cta_button_instance(cur, loc)
+    is_tagline = is_tagline_instance(cur, tgt)
     display_loc = loc
     if is_cta_btn:
         if "arc-heading-block" in loc:
@@ -480,172 +425,127 @@ def audit_wwsg_instance(inst, page_url=""):
         elif "<action-item>" in loc:
             display_loc = loc.replace("Body Copy / Cross-Sell Card (<p> / <action-item>)", "Cross-Sell CTA Button (<arc-button> / <action-item>)")
 
+    # Classify component type and whether it is a constrained heading/title that must be flagged if too long
     limit = None
     comp_name = "Body copy"
+    is_constrained_heading_or_title = False
+    flag_threshold = None
+
     if is_cta_btn:
         limit = 25
-        comp_name = "CTA button (<arc-button>, WWSG ≤25 chars max / 15 target)"
-    elif "business reinvention" in cur.lower() or "government reinvention" in cur.lower():
+        comp_name = "CTA button"
+    elif is_tagline:
         limit = 175
         comp_name = "Company positioning tagline"
     elif "arc-secondary-nav" in loc:
         limit = 50
         comp_name = "Secondary nav title"
+        is_constrained_heading_or_title = True
+        flag_threshold = 50
     elif "arc-marquee-large" in loc and ("heading" in loc.lower() or "Eyebrow" in loc):
         limit = 50
         comp_name = "Marquee large heading"
+        is_constrained_heading_or_title = True
+        flag_threshold = 50
     elif "arc-marquee-large" in loc and "<p>" in loc:
-        limit = 175
         comp_name = "Marquee large description"
     elif "arc-marquee" in loc and ("heading" in loc.lower() or "H1" in loc):
         limit = 50
         comp_name = "Marquee heading"
+        is_constrained_heading_or_title = True
+        flag_threshold = 50
     elif "arc-marquee" in loc and "<p>" in loc:
-        limit = 150
         comp_name = "Marquee description"
     elif "arc-accordion-item" in loc and "heading" in loc:
         limit = 50
-        comp_name = "Accordion title"
+        comp_name = "FAQ accordion heading"
+        is_constrained_heading_or_title = True
+        flag_threshold = 60  # Short 41-45 char FAQ questions fit; flag long 65-115 char FAQ questions
     elif "arc-accordion-item" in loc and "copy-block" in loc:
-        limit = 250
         comp_name = "Accordion body"
     elif "arc-next-steps" in loc and "<p>" in loc:
-        limit = 150
         comp_name = "Next steps description"
     elif "action-item" in loc and "<p>" in loc:
-        limit = 100
         comp_name = "Next steps action item"
     elif "arc-universal-group" in loc and "<p>" in loc:
-        limit = 100
         comp_name = "Card description"
-    elif ("Heading" in loc or "H1" in loc or "H2" in loc or "H3" in loc) and "Body Copy" not in loc and len(cur) <= 50:
+    elif ("Heading" in loc or "H1" in loc or "H2" in loc or "H3" in loc) and "Body Copy" not in loc:
         limit = 50
-        comp_name = "Component heading"
+        comp_name = "UI / Section heading"
+        is_constrained_heading_or_title = True
+        flag_threshold = 50
     elif "Breadcrumb" in loc:
         limit = 50
         comp_name = "Breadcrumb item"
+        is_constrained_heading_or_title = True
+        flag_threshold = 50
     elif cat == "Image Alt / ARIA Attribute" or "alt=" in loc:
         limit = 125
         comp_name = "Image alt text"
     elif "Document <title>" in loc or "og:title" in loc or "twitter:title" in loc:
         limit = 60
         comp_name = "SEO <title>"
+        is_constrained_heading_or_title = True
+        flag_threshold = 60
     elif "description" in loc and cat == "Head <title> & <meta>":
         limit = 160
         comp_name = "SEO <meta description>"
 
-    si_short = make_si_short_target(cur, tgt, allow_tagline_short=False)
+    btn_short = make_button_target(cur, tgt)
     t_len = len(tgt)
-    si_len = len(si_short)
+    btn_len = len(btn_short)
 
-    used_si_short = False
+    used_btn_short = False
     recommended_auto_target = tgt
-    if limit and t_len > limit:
-        if si_len <= limit:
-            used_si_short = True
-            recommended_auto_target = si_short
-        elif not is_flagship_page:
-            used_si_short = True
-            recommended_auto_target = si_short
+    needs_manual_copy = False
+    manual_reason = ""
+    is_over = False
+    flags = []
 
-    if limit:
-        if t_len <= limit:
-            char_check = f"{comp_name}: [{t_len}/{limit} chars — Full Name Fits]"
-            short_note = f"{comp_name}: {t_len}/{limit} chars"
-            is_over = False
-        elif si_len <= limit:
-            char_check = f"{comp_name}: [Full={t_len}/{limit} -> Use 'SI Control Tower'={si_len}/{limit} chars]"
-            short_note = f"{comp_name}: {si_len}/{limit} chars (Uses 'SI Control Tower')"
-            is_over = False
-        elif not is_flagship_page:
-            char_check = f"{comp_name}: [Pre-existing >{limit} chars -> Auto-swap 'SI Control Tower' ({si_len} chars, +0 net delta)]"
-            short_note = f"{comp_name}: {si_len} chars (0 net char change via 'SI Control Tower')"
-            is_over = False
-        else:
-            over_by = si_len - limit
-            char_check = f"{comp_name}: [{si_len}/{limit} chars — OVER by {over_by}, needs manual copy trim]"
-            short_note = f"Exceeds {comp_name} ({si_len}/{limit} chars) — manual trim"
-            is_over = True
+    if is_cta_btn:
+        used_btn_short = True
+        recommended_auto_target = btn_short
+        char_check = f"CTA button: [{btn_len}/25 chars — Uses 'Control Tower' per PM direction (Full={t_len} chars)]"
+        short_note = f"CTA button: {btn_len}/25 chars ('Control Tower' button standard)"
+        flags.append(f'[CTA BUTTON: Uses "{btn_short}" ({btn_len}/25 chars) per Product Marketing button rule]')
+    elif is_constrained_heading_or_title and flag_threshold and t_len > flag_threshold:
+        is_over = True
+        needs_manual_copy = True
+        over_by = t_len - limit
+        manual_reason = f"Flagged: '{comp_name}' is {t_len}/{limit} chars (+{over_by} over) with 'Super Intelligence Control Tower' — manually decide replacement"
+        char_check = f"{comp_name}: [{t_len}/{limit} chars — FLAGGED TOO LONG (+{over_by} chars), manually decide replacement]"
+        short_note = f"Flagged: {t_len}/{limit} chars (+{over_by} over) — decide replacement (e.g. 'Control Tower' or trim)"
+        flags.append(f"[FLAGGED — NAME TOO LONG: {t_len}/{limit} chars in {comp_name}; manually decide replacement]")
+    elif limit:
+        char_check = f"{comp_name}: [{t_len}/{limit} chars — Full Name Fits]"
+        short_note = f"{comp_name}: {t_len}/{limit} chars"
     else:
-        char_check = f"{comp_name}: [Full={t_len} chars | Short 'SI'={si_len} chars]"
-        short_note = f"{t_len} chars"
-        is_over = False
+        char_check = f"{comp_name}: [{t_len} chars — Direct swap to 'Super Intelligence Control Tower']"
+        short_note = f"{comp_name}: {t_len} chars"
 
-    if had_lowercase_ct:
+    if had_lowercase_ct and not is_cta_btn:
         short_note += " • Capitalize 'Control Tower'"
         char_check += " [Title-Case 'Control Tower']"
 
-    flags = []
-    rewrite = recommended_auto_target
-
-    if is_cta_btn and used_si_short:
-        flags.append(f'[CTA BUTTON: WWSG 2026 Q3 limits CTA buttons to 15 chars target / 25 chars max — auto-swaps to "{si_short}" ({si_len} chars)]')
-        short_note = f"CTA button: {si_len}/25 chars (Full name {t_len}/25 overflows)"
-
     if re.search(r"\b(?:AICT|SICT)\b", cur):
-        flags.append('[ABBREVIATION: Replace "AICT" with "SI Control Tower" (16 chars) or "Super Intelligence Control Tower"]')
-
-    if "ServiceNow Super Intelligence Control Tower" in rewrite and cat != "Head <title> & <meta>":
-        flags.append('[NAMING: Omit redundant "ServiceNow" before product name (-11 chars)]')
-        rewrite = rewrite.replace("ServiceNow Super Intelligence Control Tower", "Super Intelligence Control Tower")
-
-    for pat, rep, label in BUZZWORDS_MAP:
-        if re.search(pat, rewrite, flags=re.I):
-            flags.append(f"[BUZZWORD: {label}]")
-            rewrite = re.sub(pat, rep, rewrite, flags=re.I)
-
-    for pat, rep, label in ABSOLUTE_MAP:
-        if re.search(pat, rewrite, flags=re.I):
-            flags.append(f"[ABSOLUTE TERM: {label}]")
-            rewrite = re.sub(pat, rep, rewrite, flags=re.I)
-
-    if cat == "Image Alt / ARIA Attribute" or "alt=" in loc:
-        if re.match(r"^(?:image|photo|screenshot|video)\s+(?:of|showing)\s+", rewrite, flags=re.I):
-            flags.append('[ACCESSIBILITY: Strip "Image/Screenshot/Video showing" prefix from alt text]')
-            rewrite = re.sub(r"^(?:image|photo|screenshot|video)\s+(?:of|showing)\s+", "", rewrite, flags=re.I)
-            if rewrite:
-                rewrite = rewrite[0].upper() + rewrite[1:]
-
-    if tgt in CURATED_FLAGSHIP_REWRITES:
-        rewrite = CURATED_FLAGSHIP_REWRITES[tgt]
-    elif (cat == "Image Alt / ARIA Attribute" or "alt=" in loc) and len(rewrite) > 125:
-        rewrite = make_si_short_target(cur, rewrite)
-        rewrite = rewrite.replace(" showing ", " with ").replace(", and more.", ".")
-        if len(rewrite) > 125:
-            cut = rewrite[:121].rsplit(" ", 1)[0].rstrip(",;:-")
-            cut = re.sub(r"\s+(?:and|or|with|for|to|in|on|of|across|the|a|an)$", "", cut, flags=re.I)
-            rewrite = cut + "."
+        flags.append('[ACRONYM: Replace "AICT" with "Super Intelligence Control Tower"]')
 
     has_an_article = bool(re.search(r"\ban\s+AI\s+Control\s+Tower\b", cur, flags=re.I))
     if has_an_article:
-        flags.append('[GRAMMAR NOTE: "an AI Control Tower" -> use "an SI Control Tower" or "a Super Intelligence Control Tower"]')
+        flags.append('[GRAMMAR: "an AI Control Tower" -> "a Super Intelligence Control Tower"]')
 
-    # Determine Execution Mode for this specific instance:
-    # Automated Swap vs. Manual Copy Edit (Clean cutover — H1 Hero is 100% Automated)
-    needs_manual_copy = False
-    manual_reason = ""
-    if is_over:
-        needs_manual_copy = True
-        manual_reason = f"Exceeds {comp_name} {limit}-char cap — use trimmed WWSG rewrite"
-    elif tgt in CURATED_FLAGSHIP_REWRITES and ("Accordion" in comp_name or "Marquee large description" in comp_name):
-        needs_manual_copy = True
-        manual_reason = f"Flagship {comp_name} rewrite recommended for WWSG length/clarity"
-
-    rw_len = len(rewrite)
-    if limit:
-        rw_badge = f"[{rw_len}/{limit} chars]"
-    else:
-        rw_badge = f"[{rw_len} chars]"
+    rw_len = len(recommended_auto_target)
+    rw_badge = f"[{rw_len}/{limit} chars]" if limit else f"[{rw_len} chars]"
 
     return {
         "char_check": char_check,
         "short_note": short_note,
         "is_over": is_over,
-        "used_si_short": used_si_short,
-        "si_short_target": si_short,
+        "used_si_short": used_btn_short,
+        "si_short_target": btn_short,
         "recommended_auto_target": recommended_auto_target,
         "flags": flags,
-        "wwsg_rewrite": rewrite if (is_over or flags or needs_manual_copy) and rewrite != tgt else None,
+        "wwsg_rewrite": None,
         "wwsg_rewrite_badge": rw_badge,
         "needs_manual_copy": needs_manual_copy,
         "manual_reason": manual_reason,
@@ -708,6 +608,23 @@ def clean_ocr_display(ocr_lines):
         c = re.sub(r"\bAl\s+control\s+tower\b", "AI control tower", c)
         cleaned.append(c)
     return " | ".join(cleaned[:3]) if cleaned else "AI Control Tower"
+
+def get_target_image_url(fim):
+    """
+    Returns the new DAM image copy path so AEM automation can swap old image path -> new image path.
+    - If filename has 'ai-control-tower' or 'aict', replaces with 'super-intelligence-control-tower'
+    - Else if filename has 'control-tower', replaces with 'super-intelligence-control-tower'
+    - Else inserts '-super-intelligence-control-tower' before rendition (.sm/.xs) or file extension
+    """
+    if re.search(r"(?i)ai-control-tower|aict", fim):
+        return re.sub(r"(?i)ai-control-tower|aict", "super-intelligence-control-tower", fim)
+    if re.search(r"(?i)control-tower", fim):
+        return re.sub(r"(?i)control-tower", "super-intelligence-control-tower", fim)
+    return re.sub(
+        r"(\.(?:sm|xs|md|lg|xl)|-(?:sm|xs|md|lg|xl))?(\.[a-zA-Z0-9]+)$",
+        r"-super-intelligence-control-tower\1\2",
+        fim,
+    )
 
 total_baked_images_count = sum(1 for v in MASTER_IMAGES_MAP.values() if v.get("has_baked_aict_pixels"))
 total_auto_slug_images_count = sum(1 for v in MASTER_IMAGES_MAP.values() if not v.get("has_baked_aict_pixels") and v.get("has_aict_slug"))
@@ -978,9 +895,10 @@ def build_split_page_breakdowns(r):
         )
         manual_csv_items.append(f"[MANUAL: URL SLUG & 301] Move {u} -> {new_u}")
 
-    # B. <title> & <meta> Tag Instances (Automated — Deduplicated by value)
+    # B. <title> & <meta> Tag Instances (Automated by default; Flagged Manual if <title> > 60 chars)
     if meta_instances:
-        meta_csv_parts = []
+        meta_auto_csv_parts = []
+        meta_manual_csv_parts = []
         meta_groups = []
         meta_group_map = {}
         for idx, m in enumerate(meta_instances, 1):
@@ -990,9 +908,13 @@ def build_split_page_breakdowns(r):
             w_res = audit_wwsg_instance(m, u)
             if w_res["used_si_short"]:
                 si_short_cnt += 1
-            auto_text_meta_alt_cnt += 1
             rec_tgt = w_res["recommended_auto_target"]
-            meta_csv_parts.append(f"Meta #{idx} [AUTO] ({m_loc}) {w_res['char_check']}: \"{m_old}\" -> \"{rec_tgt}\"")
+            is_man_meta = w_res["needs_manual_copy"]
+            if is_man_meta:
+                meta_manual_csv_parts.append(f"Meta #{idx} [MANUAL_FLAGGED_TOO_LONG] ({m_loc}) {w_res['char_check']}: \"{m_old}\" -> \"{rec_tgt}\"")
+            else:
+                auto_text_meta_alt_cnt += 1
+                meta_auto_csv_parts.append(f"Meta #{idx} [AUTO] ({m_loc}) {w_res['char_check']}: \"{m_old}\" -> \"{rec_tgt}\"")
 
             # Clean tag name for grouping
             if "Document <title>" in m_loc:
@@ -1017,7 +939,7 @@ def build_split_page_breakdowns(r):
                 short_tag = m_loc
                 grp_kind = "Meta"
 
-            gkey = (grp_kind, m_old, rec_tgt, w_res["short_note"])
+            gkey = (grp_kind, m_old, rec_tgt, w_res["short_note"], is_man_meta)
             if gkey not in meta_group_map:
                 gobj = {
                     "kind": grp_kind,
@@ -1025,6 +947,7 @@ def build_split_page_breakdowns(r):
                     "old": m_old,
                     "new": rec_tgt,
                     "note": w_res["short_note"],
+                    "manual": is_man_meta,
                 }
                 meta_group_map[gkey] = gobj
                 meta_groups.append(gobj)
@@ -1036,22 +959,37 @@ def build_split_page_breakdowns(r):
             tags_str = ", ".join(html.escape(t) for t in g["tags"])
             lbl = "Page Title Tags" if g["kind"] == "Title" else ("Meta Description Tags" if g["kind"] == "Description" else "Meta Tag")
             cnt_pill = f" ({tag_cnt} tags)" if tag_cnt > 1 else ""
-            drawer_auto_rows.append(
-                f"<tr class='detail-item-auto'>"
-                f"<td><span class='badge b-auto'>Auto</span></td>"
-                f"<td><strong>{lbl}{cnt_pill}</strong><div class='sub-note'><code>{tags_str}</code></div></td>"
-                f"<td>{html.escape(g['old'])}</td>"
-                f"<td><strong>{html.escape(g['new'])}</strong></td>"
-                f"<td>{html.escape(g['note'])}</td>"
-                f"</tr>"
-            )
-        auto_csv_items.append(f"[AUTO: TITLE & META ({len(meta_instances)})] " + " || ".join(meta_csv_parts))
+            if g["manual"]:
+                manual_copy_cnt += 1
+                manual_filter_tags.add("m-copy")
+                drawer_manual_rows.append(
+                    f"<tr class='detail-item-manual'>"
+                    f"<td><span class='badge b-manual'>Manual</span></td>"
+                    f"<td><strong>{lbl}{cnt_pill}</strong><div class='sub-note'><code>{tags_str}</code> • Flagged: Name too long — manually decide replacement</div></td>"
+                    f"<td>{html.escape(g['old'])}</td>"
+                    f"<td><strong>{html.escape(g['new'])}</strong></td>"
+                    f"<td>{html.escape(g['note'])}</td>"
+                    f"</tr>"
+                )
+            else:
+                drawer_auto_rows.append(
+                    f"<tr class='detail-item-auto'>"
+                    f"<td><span class='badge b-auto'>Auto</span></td>"
+                    f"<td><strong>{lbl}{cnt_pill}</strong><div class='sub-note'><code>{tags_str}</code></div></td>"
+                    f"<td>{html.escape(g['old'])}</td>"
+                    f"<td><strong>{html.escape(g['new'])}</strong></td>"
+                    f"<td>{html.escape(g['note'])}</td>"
+                    f"</tr>"
+                )
+        if meta_auto_csv_parts:
+            auto_csv_items.append(f"[AUTO: TITLE & META ({len(meta_auto_csv_parts)})] " + " || ".join(meta_auto_csv_parts))
+        if meta_manual_csv_parts:
+            manual_csv_items.append(f"[MANUAL: FLAGGED OVERSIZED TITLE ({len(meta_manual_csv_parts)})] " + " || ".join(meta_manual_csv_parts))
 
-    # C. Visible Body Copy Instances — Split into Automated vs. Manual WWSG Copy Edits
+    # C. Visible Body Copy Instances — Automated by default; Flagged Manual ONLY when Super Intelligence Control Tower is way too big for a heading/accordion
     if body_text_instances:
         auto_body_csv = []
         manual_body_csv = []
-        has_prior_full_name = bool(meta_instances)
 
         for idx, b in enumerate(body_text_instances, 1):
             b_idx = b.get("instance_num", idx)
@@ -1063,16 +1001,6 @@ def build_split_page_breakdowns(r):
             if w_res["used_si_short"]:
                 si_short_cnt += 1
 
-            # Check if this is a First-Mention Short CTA Button that needs a Surrounding Paragraph Context Bridge
-            needs_context_bridge = False
-            if w_res["is_cta_btn"] and w_res["used_si_short"] and not has_prior_full_name:
-                next_inst_txt = body_text_instances[idx].get("target_text", "") if idx < len(body_text_instances) else ""
-                if not ("process-mining.html" in u and "Super Intelligence Control Tower" in next_inst_txt):
-                    needs_context_bridge = True
-
-            if not w_res["used_si_short"]:
-                has_prior_full_name = True
-
             if w_res["flags"]:
                 fl_str = " ".join(w_res["flags"])
                 wwsg_csv_notes.append(f"Body #{b_idx}: {w_res['char_check']} {fl_str}")
@@ -1081,24 +1009,22 @@ def build_split_page_breakdowns(r):
 
             if w_res["needs_manual_copy"]:
                 manual_copy_cnt += 1
-                rec_txt = w_res["wwsg_rewrite"] or w_res["recommended_auto_target"]
-                note_txt = f"{w_res['comp_name']}: {w_res['wwsg_rewrite_badge']} (Trimmed from {len(b_new)} chars)"
+                rec_txt = w_res["recommended_auto_target"]
+                note_txt = w_res["short_note"]
                 drawer_manual_rows.append(
                     f"<tr class='detail-item-manual'>"
                     f"<td><span class='badge b-manual'>Manual</span></td>"
-                    f"<td><strong>{html.escape(b_loc)}</strong><div class='sub-note'>Copy edit for WWSG character limit</div></td>"
+                    f"<td><strong>{html.escape(b_loc)}</strong><div class='sub-note'>Flagged: Name too long — manually decide replacement</div></td>"
                     f"<td>{html.escape(b_old)}</td>"
                     f"<td><strong>{html.escape(rec_txt)}</strong></td>"
                     f"<td>{html.escape(note_txt)}</td>"
                     f"</tr>"
                 )
-                manual_body_csv.append(f"#{b_idx} [MANUAL_COPY | {b_loc}] \"{b_old}\" -> \"{rec_txt}\"")
+                manual_body_csv.append(f"#{b_idx} [MANUAL_FLAGGED_TOO_LONG | {b_loc}] \"{b_old}\" -> \"{rec_txt}\" ({note_txt})")
             else:
                 auto_text_meta_alt_cnt += 1
                 rec_auto = w_res["recommended_auto_target"]
                 note_txt = w_res["short_note"]
-                if needs_context_bridge:
-                    note_txt += " • Paired with Manual Context Bridge below"
                 drawer_auto_rows.append(
                     f"<tr class='detail-item-auto'>"
                     f"<td><span class='badge b-auto'>Auto</span></td>"
@@ -1108,75 +1034,14 @@ def build_split_page_breakdowns(r):
                     f"<td>{html.escape(note_txt)}</td>"
                     f"</tr>"
                 )
-                m_tag = "AUTO_SI_SHORT" if w_res["used_si_short"] else "AUTO_FULL"
+                m_tag = "AUTO_BTN_SHORT" if w_res["used_si_short"] else "AUTO_FULL"
                 auto_body_csv.append(f"#{b_idx} [{m_tag} | {b_loc}] \"{b_old}\" -> \"{rec_auto}\"")
-
-            # Queue Surrounding Paragraph Context Bridge if needed
-            if needs_context_bridge:
-                manual_copy_cnt += 1
-                cta_lbl = w_res["recommended_auto_target"]
-                u_clean = u.rstrip("/")
-                is_homepage = (cat == "Homepage" or u_clean == "https://www.servicenow.com" or re.match(r"^https://www\.servicenow\.com/[a-z]{2}(?:-[a-z]{2})?$", u_clean))
-                is_en_page = (loc_code in ("us", "uk", "au", "in", "en-US", "en-GB", "en-AU", "en-IN"))
-                if is_homepage:
-                    cur_para = "Most companies have AI. Few have the data to ground it, the workflows to deploy it, and the security to govern it. ServiceNow® is the only platform built for all of it, so AI doesn't just think. It acts."
-                    opt_1a = "Most companies have AI. Few have the data to ground it, the workflows to deploy it, and the security to govern it. ServiceNow® unites all of it in the Super Intelligence Control Tower—so AI doesn't just think. It acts."
-                    opt_1b = "Most companies have AI. Few have the data to ground it, the workflows to deploy it, and the security to govern it. ServiceNow® is the only platform built for all of it—turning AI into Super Intelligence (SI) that acts."
-                    loc_sub = "" if is_en_page else f" (Translate into {loc_code.upper()} above localized CTA)"
-                    drawer_manual_rows.append(
-                        f"<tr class='detail-item-manual'>"
-                        f"<td><span class='badge b-manual'>Manual</span></td>"
-                        f"<td><strong>Hero Lead Paragraph (Context Bridge)</strong><div class='sub-note'>Introduces Super Intelligence before \"{html.escape(cta_lbl)}\" CTA{html.escape(loc_sub)}</div></td>"
-                        f"<td>{html.escape(cur_para)}</td>"
-                        f"<td><strong>Option 1A (Recommended):</strong> {html.escape(opt_1a)}<div class='sub-note' style='margin-top:4px;'><strong>Option 1B (Alt):</strong> {html.escape(opt_1b)}</div></td>"
-                        f"<td>219 chars • Bridges AI &rarr; Super Intelligence</td>"
-                        f"</tr>"
-                    )
-                    manual_body_csv.append(
-                        f"Context Bridge for #{b_idx} [MANUAL_COPY | Hero Lead Paragraph (<arc-heading-block> > <p>)] "
-                        f"Current: \"{cur_para}\" -> Option 1A: \"{opt_1a}\" (or Option 1B: \"{opt_1b}\") [Paired with CTA \"{cta_lbl}\"]"
-                    )
-                elif "it-asset-management.html" in u:
-                    cur_para = "Compare AI and machine learning cloud spending across providers. Monitor AI performance metrics to reduce risk and support ethical and regulatory compliance."
-                    opt_1a = "Compare AI and machine learning cloud spending across providers. Monitor AI performance with Super Intelligence Control Tower to reduce risk and support compliance."
-                    opt_1b = "Compare AI and machine learning cloud spending across providers. Monitor Super Intelligence (SI) performance metrics to reduce risk and support ethical and regulatory compliance."
-                    drawer_manual_rows.append(
-                        f"<tr class='detail-item-manual'>"
-                        f"<td><span class='badge b-manual'>Manual</span></td>"
-                        f"<td><strong>Feature Tab Paragraph (Context Bridge)</strong><div class='sub-note'>Introduces Super Intelligence before \"{html.escape(cta_lbl)}\" CTA</div></td>"
-                        f"<td>{html.escape(cur_para)}</td>"
-                        f"<td><strong>Option 1A (Recommended):</strong> {html.escape(opt_1a)}<div class='sub-note' style='margin-top:4px;'><strong>Option 1B (Alt):</strong> {html.escape(opt_1b)}</div></td>"
-                        f"<td>164/200 chars • Bridges AI &rarr; Super Intelligence</td>"
-                        f"</tr>"
-                    )
-                    manual_body_csv.append(
-                        f"Context Bridge for #{b_idx} [MANUAL_COPY | Feature Tab Paragraph (<arc-feature> > <p>)] "
-                        f"Current: \"{cur_para}\" -> Option 1A: \"{opt_1a}\" [Paired with CTA \"{cta_lbl}\"]"
-                    )
-                else:
-                    cur_para = "Ground AI decisions in your policies and rules, enforced automatically with explainable audit trails and manual approval when needed."
-                    opt_1a = "Ground AI decisions in your policies and rules with Super Intelligence Control Tower—enforced automatically with explainable audit trails and manual approval when needed."
-                    opt_1b = "Ground Super Intelligence (SI) decisions in your policies and rules, enforced automatically with explainable audit trails and manual approval when needed."
-                    drawer_manual_rows.append(
-                        f"<tr class='detail-item-manual'>"
-                        f"<td><span class='badge b-manual'>Manual</span></td>"
-                        f"<td><strong>Card Paragraph (Context Bridge)</strong><div class='sub-note'>Introduces Super Intelligence before \"{html.escape(cta_lbl)}\" CTA</div></td>"
-                        f"<td>{html.escape(cur_para)}</td>"
-                        f"<td><strong>Option 1A (Recommended):</strong> {html.escape(opt_1a)}<div class='sub-note' style='margin-top:4px;'><strong>Option 1B (Alt):</strong> {html.escape(opt_1b)}</div></td>"
-                        f"<td>170/200 chars • Bridges AI &rarr; Super Intelligence</td>"
-                        f"</tr>"
-                    )
-                    manual_body_csv.append(
-                        f"Context Bridge for #{b_idx} [MANUAL_COPY | Card Paragraph (<arc-card> > <p>)] "
-                        f"Current: \"{cur_para}\" -> Option 1A: \"{opt_1a}\" [Paired with CTA \"{cta_lbl}\"]"
-                    )
 
         if auto_body_csv:
             auto_csv_items.append(f"[AUTO: BODY INSTANCES ({len(auto_body_csv)})] " + " || ".join(auto_body_csv))
         if manual_body_csv:
-            manual_reasons.append(f"Copy Edit ({manual_copy_cnt})")
             manual_filter_tags.add("m-copy")
-            manual_csv_items.append(f"[MANUAL: WWSG COPY EDITS ({len(manual_body_csv)})] " + " || ".join(manual_body_csv))
+            manual_csv_items.append(f"[MANUAL: FLAGGED NAME TOO LONG ({len(manual_body_csv)})] " + " || ".join(manual_body_csv))
 
     elif body_ai_ct > 0 or raw_loc > 0 or raw_aict > 0:
         cnt = max(1, body_ai_ct + raw_loc + raw_aict)
@@ -1186,11 +1051,14 @@ def build_split_page_breakdowns(r):
             f"<td><span class='badge b-auto'>Auto</span></td>"
             f"<td><strong>Body Component / Card Copy ({cnt}x)</strong></td>"
             f"<td>AI Control Tower / AICT</td>"
-            f"<td><strong>Super Intelligence Control Tower</strong> (or <strong>SI Control Tower</strong> on tight UI cards)</td>"
+            f"<td><strong>Super Intelligence Control Tower</strong> (or <strong>Control Tower</strong> on CTA buttons)</td>"
             f"<td>Automated text swap</td>"
             f"</tr>"
         )
-        auto_csv_items.append(f"[AUTO: BODY COMPONENT COPY ({cnt}x)] Update AI Control Tower / AICT -> 'Super Intelligence Control Tower' or 'SI Control Tower'")
+        auto_csv_items.append(f"[AUTO: BODY COMPONENT COPY ({cnt}x)] Update AI Control Tower / AICT -> 'Super Intelligence Control Tower' (or 'Control Tower' on CTA buttons)")
+
+    if manual_copy_cnt > 0:
+        manual_reasons.append(f"Name Too Long ({manual_copy_cnt})")
 
     # D. In-Body Anchor Links & Component Data Attributes (Automated — Deduplicated by href pair)
     if body_slug_links or data_attr_instances or body_slug > 0:
@@ -1245,7 +1113,7 @@ def build_split_page_breakdowns(r):
             link_csv_parts.append(f"Total in-page slug refs ({body_slug}x) [AUTO]: ai-control-tower -> super-intelligence-control-tower")
         auto_csv_items.append("[AUTO: LINKS & SLUG REFS] " + " || ".join(link_csv_parts))
 
-    # E. On-Page DAM Images & HTML alt Attributes
+    # E. On-Page DAM Image Path Swaps & HTML alt Attributes (100% Automated on Webpages)
     auto_imgs = []
     baked_imgs = []
     for im in imgs:
@@ -1260,20 +1128,46 @@ def build_split_page_breakdowns(r):
             if fim not in auto_imgs:
                 auto_imgs.append(fim)
 
-    if auto_imgs or alt_instances:
+    if auto_imgs or baked_imgs or alt_instances:
+        img_swap_csv_parts = []
         alt_csv_parts = []
-        for idx, im in enumerate(auto_imgs, 1):
+        img_seq = 0
+        for im in auto_imgs:
+            img_seq += 1
             fim = full_url(im)
-            new_fim = re.sub(r"(?i)ai-control-tower|aict", "super-intelligence-control-tower", fim)
+            new_fim = get_target_image_url(fim)
             drawer_auto_rows.append(
                 f"<tr class='detail-item-auto'>"
                 f"<td><span class='badge b-auto'>Auto</span></td>"
-                f"<td><strong>DAM Image Filename Move #{idx}</strong><div class='sub-note'>0 baked-in pixels (verified by OCR)</div></td>"
+                f"<td><strong>DAM Image Path Swap #{img_seq}</strong><div class='sub-note'>0 baked-in pixels (verified by OCR)</div></td>"
                 f"<td class='mono'>{a_link(fim)}</td>"
                 f"<td class='mono'><code>{html.escape(new_fim)}</code></td>"
-                f"<td>Automated DAM rename + 301</td>"
+                f"<td>Automated image path swap + 301</td>"
                 f"</tr>"
             )
+            img_swap_csv_parts.append(f"Img #{img_seq} [AUTO_SLUG_SWAP]: {fim} -> {new_fim}")
+        for fim in baked_imgs:
+            img_seq += 1
+            minfo = MASTER_IMAGES_MAP.get(fim, {})
+            ocr_disp = clean_ocr_display(minfo.get("matched_ocr_lines", []))
+            dims = f"{minfo.get('width', 0)}×{minfo.get('height', 0)}" if minfo.get("width") else "Image"
+            kb = f"{minfo.get('bytes', 0)//1024:,} KB" if minfo.get("bytes") else ""
+            spec_str = f"{dims}{', ' + kb if kb else ''}"
+            new_fim = get_target_image_url(fim)
+            target_col_html = (
+                f"<div class='mono'><code>{html.escape(new_fim)}</code></div>"
+                f"<div class='sub-note' style='margin-top:2px;'>Automated swap to updated graphic copy (<strong>Super Intelligence Control Tower</strong>)</div>"
+            )
+            drawer_auto_rows.append(
+                f"<tr class='detail-item-auto'>"
+                f"<td><span class='badge b-auto'>Auto</span></td>"
+                f"<td><strong>DAM Image Path Swap #{img_seq}</strong><div class='sub-note'>{html.escape(spec_str)} • Updated graphic copy</div></td>"
+                f"<td class='mono'>{a_link(fim)}<div class='sub-note'>OCR: \"{html.escape(ocr_disp)}\"</div></td>"
+                f"<td>{target_col_html}</td>"
+                f"<td>Automated image path swap (old image &rarr; new image copy)</td>"
+                f"</tr>"
+            )
+            img_swap_csv_parts.append(f"Img #{img_seq} [AUTO_IMAGE_SWAP]: {fim} -> {new_fim} (OCR: \"{ocr_disp}\")")
         for a_idx, a_obj in enumerate(alt_instances, 1):
             a_loc = a_obj.get("location", "<arc-image alt=\"...\">")
             a_old = a_obj.get("current_text", "")
@@ -1281,55 +1175,21 @@ def build_split_page_breakdowns(r):
             if w_res["used_si_short"]:
                 si_short_cnt += 1
             auto_text_meta_alt_cnt += 1
-            best_alt = w_res["wwsg_rewrite"] or w_res["recommended_auto_target"]
+            best_alt = w_res["recommended_auto_target"]
             drawer_auto_rows.append(
                 f"<tr class='detail-item-auto'>"
                 f"<td><span class='badge b-auto'>Auto</span></td>"
                 f"<td><strong>Image Alt Text #{a_idx}</strong><div class='sub-note'><code>{html.escape(a_loc)}</code></div></td>"
                 f"<td>{html.escape(a_old)}</td>"
                 f"<td><strong>{html.escape(best_alt)}</strong></td>"
-                f"<td>Alt text: {len(best_alt)}/125 chars</td>"
+                f"<td>Alt text: {len(best_alt)} chars</td>"
                 f"</tr>"
             )
-            alt_csv_parts.append(f"Alt #{a_idx} [AUTO] ({len(best_alt)}/125 chars): \"{a_old}\" -> \"{best_alt}\"")
+            alt_csv_parts.append(f"Alt #{a_idx} [AUTO] ({len(best_alt)} chars): \"{a_old}\" -> \"{best_alt}\"")
         auto_csv_items.append(
-            f"[AUTO: IMAGES ({len(auto_imgs)}) & ALT INSTANCES ({len(alt_instances)})] "
-            f"Auto Imgs: {', '.join(full_url(i) for i in auto_imgs)} | Alts: {' || '.join(alt_csv_parts)}"
+            f"[AUTO: IMAGE PATH SWAPS ({len(auto_imgs) + len(baked_imgs)}) & ALT INSTANCES ({len(alt_instances)})] "
+            f"Image Swaps: {' | '.join(img_swap_csv_parts) if img_swap_csv_parts else 'None'} | Alts: {' || '.join(alt_csv_parts) if alt_csv_parts else 'None'}"
         )
-
-    if baked_imgs:
-        manual_reasons.append(f"Baked-In Image ({len(baked_imgs)})")
-        manual_filter_tags.add("m-img")
-        baked_csv_parts = []
-        for idx, fim in enumerate(baked_imgs, 1):
-            minfo = MASTER_IMAGES_MAP.get(fim, {})
-            ocr_disp = clean_ocr_display(minfo.get("matched_ocr_lines", []))
-            dims = f"{minfo.get('width', 0)}×{minfo.get('height', 0)}" if minfo.get("width") else "Image"
-            kb = f"{minfo.get('bytes', 0)//1024:,} KB" if minfo.get("bytes") else ""
-            spec_str = f"{dims}{', ' + kb if kb else ''}"
-            has_slug = bool(minfo.get("has_aict_slug") or "ai-control-tower" in fim.lower() or "aict" in fim.lower())
-            if has_slug:
-                new_fim = re.sub(r"(?i)ai-control-tower|aict", "super-intelligence-control-tower", fim)
-                target_col_html = (
-                    f"<div class='mono'><code>{html.escape(new_fim)}</code></div>"
-                    f"<div class='sub-note' style='margin-top:2px;'>Update graphic text to <strong>Super Intelligence Control Tower</strong> (or <strong>SI Control Tower</strong>)</div>"
-                )
-                slug_note = "Re-render graphic text + rename DAM filename (HTTP 301)"
-                baked_csv_parts.append(f"{fim} -> {new_fim} (OCR: \"{ocr_disp}\")")
-            else:
-                target_col_html = "Update graphic text to <strong>Super Intelligence Control Tower</strong> (or <strong>SI Control Tower</strong>)"
-                slug_note = "Re-render graphic text at same DAM path"
-                baked_csv_parts.append(f"{fim} (OCR: \"{ocr_disp}\")")
-            drawer_manual_rows.append(
-                f"<tr class='detail-item-manual'>"
-                f"<td><span class='badge b-manual'>Manual</span></td>"
-                f"<td><strong>Baked-In Graphic #{idx}</strong><div class='sub-note'>{html.escape(spec_str)}</div></td>"
-                f"<td class='mono'>{a_link(fim)}<div class='sub-note'>OCR: \"{html.escape(ocr_disp)}\"</div></td>"
-                f"<td>{target_col_html}</td>"
-                f"<td>{html.escape(slug_note)}</td>"
-                f"</tr>"
-            )
-        manual_csv_items.append(f"[MANUAL: BAKED-IN IMAGES ({len(baked_imgs)})] " + " | ".join(baked_csv_parts))
 
     # F. Linked Non-FAQ PDFs with Internal Matches (Manual)
     live_pdfs = [p for p in pdfs if pdf_match_lookup.get(p, (0,))[0] > 0 or "ds-ai-control-tower" in p]
@@ -1382,14 +1242,13 @@ def build_split_page_breakdowns(r):
         )
         manual_csv_items.append(f"[MANUAL: L10N GRAMMAR REVIEW ({loc_code.upper()})] Verify gender/article agreement on translated flagship page")
 
-    auto_edit_count = auto_text_meta_alt_cnt + auto_link_cnt + len(auto_imgs)
+    auto_edit_count = auto_text_meta_alt_cnt + auto_link_cnt + len(auto_imgs) + len(baked_imgs)
     if auto_edit_count == 0:
         auto_edit_count = max(1, r["true_body"] + r.get("raw_localized", 0))
 
     manual_task_count = (
         (1 if "m-slug" in manual_filter_tags else 0)
         + manual_copy_cnt
-        + len(baked_imgs)
         + len(live_pdfs)
         + (1 if "m-l10n" in manual_filter_tags else 0)
     )
@@ -1411,7 +1270,7 @@ def build_split_page_breakdowns(r):
     auto_csv_str = " ; ".join(auto_csv_items) if auto_csv_items else "None"
     manual_csv_str = " ; ".join(manual_csv_items) if manual_csv_items else "None (100% Automated)"
     combined_csv_str = " ; ".join(auto_csv_items + manual_csv_items)
-    wwsg_summary_str = " | ".join(wwsg_csv_notes) if wwsg_csv_notes else "Fits WWSG 2026 Q3 limits (via Full Name or 'SI Control Tower')"
+    wwsg_summary_str = " | ".join(wwsg_csv_notes) if wwsg_csv_notes else "Product Marketing naming standard: Super Intelligence Control Tower (or Control Tower on CTA buttons)"
 
     return {
         "is_fully_auto": (manual_task_count == 0),
@@ -1423,7 +1282,7 @@ def build_split_page_breakdowns(r):
         "auto_edit_count": auto_edit_count,
         "auto_text_meta_alt_cnt": auto_text_meta_alt_cnt,
         "auto_link_cnt": auto_link_cnt,
-        "auto_img_cnt": len(auto_imgs),
+        "auto_img_cnt": len(auto_imgs) + len(baked_imgs),
         "si_short_cnt": si_short_cnt,
         "manual_csv": manual_csv_str,
         "manual_task_count": manual_task_count,
@@ -1555,7 +1414,7 @@ for r in all_pages:
         manual_csv_bd = "None (100% Automated via Global Nav XF)"
         auto_cnt_val = ch
         manual_cnt_val = 0
-        wwsg_notes = "Global Nav label 'Super Intelligence Control Tower' (32 chars) or 'SI Control Tower' (16 chars)"
+        wwsg_notes = "Global Nav label 'Super Intelligence Control Tower' (32 chars)"
         wave = "Wave 1 (Auto via Global Nav XF)"
         prio = "P2 - Auto-Fixed by Global Nav XF"
         exec_mode = "100% Automated (Global Nav XF)"
@@ -1651,12 +1510,12 @@ for p in audited_pdfs:
             "Automated_Edits_Count": 0,
             "Manual_Tasks_Count": m_cnt,
             "Page_Title_or_Meta": p.get("meta_title", ""),
-            "WWSG_Copy_And_Char_Audit": "[NAMING: Use 'Super Intelligence Control Tower' or 'SI Control Tower' in PDF metadata]",
-            "Automated_Changes_Breakdown": "None",
-            "Manual_Changes_Breakdown": ocr_note,
-            "Exact_Page_Change_Breakdown": ocr_note,
-            "Linked_Non_FAQ_PDFs": hosts_full
-        })
+            "WWSG_Copy_And_Char_Audit": "[NAMING: Use 'Super Intelligence Control Tower' in PDF text & metadata]",
+        "Automated_Changes_Breakdown": "None",
+        "Manual_Changes_Breakdown": ocr_note,
+        "Exact_Page_Change_Breakdown": ocr_note,
+        "Linked_Non_FAQ_PDFs": hosts_full
+    })
 
 for im, host_list in sorted(img_map.items()):
     fim = full_url(im)
@@ -1676,7 +1535,7 @@ for im, host_list in sorted(img_map.items()):
     dims = f"{minfo.get('width', 0)}×{minfo.get('height', 0)}" if minfo.get("width") else "Image"
     kb = f"{minfo.get('bytes', 0)//1024} KB" if minfo.get("bytes") else ""
     asset_type_str = f"DAM Image ({dims}{', ' + kb if kb else ''})" if dims != "Image" else "DAM Image"
-    new_fim = re.sub(r"(?i)ai-control-tower|aict", "super-intelligence-control-tower", fim) if has_slug else fim
+    new_fim = get_target_image_url(fim) if not is_false_pos else fim
     if is_false_pos:
         note = "[FALSE POSITIVE — DO NOT RENAME] All India Council for Technical Education (AICTE) partner logo"
         prio = "False Positive - Exclude"
@@ -1686,20 +1545,20 @@ for im, host_list in sorted(img_map.items()):
         auto_bd, man_bd = "None", "None"
     elif is_baked:
         ocr_disp = clean_ocr_display(minfo.get("matched_ocr_lines", []))
-        slug_act = f" + 301 Rename DAM Filename ({fim} -> {new_fim})" if has_slug else ""
         used_str = f" | Used on {len(host_list)} pages ({hosts_full})" if host_list else ""
-        note = f"[MANUAL: BAKED-IN PIXELS — RE-RENDER GRAPHIC{slug_act}] Vision OCR confirmed baked-in text: \"{ocr_disp}\"{used_str} | Alt: {alt_str}"
-        prio = "P0 - Baked-In Image Pixels"
+        auto_bd = f"[AUTO PAGE IMAGE SWAP] Swap old DAM path {fim} -> {new_fim} across {len(host_list)} host pages + update alt text"
+        man_bd = f"[DAM GRAPHIC COPY] Update baked-in pixel text (\"{ocr_disp}\") and upload new copy at {new_fim}"
+        note = f"{auto_bd} | {man_bd}{used_str} | Alt: {alt_str}"
+        prio = "P0 - Baked-In Image Copy + Auto Swap"
         wave_lbl = "Wave 1"
-        exec_m = "Manual Update (Design Re-render + Rename Filename 301)" if has_slug else "Manual Update (Design Re-render)"
-        auto_c, man_c = 0, 1
-        auto_bd, man_bd = "None", note
+        exec_m = "Automated Page Swap (After DAM Graphic Copy Upload)"
+        auto_c, man_c = 1, 1
     else:
         used_str = f" | Used on {len(host_list)} pages ({hosts_full})" if host_list else ""
-        note = f"[AUTO: DAM IMAGE RENAME + ALT TEXT] 0 baked-in pixels; rename filename {fim} -> {new_fim} (HTTP 301) & update alt text{used_str}"
+        note = f"[AUTO: DAM IMAGE RENAME + PAGE PATH SWAP + ALT TEXT] 0 baked-in pixels; copy/rename {fim} -> {new_fim} (HTTP 301), auto-swap page references & update alt text{used_str}"
         prio = "P1 - DAM Image Slug + Alt Text"
         wave_lbl = "Wave 2"
-        exec_m = "100% Automated (DAM Move + Alt Swap)"
+        exec_m = "100% Automated (DAM Copy/Move + Page Path Swap)"
         auto_c, man_c = 1, 0
         auto_bd, man_bd = note, "None"
 
@@ -1730,7 +1589,7 @@ for im, host_list in sorted(img_map.items()):
         "Automated_Edits_Count": auto_c,
         "Manual_Tasks_Count": man_c,
         "Page_Title_or_Meta": os.path.basename(fim),
-        "WWSG_Copy_And_Char_Audit": "[ACCESSIBILITY: Updated alt text <= 125 chars using 'SI Control Tower' or 'Super Intelligence Control Tower']",
+        "WWSG_Copy_And_Char_Audit": "[ACCESSIBILITY: Updated alt text using 'Super Intelligence Control Tower']",
         "Automated_Changes_Breakdown": auto_bd,
         "Manual_Changes_Breakdown": man_bd,
         "Exact_Page_Change_Breakdown": note,
@@ -1808,21 +1667,24 @@ for page_idx, r in enumerate(unique_body_pages, 1):
         )
 
     auto_copy_cnt = sp["auto_text_meta_alt_cnt"]
+    auto_total_cnt = sp["drawer_auto_row_count"]
     man_total_cnt = sp["manual_task_count"]
     link_cnt = sp["auto_link_cnt"]
     img_cnt = sp["auto_img_cnt"]
 
     auto_sub_parts = []
+    if (link_cnt > 0 or img_cnt > 0) and auto_copy_cnt > 0:
+        auto_sub_parts.append(f"{auto_copy_cnt} copy")
     if link_cnt > 0:
-        auto_sub_parts.append(f"+{link_cnt} link update{'s' if link_cnt != 1 else ''}")
+        auto_sub_parts.append(f"{link_cnt} link{'s' if link_cnt != 1 else ''}")
     if img_cnt > 0:
-        auto_sub_parts.append(f"+{img_cnt} DAM move{'s' if img_cnt != 1 else ''}")
+        auto_sub_parts.append(f"{img_cnt} image swap{'s' if img_cnt != 1 else ''}")
     if sp["si_short_cnt"] > 0:
-        auto_sub_parts.append(f"{sp['si_short_cnt']} short 'SI'")
+        auto_sub_parts.append(f"{sp['si_short_cnt']} 'Control Tower' CTA{'s' if sp['si_short_cnt'] != 1 else ''}")
     auto_sub_html = f"<div class='sub-note'>{', '.join(auto_sub_parts)}</div>" if auto_sub_parts else "<div class='sub-note'>Groovy bulk swap</div>"
 
     auto_col_html = (
-        f"<span class='badge b-auto'>{auto_copy_cnt} Auto Swap{'s' if auto_copy_cnt != 1 else ''}</span>"
+        f"<span class='badge b-auto'>{auto_total_cnt} Auto Swap{'s' if auto_total_cnt != 1 else ''}</span>"
         f"{auto_sub_html}"
     )
 
@@ -1988,24 +1850,24 @@ for old_pdf in pdf_slug_candidates:
 for im in sorted(img_map.keys()):
     if "logo-aicte.svg" in im.lower():
         continue
-    if "ai-control-tower" not in im.lower() and "aict" not in im.lower():
-        continue
     old_im = full_url(im)
+    minfo = MASTER_IMAGES_MAP.get(old_im, {})
+    is_baked = minfo.get("has_baked_aict_pixels", False) or "now-ai-control-tower" in old_im or "secure-any-ai-action" in old_im
+    has_slug = "ai-control-tower" in old_im.lower() or "aict" in old_im.lower()
+    if not is_baked and not has_slug:
+        continue
     if old_im in seen_redirect_urls:
         continue
     seen_redirect_urls.add(old_im)
     redirect_idx += 1
     img_redirect_cnt += 1
-    new_im = re.sub(r"ai-control-tower", "super-intelligence-control-tower", old_im, flags=re.I)
-    new_im = re.sub(r"aict", "super-intelligence-control-tower", new_im, flags=re.I)
-    minfo = MASTER_IMAGES_MAP.get(old_im, {})
-    is_baked = minfo.get("has_baked_aict_pixels", False) or "now-ai-control-tower" in old_im or "secure-any-ai-action" in old_im
+    new_im = get_target_image_url(old_im)
     w_badge = '<span class="badge b-w1">Wave 1</span>' if is_baked else '<span class="badge b-w2">Wave 2</span>'
-    mode_note = "Manual Design Re-render + DAM 301" if is_baked else "Automated 0-Pixel DAM Move + 301"
+    mode_note = "Upload Updated Graphic Copy + Auto Page Path Swap & 301" if is_baked else "Automated 0-Pixel DAM Copy/Move + Auto Page Swap & 301"
     redirect_rows_html.append(f"""
     <tr data-rtype="image" data-rloc="us">
       <td data-label="#"><strong>#{redirect_idx}</strong></td>
-      <td data-label="Type &amp; Wave"><span class="badge b-loc">DAM Image</span> {w_badge}</td>
+      <td data-label="Type &amp; Wave"><span class="badge b-auto">DAM Image</span> {w_badge}</td>
       <td data-label="Old Live URL (301 Source)" class="mono">{a_link(old_im)}</td>
       <td data-label="New Target URL (301 Destination)" class="mono"><code>{html.escape(new_im)}</code></td>
       <td data-label="Technical Action">
@@ -2073,14 +1935,11 @@ for d_idx, (bkey, rlist) in enumerate(sorted(baked_design_groups.items(), key=_d
     rendition_blocks = []
     for x in rlist:
         old_u = x["url"]
-        if x.get("has_aict_slug"):
-            new_u = re.sub(r"(?i)ai-control-tower|aict", "super-intelligence-control-tower", old_u)
-            rendition_blocks.append(
-                f"<div style='margin-bottom:4px;'><strong>Current:</strong> {a_link(old_u)}<br>"
-                f"<strong>New Target:</strong> <code>{html.escape(new_u)}</code></div>"
-            )
-        else:
-            rendition_blocks.append(f"<div style='margin-bottom:4px;'>{a_link(old_u)}</div>")
+        new_u = get_target_image_url(old_u)
+        rendition_blocks.append(
+            f"<div style='margin-bottom:4px;'><strong>Current:</strong> {a_link(old_u)}<br>"
+            f"<strong>New Copy Target:</strong> <code>{html.escape(new_u)}</code></div>"
+        )
     url_links_html = "".join(rendition_blocks)
 
     all_hosts = []
@@ -2091,7 +1950,7 @@ for d_idx, (bkey, rlist) in enumerate(sorted(baked_design_groups.items(), key=_d
     if all_hosts:
         sample_hosts = ", ".join(a_link(hp) for hp in all_hosts[:3])
         more_hosts = f" (+ {len(all_hosts)-3} regional/other pages)" if len(all_hosts) > 3 else ""
-        hosts_html = f"<div class='sub-note' style='margin-top:4px;'><strong>Used on {len(all_hosts)} page{'s' if len(all_hosts)!=1 else ''}:</strong> {sample_hosts}{more_hosts}</div>"
+        hosts_html = f"<div class='sub-note' style='margin-top:4px;'><strong>Auto-swapped on {len(all_hosts)} page{'s' if len(all_hosts)!=1 else ''}:</strong> {sample_hosts}{more_hosts}</div>"
     else:
         hosts_html = ""
 
@@ -2102,30 +1961,24 @@ for d_idx, (bkey, rlist) in enumerate(sorted(baked_design_groups.items(), key=_d
     specs_html = "<br>".join(specs_parts)
 
     ocr_disp = clean_ocr_display(primary.get("matched_ocr_lines", []))
-    has_slug = any(x.get("has_aict_slug") for x in rlist)
-    slug_badge = '<span class="badge b-loc" style="margin-top:4px;display:inline-block;">Rename Filename + 301</span>' if has_slug else ''
-    action_tail = (
-        "rename DAM filename (<code>ai-control-tower</code> &rarr; <code>super-intelligence-control-tower</code>), and add HTTP 301 redirect."
-        if has_slug
-        else "and republish at same DAM path."
-    )
+    slug_badge = '<span class="badge b-auto" style="margin-top:4px;display:inline-block;">Auto Page Path Swap + 301</span>'
 
     media_rows_html.append(f"""
 <tr data-mfilter="baked">
-  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual Design #{d_idx}</span><div class="sub-note" style="margin-top:4px;">{len(rlist)} file rendition{'s' if len(rlist)!=1 else ''}</div>{slug_badge}</td>
+  <td data-label="Track &amp; Group"><span class="badge b-manual">DAM Graphic Copy #{d_idx}</span><div class="sub-note" style="margin-top:4px;">{len(rlist)} file rendition{'s' if len(rlist)!=1 else ''}</div>{slug_badge}</td>
   <td data-label="DAM Asset URL &amp; Host Pages" class="mono">
     {url_links_html}
     {hosts_html}
   </td>
   <td data-label="Specs">{specs_html}</td>
   <td data-label="Detected Text (OCR)"><code>"{html.escape(ocr_disp)}"</code></td>
-  <td data-label="Required Action">Re-render or retouch baked-in <code>AI Control Tower</code> pixel text to <strong>Super Intelligence Control Tower</strong> (or <strong>SI Control Tower</strong>), {action_tail}</td>
+  <td data-label="Required Action">Update baked-in <code>AI Control Tower</code> pixel text to <strong>Super Intelligence Control Tower</strong> and upload copy at new DAM filename. <strong>Page path swap is 100% Automated</strong> via AEM script + HTTP 301 redirect.</td>
 </tr>""")
 
 zero_pixel_pair_lines = []
 for x in zero_pixel_slug_imgs:
     old_u = x["url"]
-    new_u = re.sub(r"(?i)ai-control-tower|aict", "super-intelligence-control-tower", old_u)
+    new_u = get_target_image_url(old_u)
     zero_pixel_pair_lines.append(
         f"<div style='margin-bottom:5px;'><strong>Current:</strong> {a_link(old_u)}<br>"
         f"<strong>New Target:</strong> <code>{html.escape(new_u)}</code></div>"
@@ -2160,7 +2013,7 @@ media_rows_html.append(f"""
   </td>
   <td data-label="Specs">11 Pages, PDF<br>(231 MB)</td>
   <td data-label="Detected Text (OCR)">Meta title <code>AICT-DISCOVERY-PLAYBOOK-02</code> + 5 vector text matches on Pages 5, 8, 9</td>
-  <td data-label="Required Action">Re-export InDesign source with <strong>Super Intelligence Control Tower</strong> / <strong>SI Control Tower</strong>, update metadata title, rename PDF filename, and add HTTP 301 redirect.</td>
+  <td data-label="Required Action">Re-export InDesign source with <strong>Super Intelligence Control Tower</strong>, update metadata title, rename PDF filename, and add HTTP 301 redirect.</td>
 </tr>
 <tr data-mfilter="pdf">
   <td data-label="Track &amp; Group"><span class="badge b-manual">Manual Legal PDF</span><div class="sub-note" style="margin-top:4px;">7 Text Matches</div><span class="badge b-loc" style="margin-top:4px;display:inline-block;">Rename Filename + 301</span></td>
@@ -2201,7 +2054,7 @@ for p in audited_pdfs:
   <td data-label="DAM Asset URL &amp; Host Pages" class="mono">{pdf_url_block}<div class="sub-note" style="margin-top:4px;"><strong>Linked from:</strong> {host_links}</div></td>
   <td data-label="Specs">{p.get('pages', 0)} Pages, PDF<br>({p.get('bytes', 0)//1024:,} KB)</td>
   <td data-label="Detected Text (OCR)"><strong>Meta Title:</strong> <code>{mt}</code><br><strong>Snippet:</strong> <code>{sn}</code></td>
-  <td data-label="Required Action">Update source PDF text &amp; metadata title to <strong>Super Intelligence Control Tower</strong> / <strong>SI Control Tower</strong>, {pdf_act_tail}</td>
+  <td data-label="Required Action">Update source PDF text &amp; metadata title to <strong>Super Intelligence Control Tower</strong>, {pdf_act_tail}</td>
 </tr>""")
 
 # ---------------------------------------------------------------------------
@@ -2216,7 +2069,7 @@ full_html = f"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ServiceNow Rebrand Execution Handoff: Super Intelligence (SI) Control Tower</title>
+<title>ServiceNow Rebrand Execution Handoff: Super Intelligence Control Tower</title>
 <style>
   :root {{
     --bg: #f8fafc;
@@ -2933,13 +2786,13 @@ window.setPageViewMode = function(mode, updateTopTab, skipUrlSync) {{
   if (bannerTitle && bannerDesc) {{
     if (mode === 'all') {{
       bannerTitle.textContent = 'All Updates Combined (Auto + Manual per Page)';
-      bannerDesc.textContent = 'Showing all {len(unique_body_pages)} pages. Click any row to expand its itemized Before -> After changes. For example, the US Homepage has 2 Auto Swaps (CTA button + tagline) and 1 Manual Task (Hero paragraph context bridge).';
+      bannerDesc.textContent = 'Showing all {len(unique_body_pages)} pages. Product Marketing Rule: use "Super Intelligence Control Tower" everywhere (no "SI Control Tower"), use "Control Tower" for buttons, skip WWSG body copy edits, and flag constrained headings/titles where the full 32-char name is too long.';
     }} else if (mode === 'auto') {{
       bannerTitle.textContent = 'Automated Updates Only ({total_auto_instances:,} Scripted Swaps Across {len(unique_body_pages)} Pages)';
-      bannerDesc.textContent = 'Showing only automated DOM, metadata, link, alt-text, and zero-pixel DAM swaps executed by the AEM Groovy script. Manual tasks are hidden inside expanded rows.';
+      bannerDesc.textContent = 'Showing only automated DOM, metadata, CTA button ("Control Tower"), link, alt-text, and zero-pixel DAM swaps executed by the AEM Groovy script. Manual tasks are hidden inside expanded rows.';
     }} else if (mode === 'manual') {{
       bannerTitle.textContent = 'Manual Updates Queue Only ({pages_needing_manual} Pages with {total_manual_tasks_all} Manual Tasks)';
-      bannerDesc.textContent = 'Filtered to the {pages_needing_manual} pages requiring manual copy/design/authoring action ({total_manual_copy_instances} copy trims & context bridges, 34 page slug moves, {total_baked_images_count} baked-in images across {total_baked_designs_count} visual designs, 13 PDFs, 10 L10n reviews).';
+      bannerDesc.textContent = 'Filtered to the {pages_needing_manual} pages requiring manual action ({total_manual_copy_instances} headings/titles where "Super Intelligence Control Tower" exceeds 50/60 chars across {manual_type_counts["m-copy"]} pages, 34 page slug moves, {total_baked_images_count} baked-in images across {total_baked_designs_count} visual designs, 13 PDFs, 10 L10n reviews).';
     }}
   }}
 
@@ -3196,8 +3049,8 @@ window.addEventListener('popstate', function() {{
   <div class="header-inner">
     <div>
       <div class="eyebrow">ServiceNow Digital UX • Global &amp; Regional Rebrand Handoff</div>
-      <h1>AI Control Tower &rarr; Super Intelligence (SI) Control Tower</h1>
-      <div class="subtitle">{len(unique_body_pages)} Total Pages ({us_pages_total} US + {regional_pages_total} Regional Across 13 Locales) • Collapsible Page-by-Page Diffs • 301 Redirects • Media &amp; SEO Rules</div>
+      <h1>AI Control Tower &rarr; Super Intelligence Control Tower</h1>
+      <div class="subtitle">{len(unique_body_pages)} Total Pages ({us_pages_total} US + {regional_pages_total} Regional Across 13 Locales) • Buttons: "Control Tower" • Zero "SI Control Tower"</div>
     </div>
     <div>
       <button type="button" class="action-btn" onclick="copyShareableLink(this)" title="Copy direct deep-link URL to current tab, filters, and expanded rows" style="font-weight:700;padding:8px 14px;border-color:#cbd5e1;">Copy Direct Link</button>
@@ -3221,7 +3074,7 @@ window.addEventListener('popstate', function() {{
     <div class="kpi-card" onclick="switchPrimaryTab('tab-pages', 'manual', 'btn-tab-manual')">
       <div class="kpi-label">Manual Updates Queue</div>
       <div class="kpi-value amber">{pages_needing_manual} Pages</div>
-      <div class="kpi-sub"><strong>{total_manual_copy_instances} copy edits</strong>, 34 page moves, <strong>{total_baked_images_count} images ({total_baked_designs_count} designs)</strong>, 13 PDFs, 10 L10n.</div>
+      <div class="kpi-sub"><strong>{total_manual_copy_instances} oversized headings/titles</strong>, 34 page moves, <strong>{total_baked_images_count} images ({total_baked_designs_count} designs)</strong>, 13 PDFs, 10 L10n.</div>
     </div>
     <div class="kpi-card" onclick="switchPrimaryTab('tab-redirects', null, 'btn-tab-redirects')">
       <div class="kpi-label">HTTP 301 Redirects</div>
@@ -3265,7 +3118,7 @@ window.addEventListener('popstate', function() {{
       <div>
         <strong id="pagesBannerTitle">All Updates Combined (Auto + Manual per Page)</strong>
         <div id="pagesBannerDesc" style="color:var(--muted);font-size:12.5px;margin-top:2px;">
-          Showing all {len(unique_body_pages)} pages. Click any row to expand its itemized Before &rarr; After changes. For example, the US Homepage has 2 Auto Swaps (CTA button + tagline) and 1 Manual Task (Hero paragraph context bridge).
+          Showing all {len(unique_body_pages)} pages. Product Marketing Rule: use "Super Intelligence Control Tower" everywhere (no "SI Control Tower"), use "Control Tower" for buttons, skip WWSG body copy edits, and flag constrained headings/titles where the full 32-char name is too long.
         </div>
       </div>
     </div>
@@ -3313,9 +3166,8 @@ window.addEventListener('popstate', function() {{
           <option value="pure-auto">100% Automated Only ({pages_100pct_auto} pages)</option>
         </optgroup>
         <optgroup label="Manual Task Type">
-          <option value="m-copy">Manual: Copy Edit / Context Bridge ({manual_type_counts['m-copy']} pages)</option>
+          <option value="m-copy">Manual: Name Too Long (&gt;Limit) ({manual_type_counts['m-copy']} pages)</option>
           <option value="m-slug">Manual: 301 URL Slug Move ({manual_type_counts['m-slug']} pages)</option>
-          <option value="m-img">Manual: Baked-In Image Re-render ({manual_type_counts['m-img']} pages)</option>
           <option value="m-pdf">Manual: Live/Vector PDF Update ({manual_type_counts['m-pdf']} pages)</option>
           <option value="m-l10n">Manual: L10n Grammar Review ({manual_type_counts['m-l10n']} pages)</option>
         </optgroup>
@@ -3488,9 +3340,9 @@ RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)(ai-control-tower|aict)(.
   <div id="tab-seo" class="tab-panel">
     <div class="card">
       <div class="card-header">
-        <h2>1. Naming Rules: When to Use "Super Intelligence Control Tower" (32 Chars) vs. "SI Control Tower" (16 Chars)</h2>
+        <h2>1. Product Marketing Naming Rules: "Super Intelligence Control Tower" (Standard) &amp; "Control Tower" (Buttons)</h2>
       </div>
-      <p class="desc">Use the full 32-character canonical name on primary SEO/AIO anchors to establish the product entity for search engines and LLMs. Use the 16-character shorthand (<code>SI Control Tower</code> — exact same length as <code>AI Control Tower</code>) on constrained UI components and secondary mentions.</p>
+      <p class="desc">Per Product Marketing direction, do <strong>not</strong> use <code>SI Control Tower</code> anywhere. All copy, headings, metadata, and former <code>AICT</code> acronyms transition to <strong><code>Super Intelligence Control Tower</code></strong> (32 chars). CTA buttons use <strong><code>Control Tower</code></strong> (13 chars). Body copy character-limit trims are skipped to minimize manual work; constrained headings (&gt;50 chars) and compound <code>&lt;title&gt;</code> tags (&gt;60 chars) where <code>Super Intelligence Control Tower</code> is too long are flagged in the Manual queue so the team can manually decide what to replace them with.</p>
       <div class="table-wrap">
         <table>
           <thead>
@@ -3513,9 +3365,9 @@ RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)(ai-control-tower|aict)(.
             <tr>
               <td><strong>Compound <code>&lt;title&gt;</code> Tags</strong><br>(Blogs, Webinars, Solution Briefs)</td>
               <td>&le; 60 chars</td>
-              <td><span class="badge b-manual">SI Control Tower</span> (when Full &gt; 60)</td>
-              <td><span class="badge b-auto">Auto</span></td>
-              <td>Example: <code>What Is an SI Control Tower? - ServiceNow</code> (41/60 chars). Prevents Google SERP truncation of <code>- ServiceNow</code>.</td>
+              <td><span class="badge b-manual">Flagged if &gt; 60 chars</span></td>
+              <td><span class="badge b-manual">Manual</span> (if &gt;60)</td>
+              <td>Replaced with <code>Super Intelligence Control Tower</code>; any compound <code>&lt;title&gt;</code> that exceeds 60 chars (e.g., <code>What Is a Super Intelligence Control Tower? - ServiceNow</code> [56/60 fits] vs longer titles) is flagged in the Manual queue for editorial decision.</td>
             </tr>
             <tr>
               <td><strong>Flagship Hero Marquee <code>&lt;h1&gt;</code></strong></td>
@@ -3525,22 +3377,23 @@ RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)(ai-control-tower|aict)(.
               <td><code>Super Intelligence Control Tower</code> (32/50 chars). Direct 1:1 swap with zero legacy product eyebrow text.</td>
             </tr>
             <tr>
-              <td><strong>Flagship Hero Marquee Lead Paragraph</strong></td>
-              <td>&le; 175 chars</td>
+              <td><strong>Body Copy, Marquee Lead Paragraphs &amp; FAQ Answers</strong></td>
+              <td>Skipped for this update</td>
               <td><span class="badge b-auto">Super Intelligence Control Tower</span></td>
-              <td><span class="badge b-manual">Manual</span></td>
-              <td><code>Enforce runtime governance for AI at scale. Super Intelligence Control Tower gives you a central hub to discover, secure, govern, observe, and measure enterprise AI.</code> (165/175 chars).</td>
+              <td><span class="badge b-auto">Auto</span></td>
+              <td>100% automated direct replacement of <code>AI Control Tower</code> and <code>AICT</code> with <code>Super Intelligence Control Tower</code>. WWSG body copy trimming is skipped for this update to reduce manual work.</td>
             </tr>
             <tr>
-              <td><strong>Homepage &amp; Customer Hero CTA Button + Lead Copy Bridge</strong><br>{a_link('https://www.servicenow.com/')}</td>
-              <td>CTA: &le; 25 chars<br>Body: &le; 220 chars</td>
-              <td>CTA: <span class="badge b-auto">See SI Control Tower</span><br>+ <span class="badge b-manual">Hero Context Bridge</span></td>
-              <td><span class="badge b-auto">Auto CTA</span> +<br><span class="badge b-manual">Manual Copy</span></td>
+              <td><strong>CTA Buttons Across All Pages</strong><br>{a_link('https://www.servicenow.com/')}</td>
+              <td>CTA: &le; 25 chars</td>
+              <td><span class="badge b-auto">Control Tower</span> (Buttons)</td>
+              <td><span class="badge b-auto">Auto CTA</span></td>
               <td>
-                <strong>CTA Button (Auto):</strong> <code>See SI Control Tower</code> (20/25 chars; full name is 36/25 chars and overflows pill button).<br>
-                <strong>Hero Lead Paragraph Bridge (Manual):</strong> Update surrounding paragraph so visitors understand <code>SI = Super Intelligence</code> before clicking:<br>
-                &bull; <strong>Option 1A:</strong> <em>"...ServiceNow&reg; unites all of it in the <strong>Super Intelligence Control Tower</strong>&mdash;so AI doesn't just think. It acts."</em> (219 chars)<br>
-                &bull; <strong>Option 1B:</strong> <em>"...ServiceNow&reg; is the only platform built for all of it&mdash;turning AI into <strong>Super Intelligence (SI)</strong> that acts."</em> (220 chars)
+                Per Product Marketing direction, CTA buttons use <code>Control Tower</code>:<br>
+                &bull; <code>See AI Control Tower</code> &rarr; <strong><code>See Control Tower</code></strong> (17/25 chars)<br>
+                &bull; <code>Explore AI Control Tower</code> &rarr; <strong><code>Explore Control Tower</code></strong> (21/25 chars)<br>
+                &bull; <code>Extend AI Control Tower</code> &rarr; <strong><code>Extend Control Tower</code></strong> (20/25 chars)<br>
+                Because the button uses <code>See Control Tower</code> (no <code>SI</code> acronym), no manual Hero paragraph context bridge is needed on the Homepage.
               </td>
             </tr>
             <tr>
@@ -3551,11 +3404,11 @@ RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)(ai-control-tower|aict)(.
               <td><code>ServiceNow is the Super Intelligence Control Tower for business reinvention</code> (75/175 chars) and <code>The Super Intelligence Control Tower for business reinvention</code> (61/175 chars). Always use full name and capitalize <strong>Control Tower</strong> (Title Case required even where live copy had lowercase <code>AI control tower</code>).</td>
             </tr>
             <tr>
-              <td><strong>FAQ Accordion Headings &amp; Tight UI Cards</strong></td>
-              <td>Heading: &le; 50<br>Card: &le; 100</td>
-              <td><span class="badge b-manual">SI Control Tower</span> (16 chars)</td>
-              <td><span class="badge b-auto">Auto</span> / <span class="badge b-manual">Manual</span></td>
-              <td>Used on {total_si_short_saves} constrained instances (e.g., <code>How is SI Control Tower unique?</code> 31/50 chars; <code>Explore SI Control Tower</code> 24/25 chars) and all former <code>AICT</code> acronyms.</td>
+              <td><strong>Constrained Headings, Cards &amp; FAQ Questions (&gt;50 Chars)</strong></td>
+              <td>Heading: &le; 50</td>
+              <td><span class="badge b-manual">Flagged when &gt; 50 chars</span></td>
+              <td><span class="badge b-manual">Manual</span></td>
+              <td><strong>{total_manual_copy_instances} total instances across {manual_type_counts['m-copy']} pages</strong> are flagged as <code>Manual: Name Too Long</code> where <code>Super Intelligence Control Tower</code> causes a heading, FAQ question title, tab label, or <code>&lt;title&gt;</code> to exceed its limit so the team can manually decide the replacement.</td>
             </tr>
           </tbody>
         </table>
@@ -3617,7 +3470,7 @@ RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)(ai-control-tower|aict)(.
               <th style="width:12%;">Pages</th>
               <th style="width:28%;">Key URLs (Homepage &amp; Flagship)</th>
               <th style="width:18%;">Current Live Term</th>
-              <th style="width:24%;">Approved Target Full Name &amp; Short Form</th>
+              <th style="width:24%;">Approved Target Full Name &amp; Button Form</th>
             </tr>
           </thead>
           <tbody>
@@ -3626,63 +3479,63 @@ RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)(ai-control-tower|aict)(.
               <td>{locale_counts['uk']} UK / {locale_counts['au']} AU / {locale_counts['in']} IN</td>
               <td class="mono">{a_link('https://www.servicenow.com/uk/')}<br>{a_link('https://www.servicenow.com/uk/products/ai-control-tower.html')}</td>
               <td><code>AI Control Tower</code></td>
-              <td><strong>Super Intelligence Control Tower</strong><br><span class="sub-note">Short: <code>SI Control Tower</code></span></td>
+              <td><strong>Super Intelligence Control Tower</strong><br><span class="sub-note">Button: <code>Control Tower</code></span></td>
             </tr>
             <tr>
               <td><strong>Germany (<code>/de/</code>)</strong></td>
               <td>{locale_counts['de']} Pages</td>
               <td class="mono">{a_link('https://www.servicenow.com/de/')}<br>{a_link('https://www.servicenow.com/de/products/ai-control-tower.html')}</td>
               <td><code>KI-Kontrollturm</code></td>
-              <td><strong>Super-Intelligenz-Kontrollturm</strong><br><span class="sub-note">Short: <code>SI-Kontrollturm</code></span></td>
+              <td><strong>Super-Intelligenz-Kontrollturm</strong><br><span class="sub-note">Button: <code>Kontrollturm</code></span></td>
             </tr>
             <tr>
               <td><strong>France (<code>/fr/</code>) &amp; Canada FR (<code>/fr-ca/</code>)</strong></td>
               <td>{locale_counts['fr']} FR / {locale_counts['fr-ca']} FR-CA</td>
               <td class="mono">{a_link('https://www.servicenow.com/fr/')}<br>{a_link('https://www.servicenow.com/fr/products/ai-control-tower.html')}</td>
               <td><code>Tour de contrôle IA</code></td>
-              <td><strong>Tour de contrôle Super Intelligence</strong><br><span class="sub-note">Short: <code>Tour de contrôle SI</code></span></td>
+              <td><strong>Tour de contrôle Super Intelligence</strong><br><span class="sub-note">Button: <code>Tour de contrôle</code></span></td>
             </tr>
             <tr>
               <td><strong>Spain (<code>/es/</code>) &amp; LATAM (<code>/latam/</code>)</strong></td>
               <td>{locale_counts['es']} ES / {locale_counts['latam']} LATAM</td>
               <td class="mono">{a_link('https://www.servicenow.com/es/')}<br>{a_link('https://www.servicenow.com/es/products/ai-control-tower.html')}</td>
               <td><code>Torre de control de IA</code></td>
-              <td><strong>Torre de control de Superinteligencia</strong><br><span class="sub-note">Short: <code>Torre de control de SI</code></span></td>
+              <td><strong>Torre de control de Superinteligencia</strong><br><span class="sub-note">Button: <code>Torre de control</code></span></td>
             </tr>
             <tr>
               <td><strong>Brazil (<code>/br/</code>)</strong></td>
               <td>{locale_counts['br']} Pages</td>
               <td class="mono">{a_link('https://www.servicenow.com/br/')}<br>{a_link('https://www.servicenow.com/br/products/ai-control-tower.html')}</td>
               <td><code>Torre de controle de IA</code></td>
-              <td><strong>Torre de controle de Superinteligência</strong><br><span class="sub-note">Short: <code>Torre de controle de SI</code></span></td>
+              <td><strong>Torre de controle de Superinteligência</strong><br><span class="sub-note">Button: <code>Torre de controle</code></span></td>
             </tr>
             <tr>
               <td><strong>Italy (<code>/it/</code>)</strong></td>
               <td>{locale_counts['it']} Pages</td>
               <td class="mono">{a_link('https://www.servicenow.com/it/')}<br>{a_link('https://www.servicenow.com/it/products/ai-control-tower.html')}</td>
               <td><code>Torre di controllo AI</code></td>
-              <td><strong>Torre di controllo della Super Intelligenza</strong><br><span class="sub-note">Short: <code>Torre di controllo SI</code></span></td>
+              <td><strong>Torre di controllo della Super Intelligenza</strong><br><span class="sub-note">Button: <code>Torre di controllo</code></span></td>
             </tr>
             <tr>
               <td><strong>Netherlands (<code>/nl/</code>)</strong></td>
               <td>{locale_counts['nl']} Pages</td>
               <td class="mono">{a_link('https://www.servicenow.com/nl/')}<br>{a_link('https://www.servicenow.com/nl/products/ai-control-tower.html')}</td>
               <td><code>AI-controletoren</code></td>
-              <td><strong>Superintelligentie-controletoren</strong><br><span class="sub-note">Short: <code>SI-controletoren</code></span></td>
+              <td><strong>Superintelligentie-controletoren</strong><br><span class="sub-note">Button: <code>Controletoren</code></span></td>
             </tr>
             <tr>
               <td><strong>Japan (<code>/jp/</code>)</strong></td>
               <td>{locale_counts['jp']} Pages</td>
               <td class="mono">{a_link('https://www.servicenow.com/jp/')}<br>{a_link('https://www.servicenow.com/jp/products/ai-control-tower.html')}</td>
               <td><code>AI コントロールタワー</code></td>
-              <td><strong>スーパーインテリジェンス・コントロールタワー</strong><br><span class="sub-note">Short: <code>SI コントロールタワー</code></span></td>
+              <td><strong>スーパーインテリジェンス・コントロールタワー</strong><br><span class="sub-note">Button: <code>コントロールタワー</code></span></td>
             </tr>
             <tr>
               <td><strong>Korea (<code>/kr/</code>)</strong></td>
               <td>{locale_counts['kr']} Pages</td>
               <td class="mono">{a_link('https://www.servicenow.com/kr/')}<br>{a_link('https://www.servicenow.com/kr/products/ai-control-tower.html')}</td>
               <td><code>AI 컨트롤 타워</code></td>
-              <td><strong>슈퍼 인텔리전스 컨트롤 타워</strong><br><span class="sub-note">Short: <code>SI 컨트롤 타워</code></span></td>
+              <td><strong>슈퍼 인텔리전스 컨트롤 타워</strong><br><span class="sub-note">Button: <code>컨트롤 타워</code></span></td>
             </tr>
           </tbody>
         </table>
@@ -3715,7 +3568,7 @@ RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)(ai-control-tower|aict)(.
     <details class="code-drawer">
       <summary>View Ready-to-Run AEM Groovy Console Script ({total_auto_instances:,} Automated Swaps Across US + 13 Locales)</summary>
       <div class="drawer-body">
-        <pre>// AEM Groovy Console Script — Global + Regional Automated Swap with WWSG Length-Aware "SI Control Tower" Fallback
+        <pre>// AEM Groovy Console Script — Global + Regional Automated Swap ("Super Intelligence Control Tower" + "Control Tower" for CTA Buttons)
 import javax.jcr.Node
 
 boolean dryRun = true // Set to false after reviewing dry-run output
@@ -3739,47 +3592,56 @@ paths.each {{ rootPath -&gt;
                     val = val.replaceAll("(?i)/products/ai-control-tower", "/products/super-intelligence-control-tower")
                     val = val.replaceAll("(?i)contact-us-aict", "contact-us-super-intelligence-control-tower")
                     val = val.replaceAll("(?i)ebk-aict-discovery-playbook", "ebk-super-intelligence-control-tower-discovery-playbook")
+                    // Automated DAM Image Path Swap: swap old image path to new DAM image copy path
+                    if (val.contains("/content/dam/") || val.contains("/adobe/assets/")) {{
+                        val = val.replaceAll("(?i)ai-control-tower|aict", "super-intelligence-control-tower")
+                        val = val.replaceAll("(?i)secure-any-ai-action(\\\\.(?:sm|xs|md|lg|xl))?\\\\.(jpg|png|webp)", "secure-any-ai-action-super-intelligence-control-tower\$1.\$2")
+                    }}
                 }}
 
-                int maxCap = 0
-                if (pName.contains("cta") || pName.contains("button") || pName.contains("linktext") || pName.contains("action") || (orig.trim().length() &lt;= 36 &amp;&amp; orig.trim().matches("(?i)^(See|Explore|Extend|Discover|Try|Get|Watch|View|Infos zu|Voir|D[\\u00e9e]couvrir|Ver|Explorar|Veja|Scopri|Bekijk)\\\\s+.*|.*(\\u3092\\u898b\\u308b|\\ubcf4\\uae30)$"))) maxCap = 25
-                else if (pName.contains("jcr:title") || pName.contains("navtitle") || pName.contains("heading")) maxCap = 50
-                else if (pName.contains("pagetitle") || pName.contains("seotitle")) maxCap = 60
-                else if (pName.contains("alt")) maxCap = 125
+                boolean isButton = pName.contains("cta") || pName.contains("button") || pName.contains("linktext") || pName.contains("action") ||
+                    (orig.trim().length() &lt;= 42 &amp;&amp; orig.trim().matches("(?i)^(See|Explore|Extend|Discover|Try|Get|Watch|View|Learn about|Infos zu|Voir|D[\\u00e9e]couvrir|Ver|Explorar|Veja|Scopri|Bekijk)\\\\s+.*|.*(\\u3092\\u898b\\u308b|\\ubcf4\\uae30)$"))
 
-                String fullCandidate = val
-                    .replaceAll("(?i)\\\\bAI Control Tower\\\\b", "Super Intelligence Control Tower")
-                    .replaceAll("(?i)\\\\bAICT\\\\b", "SI Control Tower")
-                    .replaceAll("KI-Kontrollturm", "Super-Intelligenz-Kontrollturm")
-                    .replaceAll("(?i)Tour de contr\\\\u00f4le (?:de l'IA|IA)", "Tour de contr\\\\u00f4le Super Intelligence")
-                    .replaceAll("(?i)Torre de control de IA", "Torre de control de Superinteligencia")
-                    .replaceAll("(?i)Torre de controle de IA", "Torre de controle de Superintelig\\\\u00eancia")
-                    .replaceAll("(?i)Torre di controllo (?:dell'IA|AI|IA)", "Torre di controllo della Super Intelligenza")
-                    .replaceAll("(?i)AI-controletoren", "Superintelligentie-controletoren")
-                    .replaceAll("AI\\u30b3\\u30f3\\u30c8\\u30ed\\u30fc\\u30eb\\u30bf\\u30ef\\u30fc|AI \\u30b3\\u30f3\\u30c8\\u30ed\\u30fc\\u30eb\\u30bf\\u30ef\\u30fc", "\\u30b9\\u30fc\\u30d1\\u30fc\\u30a4\\u30f3\\u30c6\\u30ea\\u30b8\\u30a7\\u30f3\\u30b9\\u30fb\\u30b3\\u30f3\\u30c8\\u30ed\\u30fc\\u30eb\\u30bf\\u30ef\\u30fc")
-                    .replaceAll("AI \\ucee8\\ud2b8\\ub864 \\ud0c0\\uc6cc|AI \\ucee8\\ud2b8\\ub864\\ud0c0\\uc6cc", "\\uc288\\ud37c \\uc778\\ud154\\ub9ac\\uc804\\uc2a4 \\ucee8\\ud2b8\\ub864 \\ud0c0\\uc6cc")
-
-                if (maxCap &gt; 0 &amp;&amp; fullCandidate.length() &gt; maxCap &amp;&amp; !orig.toLowerCase().contains("business reinvention")) {{
+                if (isButton) {{
                     val = val
-                        .replaceAll("(?i)\\\\bServiceNow AI Control Tower\\\\b", "SI Control Tower")
-                        .replaceAll("(?i)\\\\bAI Control Tower\\\\b", "SI Control Tower")
-                        .replaceAll("(?i)\\\\bAICT\\\\b", "SI Control Tower")
-                        .replaceAll("KI-Kontrollturm", "SI-Kontrollturm")
-                        .replaceAll("(?i)Tour de contr\\\\u00f4le (?:de l'IA|IA)", "Tour de contr\\\\u00f4le SI")
-                        .replaceAll("(?i)Torre de control de IA", "Torre de control de SI")
-                        .replaceAll("(?i)Torre de controle de IA", "Torre de controle de SI")
-                        .replaceAll("(?i)Torre di controllo (?:dell'IA|AI|IA)", "Torre di controllo SI")
-                        .replaceAll("(?i)AI-controletoren", "SI-controletoren")
-                        .replaceAll("AI\\u30b3\\u30f3\\u30c8\\u30ed\\u30fc\\u30eb\\u30bf\\u30ef\\u30fc|AI \\u30b3\\u30f3\\u30c8\\u30ed\\u30fc\\u30eb\\u30bf\\u30ef\\u30fc", "SI \\u30b3\\u30f3\\u30c8\\u30ed\\u30fc\\u30eb\\u30bf\\u30ef\\u30fc")
-                        .replaceAll("AI \\ucee8\\ud2b8\\ub864 \\ud0c0\\uc6cc|AI \\ucee8\\ud2b8\\ub864\\ud0c0\\uc6cc", "SI \\ucee8\\ud2b8\\ub864 \\ud0c0\\uc6cc")
+                        .replaceAll("(?i)\\\\bServiceNow AI Control Tower\\\\b", "Control Tower")
+                        .replaceAll("(?i)\\\\bAI Control Tower\\\\b", "Control Tower")
+                        .replaceAll("(?i)\\\\bAICT\\\\b", "Control Tower")
+                        .replaceAll("KI-Kontrollturm", "Kontrollturm")
+                        .replaceAll("(?i)Tour de contr\\\\u00f4le (?:de l'IA|IA)", "Tour de contr\\\\u00f4le")
+                        .replaceAll("(?i)Torre de control de IA", "Torre de control")
+                        .replaceAll("(?i)Torre de controle de IA", "Torre de controle")
+                        .replaceAll("(?i)Torre di controllo (?:dell'IA|AI|IA)", "Torre di controllo")
+                        .replaceAll("(?i)AI-controletoren", "Controletoren")
+                        .replaceAll("AI\\u30b3\\u30f3\\u30c8\\u30ed\\u30fc\\u30eb\\u30bf\\u30ef\\u30fc|AI \\u30b3\\u30f3\\u30c8\\u30ed\\u30fc\\u30eb\\u30bf\\u30ef\\u30fc", "\\u30b3\\u30f3\\u30c8\\u30ed\\u30fc\\u30eb\\u30bf\\u30ef\\u30fc")
+                        .replaceAll("AI \\ucee8\\ud2b8\\ub864 \\ud0c0\\uc6cc|AI \\ucee8\\ud2b8\\ub864\\ud0c0\\uc6cc", "\\ucee8\\ud2b8\\ub864 \\ud0c0\\uc6cc")
                 }} else {{
-                    val = fullCandidate
+                    val = val
+                        .replaceAll("(?i)\\\\bAI Control Tower\\\\b", "Super Intelligence Control Tower")
+                        .replaceAll("(?i)\\\\bAICT\\\\b", "Super Intelligence Control Tower")
+                        .replaceAll("KI-Kontrollturm", "Super-Intelligenz-Kontrollturm")
+                        .replaceAll("(?i)Tour de contr\\\\u00f4le (?:de l'IA|IA)", "Tour de contr\\\\u00f4le Super Intelligence")
+                        .replaceAll("(?i)Torre de control de IA", "Torre de control de Superinteligencia")
+                        .replaceAll("(?i)Torre de controle de IA", "Torre de controle de Superintelig\\\\u00eancia")
+                        .replaceAll("(?i)Torre di controllo (?:dell'IA|AI|IA)", "Torre di controllo della Super Intelligenza")
+                        .replaceAll("(?i)AI-controletoren", "Superintelligentie-controletoren")
+                        .replaceAll("AI\\u30b3\\u30f3\\u30c8\\u30ed\\u30fc\\u30eb\\u30bf\\u30ef\\u30fc|AI \\u30b3\\u30f3\\u30c8\\u30ed\\u30fc\\u30eb\\u30bf\\u30ef\\u30fc", "\\u30b9\\u30fc\\u30d1\\u30fc\\u30a4\\u30f3\\u30c6\\u30ea\\u30b8\\u30a7\\u30f3\\u30b9\\u30fb\\u30b3\\u30f3\\u30c8\\u30ed\\u30fc\\u30eb\\u30bf\\u30ef\\u30fc")
+                        .replaceAll("AI \\ucee8\\ud2b8\\ub864 \\ud0c0\\uc6cc|AI \\ucee8\\ud2b8\\ub864\\ud0c0\\uc6cc", "\\uc288\\ud37c \\uc778\\ud154\\ub9ac\\uc804\\uc2a4 \\ucee8\\ud2b8\\ub864 \\ud0c0\\uc6cc")
                 }}
+
+                // Flag constrained headings (>50 chars) or SEO titles (>60 chars) for manual decision
+                int maxCap = 0
+                if (pName.contains("jcr:title") || pName.contains("navtitle") || pName.contains("heading")) maxCap = 50
+                else if (pName.contains("pagetitle") || pName.contains("seotitle")) maxCap = 60
 
                 if (val != orig) {{
-                    updatedProps++
-                    println "[UPDATE] ${{node.path}}@${{prop.name}} (${{val.length()}} chars)"
-                    if (!dryRun) prop.setValue(val)
+                    if (maxCap &gt; 0 &amp;&amp; val.length() &gt; maxCap &amp;&amp; !orig.toLowerCase().contains("business reinvention")) {{
+                        println "[FLAG-MANUAL-LENGTH &gt;${{maxCap}}] ${{node.path}}@${{prop.name}} (${{val.length()}} chars): ${{val}}"
+                    }} else {{
+                        updatedProps++
+                        println "[UPDATE] ${{node.path}}@${{prop.name}} (${{val.length()}} chars)"
+                        if (!dryRun) prop.setValue(val)
+                    }}
                 }}
             }}
         }}
@@ -3791,7 +3653,7 @@ println "Total properties updated: ${{updatedProps}} (dryRun=${{dryRun}})"</pre>
     </details>
 
     <details class="code-drawer">
-      <summary>View JSON-LD Structured Data Schema (SoftwareApplication + FAQPage)</summary>
+      <summary>View JSON-LD Structured Data Schema (SoftwareApplication)</summary>
       <div class="drawer-body">
         <pre>&lt;script type="application/ld+json"&gt;
 {{
@@ -3802,14 +3664,13 @@ println "Total properties updated: ${{updatedProps}} (dryRun=${{dryRun}})"</pre>
       "@id": "https://www.servicenow.com/products/super-intelligence-control-tower.html#software",
       "name": "ServiceNow Super Intelligence Control Tower",
       "alternateName": [
-        "Super Intelligence Control Tower",
-        "SI Control Tower"
+        "Super Intelligence Control Tower"
       ],
       "applicationCategory": "BusinessApplication",
       "ApplicationSubCategory": "Enterprise AI Governance, Observability, and Management Platform",
       "operatingSystem": "ServiceNow AI Platform",
       "url": "https://www.servicenow.com/products/super-intelligence-control-tower.html",
-      "description": "Enforce runtime governance for AI at scale. Super Intelligence Control Tower (SI Control Tower) gives you a central hub to discover, secure, govern, observe, and measure enterprise AI.",
+      "description": "Enforce runtime governance for AI at scale. Super Intelligence Control Tower gives you a central hub to discover, secure, govern, observe, and measure enterprise AI.",
       "brand": {{ "@type": "Brand", "name": "ServiceNow" }}
     }}
   ]
@@ -3828,13 +3689,16 @@ println "Total properties updated: ${{updatedProps}} (dryRun=${{dryRun}})"</pre>
 open(OUT_HTML, "w", encoding="utf-8").write(full_html)
 
 OUT_MD = "/Users/tamer.mina/.gemini/antigravity-cli/brain/37667ee2-9f2b-4c38-a3b2-645e77963657/aict_rebrand_plan.md"
-plan_md = f"""# Super Intelligence Control Tower (SI Control Tower) — Global & Regional Rebrand Handoff Plan
+plan_md = f"""# Super Intelligence Control Tower — Global & Regional Rebrand Handoff Plan
 
 > [!IMPORTANT]
-> **Full Global + Regional Coverage ({len(unique_body_pages)} Pages Across US + 13 Regional Locales + 63 Audited DAM Images)**
-> Every regional page that requires a copy or link update is included and inherits the Wave of its US parent page:
-> - **{len(unique_body_pages)} Total Body-Match Pages**: **{us_pages_total} US pages** + **{regional_pages_total} Regional pages** across **13 locales** (UK: {locale_counts['uk']}, DE: {locale_counts['de']}, FR: {locale_counts['fr']}, JP: {locale_counts['jp']}, NL: {locale_counts['nl']}, BR: {locale_counts['br']}, AU: {locale_counts['au']}, ES: {locale_counts['es']}, KR: {locale_counts['kr']}, FR-CA: {locale_counts['fr-ca']}, IT: {locale_counts['it']}, LATAM: {locale_counts['latam']}, IN: {locale_counts['in']}).
-> - **Clean Enterprise Light UI Dashboard**: [aict-rebrand-interactive-report.html](file:///Users/tamer.mina/Documents/Antigravity/aict-rebrand-interactive-report.html) features progressive disclosure (collapsible 1-line page rows that expand into itemized Before -> After tables), deduplicated metadata/link labels, compact dropdown filters, and zero emojis.
+> **Product Marketing Naming & Automation Direction Applied Across All {len(unique_body_pages)} Pages (US + 13 Regional Locales + 63 Audited DAM Images)**
+> - **Standard Product Name**: **`Super Intelligence Control Tower`** (32 chars). We do **not** use `SI Control Tower` anywhere—all copy, headings, metadata, and former `AICT` acronyms transition to `Super Intelligence Control Tower`.
+> - **CTA Button Name**: **`Control Tower`** (13 chars) on buttons (e.g., `See Control Tower` [17/25 chars], `Explore Control Tower` [21/25 chars], `Extend Control Tower` [20/25 chars], and localized button equivalents).
+> - **All On-Page Image Swaps Are Automated (`Auto`)**: Once updated image copies are uploaded to the new DAM paths (`super-intelligence-control-tower`), the AEM Groovy automation script swaps out the old image paths and puts in the new image paths across all webpages automatically.
+> - **WWSG Body Copy Edits Skipped**: Body copy, Marquee lead descriptions, and FAQ answers are 100% automated direct swaps (`AI Control Tower` -> `Super Intelligence Control Tower`) to minimize manual work.
+> - **Oversized Headings & Titles Flagged for Manual Decision**: **{total_manual_copy_instances} instances across {manual_type_counts['m-copy']} pages** are flagged as `Manual: Name Too Long` where `Super Intelligence Control Tower` causes a constrained heading (`<h2>`/`<h3>`/`<h4>`, card heading, FAQ question title, or tab label >50 chars) or compound `<title>` (>60 chars) to exceed its character limit.
+> - **Interactive Dashboard**: [aict-rebrand-interactive-report.html](file:///Users/tamer.mina/Documents/Antigravity/aict-rebrand-interactive-report.html)
 > - **Master CSV Inventory**: [aict-rebrand-inventory.csv](file:///Users/tamer.mina/Documents/Antigravity/aict-rebrand-inventory.csv)
 
 ---
@@ -3843,18 +3707,20 @@ plan_md = f"""# Super Intelligence Control Tower (SI Control Tower) — Global &
 
 | Track & Owner | Scope | Action Summary |
 | :--- | :--- | :--- |
-| **Track A1: Automated Global Nav XF**<br>*Owner: AEM Platform Admin* | **2 Centralized XFs** ({len(ssi_only_pages):,} pages) | Single Experience Fragment update swaps `"AI Control Tower"` to `"Super Intelligence Control Tower"` (or `"SI Control Tower"`) and updates the nav link across US + 13 locales. |
-| **Track A2: Automated AEM Groovy Swap**<br>*Owner: AEM Engineering* | **All {len(unique_body_pages)} Pages** ({pages_100pct_auto} Pure Auto + {pages_needing_manual} Hybrid)<br>**{total_auto_instances:,} Automated Swaps** | Updates `<title>`, `<meta>`, `<h1>` Hero headings (`Super Intelligence Control Tower`, 32/50 chars), body copy, CTA buttons (`See SI Control Tower`, 20/25 chars), internal links, and image `alt` tags. Automatically uses `"SI Control Tower"` (16 chars) on **{total_si_short_saves} instances** where the 32-char name would exceed WWSG character limits. |
-| **Track M1: Manual WWSG Copy Edits**<br>*Owner: Digital UX Copywriter* | **{total_manual_copy_instances} Copy Edits** across {manual_type_counts['m-copy']} pages | Apply the Hero paragraph context bridge on Homepage/Customer Experience pages (introducing `Super Intelligence Control Tower` / `Super Intelligence (SI)` above the `See SI Control Tower` CTA) and WWSG copy trims on flagship Marquee/FAQ components. |
+| **Track A1: Automated Global Nav XF**<br>*Owner: AEM Platform Admin* | **2 Centralized XFs** ({len(ssi_only_pages):,} pages) | Single Experience Fragment update swaps `"AI Control Tower"` to `"Super Intelligence Control Tower"` and updates the nav link across US + 13 locales. |
+| **Track A2: Automated AEM Groovy Swap**<br>*Owner: AEM Engineering* | **All {len(unique_body_pages)} Pages** ({pages_100pct_auto} Pure Auto + {pages_needing_manual} Hybrid)<br>**{total_auto_instances:,} Automated Swaps** | Updates `<title>`, `<meta>`, `<h1>` Hero headings (`Super Intelligence Control Tower`, 32/50 chars), all body copy & FAQ answers, CTA buttons (`See Control Tower`, `Explore Control Tower`, `Extend Control Tower`), company taglines (`ServiceNow is the Super Intelligence Control Tower for business reinvention`), internal links, **all on-page DAM image paths (`old image -> new image copy`)**, and image `alt` tags. |
+| **Track M1: Flagged Oversized Headings & `<title>` Tags**<br>*Owner: Digital UX Copywriter / PMM* | **{total_manual_copy_instances} Flagged Instances** across **{manual_type_counts['m-copy']} pages** | Review constrained headings (>50 chars) and compound `<title>` tags (>60 chars) where `"Super Intelligence Control Tower"` is too long and decide the replacement text. |
 | **Track M2: Manual AEM Move & 301 Redirects**<br>*Owner: AEM Authoring & Web Ops* | **{total_redirects_count} Total 301 Redirects** ({webpage_redirect_cnt} Webpages + {pdf_redirect_cnt} PDFs + {img_redirect_cnt} Images) | Move AEM page nodes (`/products/ai-control-tower.html` -> `/products/super-intelligence-control-tower.html`) and deploy Apache Dispatcher / Akamai 301 rules. |
-| **Track M3: Manual Design & PDF Updates**<br>*Owner: Creative, Docs & Legal* | **{total_baked_images_count} Baked-In Images ({total_baked_designs_count} Visual Designs)** + **13 PDFs** | Re-render/retouch all {total_baked_images_count} baked-in pixel images ({total_baked_designs_count} design groups, including `welcome-ai-control-tower-.sm.png` on `/platform/responsible-ai.html`) and update 13 live/vector PDFs. |
+| **Track M3: DAM Graphic Copy Upload & PDF Updates**<br>*Owner: Creative, Docs & Legal* | **{total_baked_images_count} Baked-In Image Copies ({total_baked_designs_count} Visual Designs)** + **13 PDFs** | Upload updated graphic copies at new `super-intelligence-control-tower` DAM filenames (page swaps are 100% automated) and update 13 live/vector PDFs. |
 | **Track M4: Manual Localization QA**<br>*Owner: Regional Web Leads* | **10 Non-English Flagship Pages** | Linguistic review of gender/article agreement on DE, FR, FR-CA, ES, LATAM, BR, IT, NL, JP, and KR flagship product pages. |
 """
 
 open(OUT_MD, "w", encoding="utf-8").write(plan_md)
 print(f"Successfully generated clean enterprise light handoff dashboard {OUT_HTML}, {OUT_CSV}, and {OUT_MD}")
 print(f"Total Body-Match Pages: {len(unique_body_pages)} (US: {us_pages_total} + Regional: {regional_pages_total})")
-print(f"Pages 100% Auto: {pages_100pct_auto} | Pages Needing Manual: {pages_needing_manual} | Auto Instances: {total_auto_instances} | Manual Copy Instances: {total_manual_copy_instances} | Manual Tasks All: {total_manual_tasks_all} | SI Short Fits: {total_si_short_saves}")
+print(f"Pages 100% Auto: {pages_100pct_auto} | Pages Needing Manual: {pages_needing_manual} | Auto Instances: {total_auto_instances} | Flagged Name-Too-Long Instances: {total_manual_copy_instances} (across {manual_type_counts['m-copy']} pages) | Manual Tasks All: {total_manual_tasks_all} | Button CTAs ('Control Tower'): {total_si_short_saves}")
 print(f"Total 301 Redirects: {total_redirects_count} (Webpages: {webpage_redirect_cnt}, PDFs: {pdf_redirect_cnt}, Images: {img_redirect_cnt})")
+
+
 
 
