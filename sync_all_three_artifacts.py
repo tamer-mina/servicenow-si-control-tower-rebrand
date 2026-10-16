@@ -457,10 +457,7 @@ def audit_wwsg_instance(inst, page_url=""):
     elif "arc-marquee" in loc and "<p>" in loc:
         comp_name = "Marquee description"
     elif "arc-accordion-item" in loc and "heading" in loc:
-        limit = 50
-        comp_name = "FAQ accordion heading"
-        is_constrained_heading_or_title = True
-        flag_threshold = 60  # Short 41-45 char FAQ questions fit; flag long 65-115 char FAQ questions
+        comp_name = "FAQ accordion question"
     elif "arc-accordion-item" in loc and "copy-block" in loc:
         comp_name = "Accordion body"
     elif "arc-next-steps" in loc and "<p>" in loc:
@@ -3632,11 +3629,11 @@ RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)aict(.*)\\.(png|jpg|jpeg|
               <td><code>Super Intelligence Control Tower</code> (32/50 chars). Direct 1:1 swap with zero legacy product eyebrow text.</td>
             </tr>
             <tr>
-              <td><strong>Body Copy, Marquee Lead Paragraphs &amp; FAQ Answers</strong></td>
+              <td><strong>Body Copy, Marquee Lead Paragraphs, FAQ Accordion Questions &amp; Answers</strong></td>
               <td>Skipped for this update</td>
               <td><span class="badge b-auto">Super Intelligence Control Tower</span></td>
               <td><span class="badge b-auto">Auto</span></td>
-              <td>100% automated direct replacement of <code>AI Control Tower</code> with <code>Super Intelligence Control Tower</code>. WWSG body copy trimming is skipped for this update to reduce manual work.</td>
+              <td>100% automated direct replacement of <code>AI Control Tower</code> with <code>Super Intelligence Control Tower</code> across body copy, marquee descriptions, FAQ accordion questions (<code>&lt;arc-accordion-item&gt; &gt; &lt;arc-heading slot="heading"&gt;</code>), and FAQ answers. WWSG body/FAQ length trimming is skipped for this update to reduce manual work.</td>
             </tr>
             <tr>
               <td><strong>Acronym Mapping (<code>AICT</code> &rarr; <code>SICT</code>)</strong><br>(Body Prose, Parenthetical Acronyms, Meta Descriptions, URL/PDF Slugs &amp; Data Attributes)</td>
@@ -3672,11 +3669,11 @@ RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)aict(.*)\\.(png|jpg|jpeg|
               <td><code>ServiceNow is the Super Intelligence Control Tower for business reinvention</code> (75/175 chars) and <code>The Super Intelligence Control Tower for business reinvention</code> (61/175 chars). Always use full name and capitalize <strong>Control Tower</strong> (Title Case required even where live copy had lowercase <code>AI control tower</code>).</td>
             </tr>
             <tr>
-              <td><strong>Constrained Headings, Cards &amp; FAQ Questions (&gt;50 Chars)</strong></td>
-              <td>Heading: &le; 50</td>
-              <td><span class="badge b-manual">Flagged when &gt; 50 chars</span></td>
+              <td><strong>Constrained Section/Card Headings (&gt;50 Chars) &amp; Titles (&gt;60 Chars)</strong></td>
+              <td>Heading: &le; 50<br>Title: &le; 60</td>
+              <td><span class="badge b-manual">Flagged when &gt; limit</span></td>
               <td><span class="badge b-manual">Manual</span></td>
-              <td><strong>{total_manual_copy_instances} total instances across {manual_type_counts['m-copy']} pages</strong> are flagged as <code>Manual: Name Too Long</code> where <code>Super Intelligence Control Tower</code> causes a heading, FAQ question title, tab label, or <code>&lt;title&gt;</code> to exceed its limit so the team can manually decide the replacement.</td>
+              <td><strong>{total_manual_copy_instances} total instances across {manual_type_counts['m-copy']} pages</strong> are flagged as <code>Manual: Name Too Long</code> where <code>Super Intelligence Control Tower</code> causes a section/card heading (&gt;50 chars) or <code>&lt;title&gt;</code> (&gt;60 chars) to exceed its limit so the team can manually decide the replacement. (FAQ Accordion Questions are ignored for length and 100% automated.)</td>
             </tr>
           </tbody>
         </table>
@@ -3899,9 +3896,10 @@ paths.each {{ rootPath -&gt;
                         .replaceAll("AI \\ucee8\\ud2b8\\ub864 \\ud0c0\\uc6cc|AI \\ucee8\\ud2b8\\ub864\\ud0c0\\uc6cc", "\\uc288\\ud37c \\uc778\\ud154\\ub9ac\\uc804\\uc2a4 \\ucee8\\ud2b8\\ub864 \\ud0c0\\uc6cc")
                 }}
 
-                // Flag constrained headings (>50 chars) or SEO titles (>60 chars) for manual decision
+                // Flag constrained section/card headings (>50 chars) or SEO titles (>60 chars) for manual decision (ignore FAQ accordion items)
                 int maxCap = 0
-                if (pName.contains("jcr:title") || pName.contains("navtitle") || pName.contains("heading")) maxCap = 50
+                boolean isAccordionFaq = node.path.toLowerCase().contains("accordion") || node.path.toLowerCase().contains("faq")
+                if (!isAccordionFaq &amp;&amp; (pName.contains("jcr:title") || pName.contains("navtitle") || pName.contains("heading"))) maxCap = 50
                 else if (pName.contains("pagetitle") || pName.contains("seotitle")) maxCap = 60
 
                 if (val != orig) {{
@@ -3969,8 +3967,8 @@ plan_md = f"""# Super Intelligence Control Tower — Global & Regional Rebrand H
 > - **CTA Button Name**: **`Control Tower`** (13 chars) on buttons (e.g., `See Control Tower` [17/25 chars], `Explore Control Tower` [21/25 chars], `Extend Control Tower` [20/25 chars], and localized button equivalents).
 > - **Awareness & First-Mention CTA Context Bridge Standard (`Manual: Context Bridge`)**: Across **{manual_type_counts['m-context']} pages** (all awareness-categorized pages—`Homepage`, `What is ServiceNow`, `Platform - Main Page`, `Impact Pages`, `Events - AI Summits Hub Page`, and tagline-only `Solutions` pages—plus first-mention `Control Tower` CTA button pages across US + 13 locales), a **Manual Context Bridge** copy update is queued to introduce `Super Intelligence Control Tower` in the surrounding Marquee/Feature paragraph (e.g., Homepage Marquee: *"Most companies have AI but few have the data to ground it, the workflows to deploy it, and the security to govern it. Super Intelligence Control Tower is built for all of it. So AI doesn't just think, it acts."*).
 > - **All On-Page Image Swaps Are Automated (`Auto`)**: Once updated image copies are uploaded to the new DAM paths (`super-intelligence-control-tower`), the AEM Groovy automation script swaps out the old image paths and puts in the new image paths across all webpages automatically.
-> - **WWSG Body Copy Edits Skipped**: Body copy, Marquee lead descriptions, and FAQ answers are 100% automated direct swaps (`AI Control Tower` &rarr; `Super Intelligence Control Tower`, `AICT` &rarr; `SICT`) to minimize manual work.
-> - **Oversized Headings & Titles Flagged for Manual Decision**: **{total_manual_copy_instances} instances across {manual_type_counts['m-copy']} pages** are flagged as `Manual: Name Too Long` where `Super Intelligence Control Tower` causes a constrained heading (`<h2>`/`<h3>`/`<h4>`, card heading, FAQ question title, or tab label >50 chars) or compound `<title>` (>60 chars) to exceed its character limit.
+> - **WWSG Body Copy & FAQ Accordion Questions/Answers Skipped for Length Flagging**: Body copy, Marquee lead descriptions, FAQ Accordion Questions (`<arc-accordion-item> > <arc-heading slot="heading">`), and FAQ Answers are 100% automated direct swaps (`AI Control Tower` &rarr; `Super Intelligence Control Tower`, `AICT` &rarr; `SICT`) to minimize manual work.
+> - **Oversized Section/Card Headings & Titles Flagged for Manual Decision**: **{total_manual_copy_instances} instances across {manual_type_counts['m-copy']} pages** are flagged as `Manual: Name Too Long` where `Super Intelligence Control Tower` causes a constrained section/card heading (`<h2>`/`<h3>`/`<h4>`, card heading, or tab label >50 chars) or compound `<title>` (>60 chars) to exceed its character limit.
 > - **Interactive Dashboard**: [aict-rebrand-interactive-report.html](file:///Users/tamer.mina/Documents/Antigravity/aict-rebrand-interactive-report.html)
 > - **Master CSV Inventory**: [aict-rebrand-inventory.csv](file:///Users/tamer.mina/Documents/Antigravity/aict-rebrand-inventory.csv)
 
@@ -3981,9 +3979,9 @@ plan_md = f"""# Super Intelligence Control Tower — Global & Regional Rebrand H
 | Track & Owner | Scope | Action Summary |
 | :--- | :--- | :--- |
 | **Track A1: Automated Global Nav XF**<br>*Owner: AEM Platform Admin* | **2 Centralized XFs** ({len(ssi_only_pages):,} pages) | Single Experience Fragment update swaps `"AI Control Tower"` to `"Super Intelligence Control Tower"` and updates the nav link across US + 13 locales. |
-| **Track A2: Automated AEM Groovy Swap**<br>*Owner: AEM Engineering* | **All {len(unique_body_pages)} Pages** ({pages_100pct_auto} Pure Auto + {pages_needing_manual} Hybrid)<br>**{total_auto_instances:,} Automated Swaps** | Updates `<title>`, `<meta>`, `<h1>` Hero headings (`Super Intelligence Control Tower`, 32/50 chars), all body copy & FAQ answers (`AI Control Tower` &rarr; `Super Intelligence Control Tower`, `AICT` &rarr; `SICT`), CTA buttons (`See Control Tower`, `Explore Control Tower`, `Extend Control Tower`), company taglines (`ServiceNow is the Super Intelligence Control Tower for business reinvention`), internal links, **all on-page DAM image paths (`old image -> new image copy`)**, and image `alt` tags. |
+| **Track A2: Automated AEM Groovy Swap**<br>*Owner: AEM Engineering* | **All {len(unique_body_pages)} Pages** ({pages_100pct_auto} Pure Auto + {pages_needing_manual} Hybrid)<br>**{total_auto_instances:,} Automated Swaps** | Updates `<title>`, `<meta>`, `<h1>` Hero headings (`Super Intelligence Control Tower`, 32/50 chars), all body copy, FAQ Accordion Questions & Answers (`AI Control Tower` &rarr; `Super Intelligence Control Tower`, `AICT` &rarr; `SICT`), CTA buttons (`See Control Tower`, `Explore Control Tower`, `Extend Control Tower`), company taglines (`ServiceNow is the Super Intelligence Control Tower for business reinvention`), internal links, **all on-page DAM image paths (`old image -> new image copy`)**, and image `alt` tags. |
 | **Track M0: Awareness & CTA Context Bridge Copy**<br>*Owner: Digital UX Copywriter / PMM* | **{manual_type_counts['m-context']} Pages** (US + 13 locales) | Update Marquee/Feature lead paragraphs on awareness-categorized pages (`Homepage`, `Platform`, `What is ServiceNow`, `Impact`, `AI Summits`, `Solutions`) and first-mention `Control Tower` CTA button pages so `Super Intelligence Control Tower` is explicitly introduced in context. |
-| **Track M1: Flagged Oversized Headings & `<title>` Tags**<br>*Owner: Digital UX Copywriter / PMM* | **{total_manual_copy_instances} Flagged Instances** across **{manual_type_counts['m-copy']} pages** | Review constrained headings (>50 chars) and compound `<title>` tags (>60 chars) where `"Super Intelligence Control Tower"` is too long and decide the replacement text. |
+| **Track M1: Flagged Oversized Headings & `<title>` Tags**<br>*Owner: Digital UX Copywriter / PMM* | **{total_manual_copy_instances} Flagged Instances** across **{manual_type_counts['m-copy']} pages** | Review constrained section/card headings (>50 chars) and compound `<title>` tags (>60 chars) where `"Super Intelligence Control Tower"` is too long and decide the replacement text. |
 | **Track M2: Manual AEM Move & 301 Redirects**<br>*Owner: AEM Authoring & Web Ops* | **{total_redirects_count} Total 301 Redirects** ({webpage_redirect_cnt} Webpages + {pdf_redirect_cnt} PDFs + {img_redirect_cnt} Images) | Move AEM page nodes (`/products/ai-control-tower.html` &rarr; `/products/super-intelligence-control-tower.html`, `/contact-us-aict.html` &rarr; `/contact-us-sict.html`, `/ebk-aict-discovery-playbook.html` &rarr; `/ebk-sict-discovery-playbook.html`) and deploy Apache Dispatcher / Akamai 301 rules. |
 | **Track M3: DAM Graphic Copy Upload & PDF Updates**<br>*Owner: Creative, Docs & Legal* | **{total_baked_images_count} Baked-In Image Copies ({total_baked_designs_count} Visual Designs)** + **13 PDFs** | Upload updated graphic copies at new `super-intelligence-control-tower` DAM filenames (page swaps are 100% automated) and update 13 live/vector PDFs (including `ebk-aict-discovery-playbook.pdf` &rarr; `ebk-sict-discovery-playbook.pdf` and `AICT-DISCOVERY-PLAYBOOK-02` &rarr; `SICT-DISCOVERY-PLAYBOOK-02`). |
 | **Track M4: Manual Localization QA**<br>*Owner: Regional Web Leads* | **10 Non-English Flagship Pages** | Linguistic review of gender/article agreement on DE, FR, FR-CA, ES, LATAM, BR, IT, NL, JP, and KR flagship product pages. |
