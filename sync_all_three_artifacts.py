@@ -18,20 +18,20 @@ OUT_CSV = "/Users/tamer.mina/Documents/Antigravity/aict-rebrand-inventory.csv"
 OUT_HTML = "/Users/tamer.mina/Documents/Antigravity/aict-rebrand-interactive-report.html"
 
 LOCALE_BADGE_MAP = {
-    "us": ("🇺🇸 US", "b-ok"),
-    "uk": ("🇬🇧 UK", "b-w3"),
-    "au": ("🇦🇺 AU", "b-w3"),
-    "in": ("🇮🇳 IN", "b-w3"),
-    "de": ("🇩🇪 DE", "b-warn"),
-    "fr": ("🇫🇷 FR", "b-warn"),
-    "fr-ca": ("🇨🇦 FR-CA", "b-warn"),
-    "es": ("🇪🇸 ES", "b-warn"),
-    "latam": ("🌎 LATAM", "b-warn"),
-    "br": ("🇧🇷 BR", "b-warn"),
-    "it": ("🇮🇹 IT", "b-warn"),
-    "nl": ("🇳🇱 NL", "b-warn"),
-    "jp": ("🇯🇵 JP", "b-warn"),
-    "kr": ("🇰🇷 KR", "b-warn"),
+    "us": ("US", "b-loc-us"),
+    "uk": ("UK", "b-loc"),
+    "au": ("AU", "b-loc"),
+    "in": ("IN", "b-loc"),
+    "de": ("DE", "b-loc"),
+    "fr": ("FR", "b-loc"),
+    "fr-ca": ("FR-CA", "b-loc"),
+    "es": ("ES", "b-loc"),
+    "latam": ("LATAM", "b-loc"),
+    "br": ("BR", "b-loc"),
+    "it": ("IT", "b-loc"),
+    "nl": ("NL", "b-loc"),
+    "jp": ("JP", "b-loc"),
+    "kr": ("KR", "b-loc"),
 }
 
 def get_page_locale(url):
@@ -56,14 +56,13 @@ def full_url(path_or_url):
         p = "/" + p
     return "https://www.servicenow.com" + p
 
-def a_link(path_or_url, label=None, color="var(--green)"):
+def a_link(path_or_url, label=None, color="var(--blue)"):
     href = full_url(path_or_url)
     disp = label if label is not None else href
     return (
         f'<a class="ext-link" href="{html.escape(href)}" target="_blank" rel="noopener noreferrer" '
-        f'title="Open {html.escape(href)} in browser" '
-        f'style="color:{color};text-decoration:underline;text-underline-offset:2px;word-break:break-word;overflow-wrap:anywhere;cursor:pointer;">'
-        f'{html.escape(disp)} ↗</a>'
+        f'title="Open {html.escape(href)} in browser">'
+        f'{html.escape(disp)}</a>'
     )
 
 # ---------------------------------------------------------------------------
@@ -536,27 +535,33 @@ def audit_wwsg_instance(inst, page_url=""):
 
     if limit:
         if t_len <= limit:
-            char_check = f"{comp_name}: [{t_len}/{limit} chars ✓ Full Name Fits]"
+            char_check = f"{comp_name}: [{t_len}/{limit} chars — Full Name Fits]"
+            short_note = f"{comp_name}: {t_len}/{limit} chars"
             is_over = False
         elif si_len <= limit:
-            char_check = f"{comp_name}: [Full={t_len}/{limit} ⚠️ → Use 'SI Control Tower'={si_len}/{limit} chars ✓]"
+            char_check = f"{comp_name}: [Full={t_len}/{limit} -> Use 'SI Control Tower'={si_len}/{limit} chars]"
+            short_note = f"{comp_name}: {si_len}/{limit} chars (Uses 'SI Control Tower')"
             is_over = False
         elif not is_flagship_page:
-            char_check = f"{comp_name}: [Pre-existing >{limit} chars → Auto-swap 'SI Control Tower' ({si_len} chars, +0 net delta) ✓]"
+            char_check = f"{comp_name}: [Pre-existing >{limit} chars -> Auto-swap 'SI Control Tower' ({si_len} chars, +0 net delta)]"
+            short_note = f"{comp_name}: {si_len} chars (0 net char change via 'SI Control Tower')"
             is_over = False
         else:
             over_by = si_len - limit
-            char_check = f"{comp_name}: [{si_len}/{limit} chars ⚠️ OVER by {over_by} — needs manual copy trim]"
+            char_check = f"{comp_name}: [{si_len}/{limit} chars — OVER by {over_by}, needs manual copy trim]"
+            short_note = f"Exceeds {comp_name} ({si_len}/{limit} chars) — manual trim"
             is_over = True
     else:
         char_check = f"{comp_name}: [Full={t_len} chars | Short 'SI'={si_len} chars]"
+        short_note = f"{t_len} chars"
         is_over = False
 
     flags = []
     rewrite = recommended_auto_target
 
     if is_cta_btn and used_si_short:
-        flags.append(f'[CTA BUTTON: WWSG 2026 Q3 limits CTA buttons to 15 chars target / 25 chars max for clarity — auto-swaps to "{si_short}" ({si_len} chars) so the <arc-button> pill does not overflow]')
+        flags.append(f'[CTA BUTTON: WWSG 2026 Q3 limits CTA buttons to 15 chars target / 25 chars max — auto-swaps to "{si_short}" ({si_len} chars)]')
+        short_note = f"CTA button: {si_len}/25 chars (Full name {t_len}/25 overflows)"
 
     if re.search(r"\b(?:AICT|SICT)\b", cur):
         flags.append('[ABBREVIATION: Replace "AICT" with "SI Control Tower" (16 chars) or "Super Intelligence Control Tower"]')
@@ -594,10 +599,10 @@ def audit_wwsg_instance(inst, page_url=""):
 
     has_an_article = bool(re.search(r"\ban\s+AI\s+Control\s+Tower\b", cur, flags=re.I))
     if has_an_article:
-        flags.append('[GRAMMAR NOTE: "an AI Control Tower" → use "an SI Control Tower" or "a Super Intelligence Control Tower"]')
+        flags.append('[GRAMMAR NOTE: "an AI Control Tower" -> use "an SI Control Tower" or "a Super Intelligence Control Tower"]')
 
     # Determine Execution Mode for this specific instance:
-    # Automated Swap vs. Manual Copy Edit (Clean cutover — H1 Hero is 100% Automated!)
+    # Automated Swap vs. Manual Copy Edit (Clean cutover — H1 Hero is 100% Automated)
     needs_manual_copy = False
     manual_reason = ""
     if is_over:
@@ -609,12 +614,13 @@ def audit_wwsg_instance(inst, page_url=""):
 
     rw_len = len(rewrite)
     if limit:
-        rw_badge = f"[{rw_len}/{limit} chars {'✓' if rw_len <= limit else '⚠️'}]"
+        rw_badge = f"[{rw_len}/{limit} chars]"
     else:
         rw_badge = f"[{rw_len} chars]"
 
     return {
         "char_check": char_check,
+        "short_note": short_note,
         "is_over": is_over,
         "used_si_short": used_si_short,
         "si_short_target": si_short,
@@ -877,23 +883,13 @@ img_map.setdefault("https://www.servicenow.com/content/dam/servicenow-assets/pub
 # ---------------------------------------------------------------------------
 def build_split_page_breakdowns(r):
     """
-    Splits all changes for page `r` into two distinct tracks:
-      1. Automated Updates (`auto_html`, `auto_csv`, `auto_edit_count`):
-         - <title> & <meta> swaps
-         - Automated body copy swaps (where not needs_manual_copy)
-         - Automated in-body link slug swaps
-         - Automated <arc-image alt> attribute swaps
-         - Automated 0-pixel DAM image slug moves
-         - Sitewide Chrome XF note
-      2. Manual Updates (`manual_html`, `manual_csv`, `manual_task_count`, `manual_reasons`, `manual_filter_tags`):
-         - Manual WWSG Copy Edits (where needs_manual_copy == True)
-         - Manual Baked-In Image Re-renders (now-ai-control-tower, secure-any-ai-action)
-         - Manual Live/Vector PDF Updates
-         - Manual L10n Native Grammar Review (10 non-English flagship product pages)
-         - URL Slug 301 Redirect Note (cross-linked to Tab 3: 301 Redirects)
+    Splits all changes for page `r` into Automated vs. Manual tracks, deduplicates repetitive
+    <title>/<meta> and <a href> rows, and returns structured 5-column Before -> After mini-table
+    rows (`drawer_rows_html`) for the collapsible page detail drawer.
     """
     u = full_url(r["url"])
     loc_code = r.get("locale", get_page_locale(u))
+    cat = r.get("an", {}).get("category", "")
     ch = r["chrome_est"]
     raw_ai_ct = r.get("raw_ai_ct", 0)
     raw_aict = r.get("raw_aict", 0)
@@ -911,9 +907,9 @@ def build_split_page_breakdowns(r):
     data_attr_instances = p_inst.get("data_attr_instances", [])
     body_slug_links = p_inst.get("body_slug_links", [])
 
-    auto_html_items = []
+    drawer_auto_rows = []
+    drawer_manual_rows = []
     auto_csv_items = []
-    manual_html_items = []
     manual_csv_items = []
     wwsg_csv_notes = []
 
@@ -924,24 +920,28 @@ def build_split_page_breakdowns(r):
     manual_reasons = []
     manual_filter_tags = set()
 
-    # A. URL Slug / 301 Redirect (Manual / Web Ops task, cross-linked to Tab 3)
+    # A. URL Slug / 301 Redirect (Manual / Web Ops task)
     if "ai-control-tower" in u.lower() or "aict" in u.lower():
         new_u = re.sub(r'ai-control-tower', 'super-intelligence-control-tower', u, flags=re.I)
         new_u = re.sub(r'aict', 'super-intelligence-control-tower', new_u, flags=re.I)
-        manual_reasons.append("AEM Page Move & 301 Redirect")
+        manual_reasons.append("Page Slug Move & 301")
         manual_filter_tags.add("m-slug")
-        manual_html_items.append(
-            f"<li><span class='badge b-w1'>🛠️ MANUAL: AEM PAGE MOVE &amp; 301</span> "
-            f"<span class='badge b-w3' style='cursor:pointer;margin-left:4px;' onclick=\"showTab('tab-redirects', document.getElementById('btn-tab-redirects'))\">🔀 View in Tab 3 (301 Redirects) ↗</span><br>"
-            f"<strong>URL Slug &amp; 301 Redirect:</strong> {a_link(u, None, 'var(--blue)')} &rarr; <code>{html.escape(new_u)}</code> "
-            f"(move AEM page node, deploy HTTP 301 redirect rule, and update canonical, <code>og:url</code> &amp; <code>hreflang</code> cluster).</li>"
+        drawer_manual_rows.append(
+            f"<tr class='detail-item-manual'>"
+            f"<td><span class='badge b-manual'>Manual</span></td>"
+            f"<td><strong>Page URL Slug &amp; 301 Redirect</strong><div class='sub-note'>AEM page move + canonical &amp; hreflang</div></td>"
+            f"<td class='mono'>{a_link(u)}</td>"
+            f"<td class='mono'><code>{html.escape(new_u)}</code></td>"
+            f"<td>HTTP 301 Permanent Redirect <span class='link-pill' onclick=\"showTab('tab-redirects', document.getElementById('btn-tab-redirects'))\">View 301 Rules</span></td>"
+            f"</tr>"
         )
         manual_csv_items.append(f"[MANUAL: URL SLUG & 301] Move {u} -> {new_u}")
 
-    # B. <title> & <meta> Tag Instances (Automated)
+    # B. <title> & <meta> Tag Instances (Automated — Deduplicated by value)
     if meta_instances:
-        meta_lines = []
         meta_csv_parts = []
+        meta_groups = []
+        meta_group_map = {}
         for idx, m in enumerate(meta_instances, 1):
             m_loc = m.get("location", "meta")
             m_old = m.get("current_text", "")
@@ -950,147 +950,212 @@ def build_split_page_breakdowns(r):
             if w_res["used_si_short"]:
                 si_short_cnt += 1
             auto_text_meta_alt_cnt += 1
-            si_opt = w_res["si_short_target"]
-            mode_badge = "<span class='badge b-ok' style='font-size:10px;padding:1px 6px;'>🤖 AUTO SWAP</span>"
-            cc_badge = f"<span style='color:{'var(--amber)' if w_res['is_over'] else 'var(--muted)'};font-size:11px;margin-left:6px;'>{html.escape(w_res['char_check'])}</span>"
-            seo_note = ""
+            rec_tgt = w_res["recommended_auto_target"]
+            meta_csv_parts.append(f"Meta #{idx} [AUTO] ({m_loc}) {w_res['char_check']}: \"{m_old}\" -> \"{rec_tgt}\"")
+
+            # Clean tag name for grouping
             if "Document <title>" in m_loc:
-                if len(m_new) <= 60:
-                    seo_note = f"<br><span style='color:var(--blue);font-size:11px;'>• <strong>SEO/AIO <code>&lt;title&gt;</code> Guidance:</strong> Full name <code>\"{html.escape(m_new)}\"</code> ({len(m_new)}/60 chars) fits Google SERP limit &amp; establishes canonical LLM entity. Short alternative: <code>\"{html.escape(si_opt)}\"</code> ({len(si_opt)}/60 chars).</span>"
-                else:
-                    seo_note = f"<br><span style='color:var(--amber);font-size:11px;'>• <strong>SEO/AIO <code>&lt;title&gt;</code> Guidance:</strong> Full name is {len(m_new)}/60 chars (truncates in SERP) &rarr; <strong>Auto-swaps to short name:</strong> <code>\"{html.escape(si_opt)}\"</code> ({len(si_opt)}/60 chars ✓).</span>"
-            meta_lines.append(
-                f"<div style='margin-top:3px;padding-left:6px;border-left:2px solid var(--border);'>"
-                f"{mode_badge} <strong>Meta #{idx}</strong> <code>{html.escape(m_loc)}</code> {cc_badge}:<br>"
-                f"<span style='color:var(--muted);'>Current:</span> <code>\"{html.escape(m_old)}\"</code><br>"
-                f"<span style='color:var(--green);'>Target:</span> <strong>\"{html.escape(w_res['recommended_auto_target'])}\"</strong>"
-                f"{seo_note}</div>"
+                short_tag = "<title>"
+                grp_kind = "Title"
+            elif "og:title" in m_loc:
+                short_tag = "og:title"
+                grp_kind = "Title"
+            elif "twitter:title" in m_loc:
+                short_tag = "twitter:title"
+                grp_kind = "Title"
+            elif "og:description" in m_loc:
+                short_tag = "og:description"
+                grp_kind = "Description"
+            elif "twitter:description" in m_loc:
+                short_tag = "twitter:description"
+                grp_kind = "Description"
+            elif "description" in m_loc:
+                short_tag = "meta description"
+                grp_kind = "Description"
+            else:
+                short_tag = m_loc
+                grp_kind = "Meta"
+
+            gkey = (grp_kind, m_old, rec_tgt, w_res["short_note"])
+            if gkey not in meta_group_map:
+                gobj = {
+                    "kind": grp_kind,
+                    "tags": [short_tag],
+                    "old": m_old,
+                    "new": rec_tgt,
+                    "note": w_res["short_note"],
+                }
+                meta_group_map[gkey] = gobj
+                meta_groups.append(gobj)
+            else:
+                meta_group_map[gkey]["tags"].append(short_tag)
+
+        for g in meta_groups:
+            tag_cnt = len(g["tags"])
+            tags_str = ", ".join(html.escape(t) for t in g["tags"])
+            lbl = "Page Title Tags" if g["kind"] == "Title" else ("Meta Description Tags" if g["kind"] == "Description" else "Meta Tag")
+            cnt_pill = f" ({tag_cnt} tags)" if tag_cnt > 1 else ""
+            drawer_auto_rows.append(
+                f"<tr class='detail-item-auto'>"
+                f"<td><span class='badge b-auto'>Auto</span></td>"
+                f"<td><strong>{lbl}{cnt_pill}</strong><div class='sub-note'><code>{tags_str}</code></div></td>"
+                f"<td>{html.escape(g['old'])}</td>"
+                f"<td><strong>{html.escape(g['new'])}</strong></td>"
+                f"<td>{html.escape(g['note'])}</td>"
+                f"</tr>"
             )
-            meta_csv_parts.append(f"Meta #{idx} [AUTO] ({m_loc}) {w_res['char_check']}: \"{m_old}\" -> \"{w_res['recommended_auto_target']}\"")
-        auto_html_items.append(
-            f"<li><strong>Page <code>&lt;title&gt;</code> &amp; <code>&lt;meta&gt;</code> Tags ({len(meta_instances)} automated tags — Meta #1 to Meta #{len(meta_instances)}):</strong>"
-            f"{''.join(meta_lines)}</li>"
-        )
         auto_csv_items.append(f"[AUTO: TITLE & META ({len(meta_instances)})] " + " || ".join(meta_csv_parts))
 
     # C. Visible Body Copy Instances — Split into Automated vs. Manual WWSG Copy Edits
     if body_text_instances:
-        total_b = len(body_text_instances)
-        auto_body_entries = []
-        manual_body_entries = []
         auto_body_csv = []
         manual_body_csv = []
+        has_prior_full_name = bool(meta_instances)
 
         for idx, b in enumerate(body_text_instances, 1):
             b_idx = b.get("instance_num", idx)
             b_loc = b.get("location", "Body Copy")
-            b_term = b.get("matched_term", "")
             b_old = b.get("current_text", "")
             b_new = b.get("target_text", "")
             w_res = audit_wwsg_instance(b, u)
             b_loc = w_res.get("display_loc", b_loc)
             if w_res["used_si_short"]:
                 si_short_cnt += 1
-            si_opt = w_res["si_short_target"]
 
-            cc_color = "var(--amber)" if w_res["is_over"] else "var(--green)"
-            cc_html = f"<span style='color:{cc_color};font-size:11px;font-weight:600;margin-left:6px;'>• {html.escape(w_res['char_check'])}</span>"
-            flags_html = ""
+            # Check if this is a First-Mention Short CTA Button that needs a Surrounding Paragraph Context Bridge
+            needs_context_bridge = False
+            if w_res["is_cta_btn"] and w_res["used_si_short"] and not has_prior_full_name:
+                next_inst_txt = body_text_instances[idx].get("target_text", "") if idx < len(body_text_instances) else ""
+                if not ("process-mining.html" in u and "Super Intelligence Control Tower" in next_inst_txt):
+                    needs_context_bridge = True
+
+            if not w_res["used_si_short"]:
+                has_prior_full_name = True
+
             if w_res["flags"]:
                 fl_str = " ".join(w_res["flags"])
-                flags_html = f"<br><span style='color:var(--amber);font-size:11px;'><strong>WWSG Notes:</strong> {html.escape(fl_str)}</span>"
                 wwsg_csv_notes.append(f"Body #{b_idx}: {w_res['char_check']} {fl_str}")
             elif w_res["is_over"]:
                 wwsg_csv_notes.append(f"Body #{b_idx}: {w_res['char_check']}")
 
-            si_line = ""
-            if w_res["used_si_short"] and b_new != si_opt:
-                si_line = f"<br><span style='color:var(--muted);'>Full 32-char Candidate (overflows {w_res['limit']}-char cap):</span> <code>\"{html.escape(b_new)}\"</code> ({len(b_new)}/{w_res['limit']} chars ⚠️)"
-            elif si_opt != b_new and "business reinvention" not in b_old.lower():
-                si_line = f"<br><span style='color:var(--blue);'>Short Option (<code>SI Control Tower</code> — 0 char expansion):</span> <code>\"{html.escape(si_opt)}\"</code>"
-
-            rw_html = ""
-            if w_res["wwsg_rewrite"] and (w_res["needs_manual_copy"] or w_res["wwsg_rewrite"] != w_res["recommended_auto_target"]):
-                rw_html = (
-                    f"<br><span style='color:var(--green);font-weight:600;'>Recommended WWSG Rewrite {html.escape(w_res['wwsg_rewrite_badge'])}:</span> "
-                    f"<strong style='color:#93c5fd;'>\"{html.escape(w_res['wwsg_rewrite'])}\"</strong>"
-                )
-
             if w_res["needs_manual_copy"]:
                 manual_copy_cnt += 1
-                mode_badge = "<span class='badge b-w1' style='font-size:10px;padding:1px 6px;'>🛠️ MANUAL COPY EDIT</span>"
-                reason_line = f"<br><span style='color:var(--amber);font-size:11px;'><strong>Why Manual:</strong> {html.escape(w_res['manual_reason'])}</span>"
-                item_html = (
-                    f"<div style='margin-top:4px;padding-left:6px;border-left:2px solid var(--amber);'>"
-                    f"{mode_badge} <strong>Instance #{b_idx}</strong> (of {total_b}) <span style='color:var(--blue);font-weight:600;'>[{html.escape(b_loc)}]</span> "
-                    f"<span style='color:var(--muted);font-size:11px;'>(matched <code>{html.escape(b_term)}</code>)</span>{cc_html}:<br>"
-                    f"<span style='color:var(--muted);'>Current:</span> <code>\"{html.escape(b_old)}\"</code><br>"
-                    f"<span style='color:var(--green);'>Full Target:</span> <strong>\"{html.escape(b_new)}\"</strong>"
-                    f"{si_line}{reason_line}{flags_html}{rw_html}</div>"
-                )
-                manual_body_entries.append(item_html)
                 rec_txt = w_res["wwsg_rewrite"] or w_res["recommended_auto_target"]
+                note_txt = f"{w_res['comp_name']}: {w_res['wwsg_rewrite_badge']} (Trimmed from {len(b_new)} chars)"
+                drawer_manual_rows.append(
+                    f"<tr class='detail-item-manual'>"
+                    f"<td><span class='badge b-manual'>Manual</span></td>"
+                    f"<td><strong>{html.escape(b_loc)}</strong><div class='sub-note'>Copy edit for WWSG character limit</div></td>"
+                    f"<td>{html.escape(b_old)}</td>"
+                    f"<td><strong>{html.escape(rec_txt)}</strong></td>"
+                    f"<td>{html.escape(note_txt)}</td>"
+                    f"</tr>"
+                )
                 manual_body_csv.append(f"#{b_idx} [MANUAL_COPY | {b_loc}] \"{b_old}\" -> \"{rec_txt}\"")
             else:
                 auto_text_meta_alt_cnt += 1
-                if w_res["used_si_short"]:
-                    mode_badge = "<span class='badge b-ok' style='font-size:10px;padding:1px 6px;'>🤖 AUTO SWAP (Uses 'SI Control Tower')</span>"
-                else:
-                    mode_badge = "<span class='badge b-ok' style='font-size:10px;padding:1px 6px;'>🤖 AUTO SWAP</span>"
-                item_html = (
-                    f"<div style='margin-top:4px;padding-left:6px;border-left:2px solid var(--blue);'>"
-                    f"{mode_badge} <strong>Instance #{b_idx}</strong> (of {total_b}) <span style='color:var(--blue);font-weight:600;'>[{html.escape(b_loc)}]</span> "
-                    f"<span style='color:var(--muted);font-size:11px;'>(matched <code>{html.escape(b_term)}</code>)</span>{cc_html}:<br>"
-                    f"<span style='color:var(--muted);'>Current:</span> <code>\"{html.escape(b_old)}\"</code><br>"
-                    f"<span style='color:var(--green);'>Automated Target:</span> <strong>\"{html.escape(w_res['recommended_auto_target'])}\"</strong>"
-                    f"{si_line}{flags_html}{rw_html}</div>"
+                rec_auto = w_res["recommended_auto_target"]
+                note_txt = w_res["short_note"]
+                if needs_context_bridge:
+                    note_txt += " • Paired with Manual Context Bridge below"
+                drawer_auto_rows.append(
+                    f"<tr class='detail-item-auto'>"
+                    f"<td><span class='badge b-auto'>Auto</span></td>"
+                    f"<td><strong>{html.escape(b_loc)}</strong></td>"
+                    f"<td>{html.escape(b_old)}</td>"
+                    f"<td><strong>{html.escape(rec_auto)}</strong></td>"
+                    f"<td>{html.escape(note_txt)}</td>"
+                    f"</tr>"
                 )
-                auto_body_entries.append(item_html)
                 m_tag = "AUTO_SI_SHORT" if w_res["used_si_short"] else "AUTO_FULL"
-                auto_body_csv.append(f"#{b_idx} [{m_tag} | {b_loc}] \"{b_old}\" -> \"{w_res['recommended_auto_target']}\"")
+                auto_body_csv.append(f"#{b_idx} [{m_tag} | {b_loc}] \"{b_old}\" -> \"{rec_auto}\"")
 
-        if auto_body_entries:
-            is_flagship = ("products/ai-control-tower.html" in u or "contact-us-aict.html" in u)
-            if len(auto_body_entries) <= 6 or is_flagship:
-                auto_html_items.append(
-                    f"<li><strong>Automated Body Copy, Headings, Cards &amp; Breadcrumbs ({len(auto_body_entries)} of {total_b} body instances):</strong>"
-                    f"{''.join(auto_body_entries)}</li>"
-                )
-            else:
-                shown = auto_body_entries[:5]
-                rest = auto_body_entries[5:]
-                extra_html = (
-                    f"<details style='margin-top:5px;cursor:pointer;'>"
-                    f"<summary style='color:var(--blue);font-weight:600;'>+ Show all remaining {len(rest)} automated body copy instances on this page</summary>"
-                    f"<div style='margin-top:4px;'>{''.join(rest)}</div></details>"
-                )
-                auto_html_items.append(
-                    f"<li><strong>Automated Body Copy, Headings, Cards &amp; Breadcrumbs ({len(auto_body_entries)} of {total_b} body instances):</strong>"
-                    f"{''.join(shown)}{extra_html}</li>"
-                )
-            auto_csv_items.append(f"[AUTO: BODY INSTANCES ({len(auto_body_entries)})] " + " || ".join(auto_body_csv))
+            # Queue Surrounding Paragraph Context Bridge if needed
+            if needs_context_bridge:
+                manual_copy_cnt += 1
+                cta_lbl = w_res["recommended_auto_target"]
+                u_clean = u.rstrip("/")
+                is_homepage = (cat == "Homepage" or u_clean == "https://www.servicenow.com" or re.match(r"^https://www\.servicenow\.com/[a-z]{2}(?:-[a-z]{2})?$", u_clean))
+                is_en_page = (loc_code in ("us", "uk", "au", "in", "en-US", "en-GB", "en-AU", "en-IN"))
+                if is_homepage:
+                    cur_para = "Most companies have AI. Few have the data to ground it, the workflows to deploy it, and the security to govern it. ServiceNow® is the only platform built for all of it, so AI doesn't just think. It acts."
+                    opt_1a = "Most companies have AI. Few have the data to ground it, the workflows to deploy it, and the security to govern it. ServiceNow® unites all of it in the Super Intelligence Control Tower—so AI doesn't just think. It acts."
+                    opt_1b = "Most companies have AI. Few have the data to ground it, the workflows to deploy it, and the security to govern it. ServiceNow® is the only platform built for all of it—turning AI into Super Intelligence (SI) that acts."
+                    loc_sub = "" if is_en_page else f" (Translate into {loc_code.upper()} above localized CTA)"
+                    drawer_manual_rows.append(
+                        f"<tr class='detail-item-manual'>"
+                        f"<td><span class='badge b-manual'>Manual</span></td>"
+                        f"<td><strong>Hero Lead Paragraph (Context Bridge)</strong><div class='sub-note'>Introduces Super Intelligence before \"{html.escape(cta_lbl)}\" CTA{html.escape(loc_sub)}</div></td>"
+                        f"<td>{html.escape(cur_para)}</td>"
+                        f"<td><strong>Option 1A (Recommended):</strong> {html.escape(opt_1a)}<div class='sub-note' style='margin-top:4px;'><strong>Option 1B (Alt):</strong> {html.escape(opt_1b)}</div></td>"
+                        f"<td>219 chars • Bridges AI &rarr; Super Intelligence</td>"
+                        f"</tr>"
+                    )
+                    manual_body_csv.append(
+                        f"Context Bridge for #{b_idx} [MANUAL_COPY | Hero Lead Paragraph (<arc-heading-block> > <p>)] "
+                        f"Current: \"{cur_para}\" -> Option 1A: \"{opt_1a}\" (or Option 1B: \"{opt_1b}\") [Paired with CTA \"{cta_lbl}\"]"
+                    )
+                elif "it-asset-management.html" in u:
+                    cur_para = "Compare AI and machine learning cloud spending across providers. Monitor AI performance metrics to reduce risk and support ethical and regulatory compliance."
+                    opt_1a = "Compare AI and machine learning cloud spending across providers. Monitor AI performance with Super Intelligence Control Tower to reduce risk and support compliance."
+                    opt_1b = "Compare AI and machine learning cloud spending across providers. Monitor Super Intelligence (SI) performance metrics to reduce risk and support ethical and regulatory compliance."
+                    drawer_manual_rows.append(
+                        f"<tr class='detail-item-manual'>"
+                        f"<td><span class='badge b-manual'>Manual</span></td>"
+                        f"<td><strong>Feature Tab Paragraph (Context Bridge)</strong><div class='sub-note'>Introduces Super Intelligence before \"{html.escape(cta_lbl)}\" CTA</div></td>"
+                        f"<td>{html.escape(cur_para)}</td>"
+                        f"<td><strong>Option 1A (Recommended):</strong> {html.escape(opt_1a)}<div class='sub-note' style='margin-top:4px;'><strong>Option 1B (Alt):</strong> {html.escape(opt_1b)}</div></td>"
+                        f"<td>164/200 chars • Bridges AI &rarr; Super Intelligence</td>"
+                        f"</tr>"
+                    )
+                    manual_body_csv.append(
+                        f"Context Bridge for #{b_idx} [MANUAL_COPY | Feature Tab Paragraph (<arc-feature> > <p>)] "
+                        f"Current: \"{cur_para}\" -> Option 1A: \"{opt_1a}\" [Paired with CTA \"{cta_lbl}\"]"
+                    )
+                else:
+                    cur_para = "Ground AI decisions in your policies and rules, enforced automatically with explainable audit trails and manual approval when needed."
+                    opt_1a = "Ground AI decisions in your policies and rules with Super Intelligence Control Tower—enforced automatically with explainable audit trails and manual approval when needed."
+                    opt_1b = "Ground Super Intelligence (SI) decisions in your policies and rules, enforced automatically with explainable audit trails and manual approval when needed."
+                    drawer_manual_rows.append(
+                        f"<tr class='detail-item-manual'>"
+                        f"<td><span class='badge b-manual'>Manual</span></td>"
+                        f"<td><strong>Card Paragraph (Context Bridge)</strong><div class='sub-note'>Introduces Super Intelligence before \"{html.escape(cta_lbl)}\" CTA</div></td>"
+                        f"<td>{html.escape(cur_para)}</td>"
+                        f"<td><strong>Option 1A (Recommended):</strong> {html.escape(opt_1a)}<div class='sub-note' style='margin-top:4px;'><strong>Option 1B (Alt):</strong> {html.escape(opt_1b)}</div></td>"
+                        f"<td>170/200 chars • Bridges AI &rarr; Super Intelligence</td>"
+                        f"</tr>"
+                    )
+                    manual_body_csv.append(
+                        f"Context Bridge for #{b_idx} [MANUAL_COPY | Card Paragraph (<arc-card> > <p>)] "
+                        f"Current: \"{cur_para}\" -> Option 1A: \"{opt_1a}\" [Paired with CTA \"{cta_lbl}\"]"
+                    )
 
-        if manual_body_entries:
-            manual_reasons.append(f"Copy Edit ({manual_copy_cnt} WWSG / FAQ / Marquee items)")
+        if auto_body_csv:
+            auto_csv_items.append(f"[AUTO: BODY INSTANCES ({len(auto_body_csv)})] " + " || ".join(auto_body_csv))
+        if manual_body_csv:
+            manual_reasons.append(f"Copy Edit ({manual_copy_cnt})")
             manual_filter_tags.add("m-copy")
-            manual_html_items.append(
-                f"<li><strong>Manual WWSG Copy Edits ({len(manual_body_entries)} of {total_b} body instances — pre-existing copy over WWSG char cap):</strong>"
-                f"{''.join(manual_body_entries)}</li>"
-            )
-            manual_csv_items.append(f"[MANUAL: WWSG COPY EDITS ({len(manual_body_entries)})] " + " || ".join(manual_body_csv))
+            manual_csv_items.append(f"[MANUAL: WWSG COPY EDITS ({len(manual_body_csv)})] " + " || ".join(manual_body_csv))
 
     elif body_ai_ct > 0 or raw_loc > 0 or raw_aict > 0:
         cnt = max(1, body_ai_ct + raw_loc + raw_aict)
         auto_text_meta_alt_cnt += cnt
-        auto_html_items.append(
-            f"<li><span class='badge b-ok'>🤖 AUTO SWAP</span> <strong>On-Page Body Component / Card Copy ({cnt} instance{'s' if cnt != 1 else ''}):</strong> Update <code>AI Control Tower</code> / <code>AICT</code> &rarr; <strong>Super Intelligence Control Tower</strong> (or <strong>SI Control Tower</strong> on tight UI cards).</li>"
+        drawer_auto_rows.append(
+            f"<tr class='detail-item-auto'>"
+            f"<td><span class='badge b-auto'>Auto</span></td>"
+            f"<td><strong>Body Component / Card Copy ({cnt}x)</strong></td>"
+            f"<td>AI Control Tower / AICT</td>"
+            f"<td><strong>Super Intelligence Control Tower</strong> (or <strong>SI Control Tower</strong> on tight UI cards)</td>"
+            f"<td>Automated text swap</td>"
+            f"</tr>"
         )
         auto_csv_items.append(f"[AUTO: BODY COMPONENT COPY ({cnt}x)] Update AI Control Tower / AICT -> 'Super Intelligence Control Tower' or 'SI Control Tower'")
 
-    # D. In-Body Anchor Links & Component Data Attributes (Automated)
+    # D. In-Body Anchor Links & Component Data Attributes (Automated — Deduplicated by href pair)
     if body_slug_links or data_attr_instances or body_slug > 0:
-        link_lines = []
         link_csv_parts = []
+        link_groups = []
+        link_group_map = {}
         for idx, lk in enumerate(body_slug_links, 1):
             if isinstance(lk, (list, tuple)) and len(lk) >= 3:
                 lk_tag, lk_attr, lk_old = lk[0], lk[1], lk[2]
@@ -1102,25 +1167,44 @@ def build_split_page_breakdowns(r):
                 lk_new = lk.get("new_href", "")
             else:
                 continue
-            lk_old_clickable = a_link(full_url(lk_old), lk_old, 'var(--blue)') if (lk_old.startswith("/") or lk_old.startswith("http")) else f"<code>{html.escape(lk_old)}</code>"
-            link_lines.append(
-                f"<div style='margin-top:3px;padding-left:6px;border-left:2px solid var(--border);'>"
-                f"<span class='badge b-ok' style='font-size:10px;padding:1px 6px;'>🤖 AUTO LINK SWAP</span> <strong>Link #{idx}</strong> <code>&lt;{html.escape(lk_tag)} {html.escape(lk_attr)}=...&gt;</code>:<br>"
-                f"{lk_old_clickable} &rarr; <code>{html.escape(lk_new)}</code></div>"
-            )
             link_csv_parts.append(f"Link #{idx} [AUTO] (<{lk_tag} {lk_attr}>): {lk_old} -> {lk_new}")
-        if body_slug > 0:
-            link_lines.append(
-                f"<div style='margin-top:3px;color:var(--muted);'>• Total in-page <code>ai-control-tower</code> slug references: <strong>{body_slug}</strong> (automated via Groovy link rule).</div>"
+            lkey = (lk_old, lk_new)
+            if lkey not in link_group_map:
+                lobj = {"old": lk_old, "new": lk_new, "count": 1, "tag": f"<{lk_tag} {lk_attr}>"}
+                link_group_map[lkey] = lobj
+                link_groups.append(lobj)
+            else:
+                link_group_map[lkey]["count"] += 1
+
+        for lg in link_groups:
+            lk_old = lg["old"]
+            lk_new = lg["new"]
+            c_str = f" ({lg['count']}x)" if lg["count"] > 1 else ""
+            lk_old_clickable = a_link(full_url(lk_old), lk_old) if (lk_old.startswith("/") or lk_old.startswith("http")) else f"<code>{html.escape(lk_old)}</code>"
+            drawer_auto_rows.append(
+                f"<tr class='detail-item-auto'>"
+                f"<td><span class='badge b-auto'>Auto</span></td>"
+                f"<td><strong>In-Body Link Href{c_str}</strong><div class='sub-note'><code>{html.escape(lg['tag'])}</code></div></td>"
+                f"<td class='mono'>{lk_old_clickable}</td>"
+                f"<td class='mono'><code>{html.escape(lk_new)}</code></td>"
+                f"<td>Automated link path update</td>"
+                f"</tr>"
             )
+        if not link_groups and body_slug > 0:
+            drawer_auto_rows.append(
+                f"<tr class='detail-item-auto'>"
+                f"<td><span class='badge b-auto'>Auto</span></td>"
+                f"<td><strong>In-Page Slug References ({body_slug}x)</strong></td>"
+                f"<td class='mono'><code>.../ai-control-tower...</code></td>"
+                f"<td class='mono'><code>.../super-intelligence-control-tower...</code></td>"
+                f"<td>Automated link path update</td>"
+                f"</tr>"
+            )
+        if body_slug > 0:
             link_csv_parts.append(f"Total in-page slug refs ({body_slug}x) [AUTO]: ai-control-tower -> super-intelligence-control-tower")
-        auto_html_items.append(
-            f"<li><strong>Automated In-Body CTA Links &amp; Slug References ({len(body_slug_links)} in-body links, {body_slug} total slug refs):</strong>"
-            f"{''.join(link_lines)}</li>"
-        )
         auto_csv_items.append("[AUTO: LINKS & SLUG REFS] " + " || ".join(link_csv_parts))
 
-    # E. On-Page DAM Images & HTML alt Attributes — Split into Auto (alt swaps + 0-pixel DAM moves) vs. Manual (Baked-In Images)
+    # E. On-Page DAM Images & HTML alt Attributes
     auto_imgs = []
     baked_imgs = []
     for im in imgs:
@@ -1136,115 +1220,102 @@ def build_split_page_breakdowns(r):
                 auto_imgs.append(fim)
 
     if auto_imgs or alt_instances:
-        auto_img_lines = []
+        alt_csv_parts = []
         for idx, im in enumerate(auto_imgs, 1):
             fim = full_url(im)
-            auto_img_lines.append(
-                f"<div style='margin-top:3px;'>🖼️ <strong>Auto DAM Image #{idx}:</strong> {a_link(fim, None, 'var(--purple)')} "
-                f"<span class='badge b-ok'>🤖 AUTO DAM MOVE</span> <strong>[0 Baked Pixels — Rename DAM file slug + 301]</strong></div>"
+            new_fim = re.sub(r"(?i)ai-control-tower|aict", "super-intelligence-control-tower", fim)
+            drawer_auto_rows.append(
+                f"<tr class='detail-item-auto'>"
+                f"<td><span class='badge b-auto'>Auto</span></td>"
+                f"<td><strong>DAM Image Filename Move #{idx}</strong><div class='sub-note'>0 baked-in pixels (verified by OCR)</div></td>"
+                f"<td class='mono'>{a_link(fim)}</td>"
+                f"<td class='mono'><code>{html.escape(new_fim)}</code></td>"
+                f"<td>Automated DAM rename + 301</td>"
+                f"</tr>"
             )
-        alt_html = ""
-        alt_csv_parts = []
-        if alt_instances:
-            alt_items_html = []
-            for a_idx, a_obj in enumerate(alt_instances, 1):
-                a_loc = a_obj.get("location", "<arc-image alt=\"...\">")
-                a_old = a_obj.get("current_text", "")
-                w_res = audit_wwsg_instance(a_obj, u)
-                if w_res["used_si_short"]:
-                    si_short_cnt += 1
-                auto_text_meta_alt_cnt += 1
-                best_alt = w_res["wwsg_rewrite"] or w_res["recommended_auto_target"]
-                mode_badge = "<span class='badge b-ok' style='font-size:10px;padding:1px 6px;'>🤖 AUTO ALT SWAP</span>"
-                cc_color = "var(--amber)" if w_res["is_over"] else "var(--green)"
-                cc_html = f"<span style='color:{cc_color};font-size:11px;font-weight:600;margin-left:6px;'>• {html.escape(w_res['char_check'])}</span>"
-                alt_items_html.append(
-                    f"<div style='margin-top:3px;padding-left:6px;border-left:2px solid var(--purple);'>"
-                    f"{mode_badge} <strong>Alt #{a_idx}</strong> (<code>{html.escape(a_loc)}</code>){cc_html}:<br>"
-                    f"<span style='color:var(--muted);'>Current:</span> <code>alt=\"{html.escape(a_old)}\"</code><br>"
-                    f"<span style='color:var(--green);'>Recommended Target (≤125 chars ✓):</span> <strong>alt=\"{html.escape(best_alt)}\"</strong></div>"
-                )
-                alt_csv_parts.append(f"Alt #{a_idx} [AUTO] ({len(best_alt)}/125 chars): \"{a_old}\" -> \"{best_alt}\"")
-            alt_html = (
-                f"<div style='margin-top:5px;'><strong>Automated Image <code>alt</code> Attributes ({len(alt_instances)} tags — Alt #1 to Alt #{len(alt_instances)}):</strong>"
-                f"{''.join(alt_items_html)}</div>"
+        for a_idx, a_obj in enumerate(alt_instances, 1):
+            a_loc = a_obj.get("location", "<arc-image alt=\"...\">")
+            a_old = a_obj.get("current_text", "")
+            w_res = audit_wwsg_instance(a_obj, u)
+            if w_res["used_si_short"]:
+                si_short_cnt += 1
+            auto_text_meta_alt_cnt += 1
+            best_alt = w_res["wwsg_rewrite"] or w_res["recommended_auto_target"]
+            drawer_auto_rows.append(
+                f"<tr class='detail-item-auto'>"
+                f"<td><span class='badge b-auto'>Auto</span></td>"
+                f"<td><strong>Image Alt Text #{a_idx}</strong><div class='sub-note'><code>{html.escape(a_loc)}</code></div></td>"
+                f"<td>{html.escape(a_old)}</td>"
+                f"<td><strong>{html.escape(best_alt)}</strong></td>"
+                f"<td>Alt text: {len(best_alt)}/125 chars</td>"
+                f"</tr>"
             )
-        auto_html_items.append(
-            f"<li><strong>Automated DAM Image Moves ({len(auto_imgs)}) &amp; HTML <code>alt</code> Attributes ({len(alt_instances)}):</strong>{''.join(auto_img_lines)}{alt_html}</li>"
-        )
+            alt_csv_parts.append(f"Alt #{a_idx} [AUTO] ({len(best_alt)}/125 chars): \"{a_old}\" -> \"{best_alt}\"")
         auto_csv_items.append(
             f"[AUTO: IMAGES ({len(auto_imgs)}) & ALT INSTANCES ({len(alt_instances)})] "
             f"Auto Imgs: {', '.join(full_url(i) for i in auto_imgs)} | Alts: {' || '.join(alt_csv_parts)}"
         )
 
     if baked_imgs:
-        manual_reasons.append(f"Baked-In Image Re-render ({len(baked_imgs)})")
+        manual_reasons.append(f"Baked-In Image ({len(baked_imgs)})")
         manual_filter_tags.add("m-img")
-        baked_lines = []
         baked_csv_parts = []
         for idx, fim in enumerate(baked_imgs, 1):
             minfo = MASTER_IMAGES_MAP.get(fim, {})
             ocr_disp = clean_ocr_display(minfo.get("matched_ocr_lines", []))
             dims = f"{minfo.get('width', 0)}×{minfo.get('height', 0)}" if minfo.get("width") else "Image"
             kb = f"{minfo.get('bytes', 0)//1024:,} KB" if minfo.get("bytes") else ""
-            spec_str = f" ({dims}{', ' + kb if kb else ''})" if dims != "Image" else ""
-            slug_note = " + <strong>301 Rename DAM Slug</strong>" if minfo.get("has_aict_slug") else " (Keep existing generic filename)"
-            detail = (
-                f"<strong>Vision OCR Match{spec_str}:</strong> <code>\"{html.escape(ocr_disp)}\"</code> baked into image pixels — "
-                f"re-render/retouch graphic text to <em>\"Super Intelligence Control Tower\"</em> (or <em>\"SI Control Tower\"</em>){slug_note}."
-            )
-            baked_lines.append(
-                f"<div style='margin-top:3px;padding-left:6px;border-left:2px solid var(--amber);'>"
-                f"🖼️ <span class='badge b-w1'>🛠️ MANUAL DESIGN RE-RENDER</span> <strong>Baked-In Image #{idx}:</strong> {a_link(fim, None, 'var(--purple)')}<br>"
-                f"<span style='color:var(--muted);font-size:11.5px;'>{detail}</span></div>"
+            spec_str = f"{dims}{', ' + kb if kb else ''}"
+            slug_note = "Re-render graphic text + rename DAM slug (301)" if minfo.get("has_aict_slug") else "Re-render graphic text in-place (keep generic filename)"
+            drawer_manual_rows.append(
+                f"<tr class='detail-item-manual'>"
+                f"<td><span class='badge b-manual'>Manual</span></td>"
+                f"<td><strong>Baked-In Graphic #{idx}</strong><div class='sub-note'>{html.escape(spec_str)}</div></td>"
+                f"<td class='mono'>{a_link(fim)}<div class='sub-note'>OCR: \"{html.escape(ocr_disp)}\"</div></td>"
+                f"<td>Update graphic text to <strong>Super Intelligence Control Tower</strong> (or <strong>SI Control Tower</strong>)</td>"
+                f"<td>{html.escape(slug_note)}</td>"
+                f"</tr>"
             )
             baked_csv_parts.append(f"{fim} (OCR: \"{ocr_disp}\")")
-        manual_html_items.append(
-            f"<li><strong>Manual Baked-In Image Re-renders ({len(baked_imgs)} asset{'s' if len(baked_imgs) != 1 else ''}):</strong>{''.join(baked_lines)}</li>"
-        )
         manual_csv_items.append(f"[MANUAL: BAKED-IN IMAGES ({len(baked_imgs)})] " + " | ".join(baked_csv_parts))
-
 
     # F. Linked Non-FAQ PDFs with Internal Matches (Manual)
     live_pdfs = [p for p in pdfs if pdf_match_lookup.get(p, (0,))[0] > 0 or "ds-ai-control-tower" in p]
     if live_pdfs:
         manual_reasons.append(f"PDF Update ({len(live_pdfs)})")
         manual_filter_tags.add("m-pdf")
-        pdf_lines = []
         for idx, p in enumerate(live_pdfs, 1):
             m_info = pdf_match_lookup.get(p)
             if m_info and m_info[0] > 0:
                 m_cnt, p_pages, _ = m_info
-                pdf_lines.append(
-                    f"<div style='margin-top:3px;padding-left:6px;border-left:2px solid var(--amber);'>"
-                    f"📄 <span class='badge b-w1'>🛠️ MANUAL PDF UPDATE</span> <strong>PDF #{idx}:</strong> {a_link(p, None, 'var(--amber)')} — "
-                    f"<strong>{m_cnt} matches across {p_pages} PDF pages</strong> (re-export source PDF &amp; configure DAM 301 redirect).</div>"
-                )
+                p_note = f"{m_cnt} matches across {p_pages} PDF pages • Re-export & 301"
             else:
-                pdf_lines.append(
-                    f"<div style='margin-top:3px;padding-left:6px;border-left:2px solid var(--amber);'>"
-                    f"📄 <span class='badge b-w1'>🛠️ MANUAL PDF UPDATE</span> <strong>PDF #{idx}:</strong> {a_link(p, None, 'var(--amber)')} — "
-                    f"Update datasheet copy &amp; filename slug.</div>"
-                )
-        manual_html_items.append(f"<li><strong>Manual Linked DAM PDF Updates ({len(live_pdfs)}):</strong>{''.join(pdf_lines)}</li>")
+                p_note = "Update datasheet copy & filename slug"
+            drawer_manual_rows.append(
+                f"<tr class='detail-item-manual'>"
+                f"<td><span class='badge b-manual'>Manual</span></td>"
+                f"<td><strong>Linked PDF Document #{idx}</strong></td>"
+                f"<td class='mono'>{a_link(p)}</td>"
+                f"<td>Update internal PDF text &amp; metadata to <strong>Super Intelligence Control Tower</strong></td>"
+                f"<td>{html.escape(p_note)}</td>"
+                f"</tr>"
+            )
         manual_csv_items.append(f"[MANUAL: LINKED PDFS ({len(live_pdfs)})] " + ", ".join(live_pdfs))
 
     # G. Localized Flagship Native Grammar Review (Manual L10n Task on 10 non-English flagship pages)
     if loc_code in ("de", "fr", "fr-ca", "es", "latam", "br", "it", "nl", "jp", "kr") and "products/ai-control-tower.html" in u:
-        manual_reasons.append("L10n Native Grammar Review")
+        manual_reasons.append("L10n Review")
         manual_filter_tags.add("m-l10n")
-        manual_html_items.append(
-            f"<li><span class='badge b-w2'>🛠️ MANUAL L10N REVIEW</span> <strong>Localized Flagship Native Grammar Check (<code>{loc_code.upper()}</code>):</strong> "
-            f"Verify gender/article agreement and compound noun inflections on translated flagship headings and FAQs after automated AEM script run.</li>"
+        drawer_manual_rows.append(
+            f"<tr class='detail-item-manual'>"
+            f"<td><span class='badge b-manual'>Manual</span></td>"
+            f"<td><strong>Localized Grammar Review ({loc_code.upper()})</strong></td>"
+            f"<td>Translated Flagship Product Page</td>"
+            f"<td>Verify gender/article agreement and compound noun inflections on translated headings &amp; FAQs</td>"
+            f"<td>Post-script L10n QA</td>"
+            f"</tr>"
         )
         manual_csv_items.append(f"[MANUAL: L10N GRAMMAR REVIEW ({loc_code.upper()})] Verify gender/article agreement on translated flagship page")
-
-    # H. Sitewide Chrome Note (Automated via XF)
-    if ch > 0:
-        auto_html_items.append(
-            f"<li style='color:var(--muted);'><span class='badge b-ok' style='font-size:10px;padding:1px 6px;'>🤖 AUTO VIA XF</span> "
-            f"<strong>Sitewide Chrome ({ch} matches):</strong> Global Navigation Mega-Menu XF + Header Search Prompt JSON (auto-updated in Wave 1).</li>"
-        )
 
     auto_edit_count = auto_text_meta_alt_cnt + auto_link_cnt + len(auto_imgs)
     if auto_edit_count == 0:
@@ -1258,8 +1329,19 @@ def build_split_page_breakdowns(r):
         + (1 if "m-l10n" in manual_filter_tags else 0)
     )
 
-    auto_html = f"<ul style='margin:4px 0 0 16px;padding:0;font-size:12px;line-height:1.45;'>{''.join(auto_html_items)}</ul>" if auto_html_items else "<div style='color:var(--muted);font-size:12px;'>No page-level automated items</div>"
-    manual_html = f"<ul style='margin:4px 0 0 16px;padding:0;font-size:12px;line-height:1.45;'>{''.join(manual_html_items)}</ul>" if manual_html_items else "<div style='color:var(--muted);font-size:12px;'>0 manual tasks required</div>"
+    all_drawer_rows = "".join(drawer_auto_rows + drawer_manual_rows)
+    drawer_table_html = (
+        f"<table class='mini-table'>"
+        f"<thead><tr>"
+        f"<th style='width:8%;'>Track</th>"
+        f"<th style='width:22%;'>Element / Location</th>"
+        f"<th style='width:27%;'>Current (Live)</th>"
+        f"<th style='width:27%;'>New Target (Approved)</th>"
+        f"<th style='width:16%;'>Limit &amp; Notes</th>"
+        f"</tr></thead>"
+        f"<tbody>{all_drawer_rows}</tbody>"
+        f"</table>"
+    )
 
     auto_csv_str = " ; ".join(auto_csv_items) if auto_csv_items else "None"
     manual_csv_str = " ; ".join(manual_csv_items) if manual_csv_items else "None (100% Automated)"
@@ -1268,14 +1350,16 @@ def build_split_page_breakdowns(r):
 
     return {
         "is_fully_auto": (manual_task_count == 0),
-        "auto_html": auto_html,
+        "drawer_table_html": drawer_table_html,
+        "drawer_row_count": len(drawer_auto_rows) + len(drawer_manual_rows),
+        "drawer_auto_row_count": len(drawer_auto_rows),
+        "drawer_manual_row_count": len(drawer_manual_rows),
         "auto_csv": auto_csv_str,
         "auto_edit_count": auto_edit_count,
         "auto_text_meta_alt_cnt": auto_text_meta_alt_cnt,
         "auto_link_cnt": auto_link_cnt,
         "auto_img_cnt": len(auto_imgs),
         "si_short_cnt": si_short_cnt,
-        "manual_html": manual_html,
         "manual_csv": manual_csv_str,
         "manual_task_count": manual_task_count,
         "manual_copy_cnt": manual_copy_cnt,
@@ -1600,15 +1684,14 @@ with open(OUT_CSV, "w", newline="", encoding="utf-8") as f:
     w.writerows(csv_rows)
 
 # ---------------------------------------------------------------------------
-# 7. Build Interactive HTML Table Rows for Tab 1 (Automated Updates) & Tab 2 (Manual Updates)
+# 7. Build Unified Collapsible Page Rows for #pagesTable (Supports All, Auto Only, and Manual Only views)
 # ---------------------------------------------------------------------------
-auto_table_rows_html = []
-manual_table_rows_html = []
+pages_table_rows_html = []
 
 manual_wave_counts = {"w1": 0, "w2": 0, "w3": 0}
 manual_type_counts = {"m-copy": 0, "m-slug": 0, "m-img": 0, "m-pdf": 0, "m-l10n": 0}
 
-for r in unique_body_pages:
+for page_idx, r in enumerate(unique_body_pages, 1):
     u = full_url(r["url"])
     title_str = html.escape(r["title_clean"] or "(No Title)")
     an = r["an"]
@@ -1625,143 +1708,103 @@ for r in unique_body_pages:
     else:
         wave_badge = '<span class="badge b-w3">Wave 3</span>'
 
-    loc_badge = f'<span class="badge {loc_cls}" style="margin-left:4px;">{loc_lbl}</span>'
-    cat_badge = f'<span class="badge b-warn" style="margin-top:4px;display:inline-block;">{html.escape(an["category"])}</span>'
+    loc_badge = f'<span class="badge b-loc" style="margin-left:4px;">{loc_lbl}</span>'
 
     visits_val = an["ytd_visits"]
     conv_val = an["ytd_conversions"]
     fcr_val = an["ytd_fcr"] * 100
     rank_val = an["ytd_rank"]
     p_score = an["prio_score"]
-    sv_val = an["strategic_visibility"]
-    urg_val = an["urgency"]
     en_base_v = an.get("en_baseline_visits", 0)
-    en_base_c = an.get("en_baseline_conversions", 0)
     en_base_p = an.get("en_baseline_prio_score", p_score)
 
     if visits_val > 0:
+        rank_str = f" • Rank #{rank_val:,}" if rank_val else ""
         analytics_html = (
-            f"<div style='font-size:14px;font-weight:700;color:var(--green);'>{visits_val:,} <span style='font-size:11px;font-weight:400;color:var(--muted);'>US YTD Visits</span></div>"
-            f"<div style='font-size:12.5px;font-weight:600;color:var(--amber);margin-top:2px;'>{conv_val:,} <span style='font-size:11px;font-weight:400;color:var(--muted);'>Form Conv ({fcr_val:.1f}% FCR)</span></div>"
-            f"<div style='font-size:11px;color:var(--muted);margin-top:4px;'>"
-            f"• <strong>Priority Score:</strong> <strong style='color:var(--text);'>{p_score:.2f}</strong> (Vis={sv_val}, Urg={urg_val})<br>"
-            f"{f'• <strong>Site Traffic Rank:</strong> #{rank_val:,}' if rank_val else ''}"
-            f"</div>"
+            f"<div class='metric-main'>{visits_val:,} visits</div>"
+            f"<div class='sub-note'>{conv_val:,} conv ({fcr_val:.1f}%) • Score {p_score:.2f}{rank_str}</div>"
         )
     elif loc_code != "us":
-        parent_vis_line = f"• <strong>US Parent Visits:</strong> <strong style='color:var(--green);'>{en_base_v:,}</strong> ({en_base_c:,} conv)<br>" if en_base_v > 0 else ""
+        parent_str = f"US parent: {en_base_v:,} visits • " if en_base_v > 0 else ""
         analytics_html = (
-            f"<div style='font-size:12.5px;font-weight:700;color:var(--blue);'>{loc_lbl} Regional Counterpart</div>"
-            f"<div style='font-size:11px;color:var(--muted);margin-top:3px;line-height:1.45;'>"
-            f"• <strong>Included by Content Need:</strong> Regional traffic is not in US workbook; included because page has live AICT instances.<br>"
-            f"{parent_vis_line}"
-            f"• <strong>Inherited Wave Score:</strong> {en_base_p:.2f} (Vis={sv_val}, Urg={urg_val})"
-            f"</div>"
+            f"<div class='metric-reg'>{loc_lbl} Regional Page</div>"
+            f"<div class='sub-note'>{parent_str}Score {en_base_p:.2f}</div>"
         )
     else:
         analytics_html = (
-            f"<div style='font-size:12px;color:var(--muted);'>0 Tracked US Workbook Visits</div>"
-            f"<div style='font-size:11px;color:var(--muted);margin-top:3px;'>"
-            f"• <strong>Included by Content Need</strong> (Live DOM matches)<br>"
-            f"• <strong>Priority Score:</strong> {p_score:.2f} (Vis={sv_val}, Urg={urg_val})"
-            f"</div>"
+            f"<div class='metric-reg'>Included by Match</div>"
+            f"<div class='sub-note'>Score {p_score:.2f}</div>"
         )
 
-    # --- TAB 1 ROW: AUTOMATED UPDATES ---
-    if sp["is_fully_auto"]:
-        auto_mode_badge = '<span class="badge b-ok" style="margin-top:4px;display:inline-block;">🤖 100% Automated Page</span>'
-        auto_cross_badge = '<div style="margin-top:4px;font-size:11px;color:var(--muted);">✓ 0 Manual Tasks Needed</div>'
-        auto_exec_attr = "pure-auto"
-    else:
-        auto_mode_badge = '<span class="badge b-ok" style="margin-top:4px;display:inline-block;">🤖 Automated Bulk Track</span>'
-        auto_cross_badge = (
-            f'<div style="margin-top:5px;">'
-            f'<span class="badge b-w2" style="cursor:pointer;" onclick="showTab(\'tab-manual\', document.getElementById(\'btn-tab-manual\'))" '
-            f'title="Click to inspect the Manual Updates for this URL in Tab 2">'
-            f'🛠️ +{sp["manual_task_count"]} Manual Task{"s" if sp["manual_task_count"] != 1 else ""} in Tab 2 ↗</span></div>'
-        )
-        auto_exec_attr = "hybrid-auto"
+    auto_copy_cnt = sp["auto_text_meta_alt_cnt"]
+    man_total_cnt = sp["manual_task_count"]
+    link_cnt = sp["auto_link_cnt"]
+    img_cnt = sp["auto_img_cnt"]
 
-    auto_summary_lines = []
-    if sp["auto_text_meta_alt_cnt"] > 0:
-        auto_summary_lines.append(f"• <strong style='color:var(--green);'>🤖 {sp['auto_text_meta_alt_cnt']}</strong> Auto Text/Meta/Alt Swaps")
+    auto_sub_parts = []
+    if link_cnt > 0:
+        auto_sub_parts.append(f"+{link_cnt} link update{'s' if link_cnt != 1 else ''}")
+    if img_cnt > 0:
+        auto_sub_parts.append(f"+{img_cnt} DAM move{'s' if img_cnt != 1 else ''}")
     if sp["si_short_cnt"] > 0:
-        auto_summary_lines.append(f"• <strong style='color:var(--blue);'>✨ {sp['si_short_cnt']}</strong> Fit via <code>SI Control Tower</code>")
-    if sp["auto_link_cnt"] > 0:
-        auto_summary_lines.append(f"• <strong>🔗 {sp['auto_link_cnt']}</strong> Auto Link Slug Swaps")
-    if sp["auto_img_cnt"] > 0:
-        auto_summary_lines.append(f"• <strong>🖼️ {sp['auto_img_cnt']}</strong> Auto 0-Pixel DAM Moves")
+        auto_sub_parts.append(f"{sp['si_short_cnt']} short 'SI'")
+    auto_sub_html = f"<div class='sub-note'>{', '.join(auto_sub_parts)}</div>" if auto_sub_parts else "<div class='sub-note'>Groovy bulk swap</div>"
 
-    auto_table_rows_html.append(f"""
-    <tr data-cat="{wc}" data-b30="{fgrp}" data-exec="{auto_exec_attr}" data-loc="{loc_code}">
-      <td data-label="Wave, Region &amp; Mode">{wave_badge}{loc_badge}<br>{auto_mode_badge}{auto_cross_badge}<br>{cat_badge}</td>
-      <td data-label="Full Page URL" class="mono">{a_link(u)}</td>
-      <td data-label="Traffic &amp; Inclusion">{analytics_html}</td>
-      <td data-label="Automated Instances (Groovy Script)">
-        <div style="font-size:13.5px;margin-bottom:4px;"><strong>{title_str}</strong></div>
-        {sp["auto_html"]}
-      </td>
-      <td data-label="Automated Handoff Summary" style="font-size:12px;line-height:1.5;">
-        <strong style="color:var(--green);font-size:14px;">🤖 {sp["auto_edit_count"]}</strong> Auto Edits<br>
-        {"<br>".join(auto_summary_lines)}
-        {auto_cross_badge}
-      </td>
-    </tr>""")
+    auto_col_html = (
+        f"<span class='badge b-auto'>{auto_copy_cnt} Auto Swap{'s' if auto_copy_cnt != 1 else ''}</span>"
+        f"{auto_sub_html}"
+    )
 
-    # --- TAB 2 ROW: MANUAL UPDATES (Only for pages with manual_task_count > 0, including Hybrid URLs!) ---
-    if not sp["is_fully_auto"]:
+    if sp["is_fully_auto"]:
+        auto_exec_attr = "pure-auto"
+        has_manual_attr = "0"
+        mtags_attr = ""
+        man_col_html = "<span class='badge b-neutral'>0 Manual</span><div class='sub-note'>100% automated</div>"
+    else:
+        auto_exec_attr = "hybrid-auto"
+        has_manual_attr = "1"
         manual_wave_counts[wc] = manual_wave_counts.get(wc, 0) + 1
         for mtag in sp["manual_filter_tags"]:
             manual_type_counts[mtag] = manual_type_counts.get(mtag, 0) + 1
         mtags_attr = " ".join(sp["manual_filter_tags"])
-
-        man_cross_badge = (
-            f'<div style="margin-top:5px;">'
-            f'<span class="badge b-ok" style="cursor:pointer;" onclick="showTab(\'tab-automated\', document.getElementById(\'btn-tab-automated\'))" '
-            f'title="Click to inspect the Automated Bulk Swaps for this same URL in Tab 1">'
-            f'🤖 +{sp["auto_edit_count"]} Auto Swaps in Tab 1 ↗</span></div>'
+        man_reasons_str = ", ".join(sp["manual_reasons"])
+        man_col_html = (
+            f"<span class='badge b-manual'>{man_total_cnt} Manual Task{'s' if man_total_cnt != 1 else ''}</span>"
+            f"<div class='sub-note'>{html.escape(man_reasons_str)}</div>"
         )
-        man_summary_lines = [f"• <strong style='color:var(--amber);'>🛠️ {html.escape(mr)}</strong>" for mr in sp["manual_reasons"]]
 
-        manual_table_rows_html.append(f"""
-    <tr data-cat="{wc}" data-b30="{fgrp}" data-mtypes="{mtags_attr}" data-loc="{loc_code}">
-      <td data-label="Wave, Region &amp; Mode">{wave_badge}{loc_badge}<br><span class="badge b-w1" style="margin-top:4px;display:inline-block;">🛠️ Manual Update Queue</span>{man_cross_badge}<br>{cat_badge}</td>
-      <td data-label="Full Page URL" class="mono">{a_link(u)}</td>
-      <td data-label="Traffic &amp; Inclusion">{analytics_html}</td>
-      <td data-label="Manual Tasks &amp; WWSG Copy Edits">
-        <div style="font-size:13.5px;margin-bottom:4px;"><strong>{title_str}</strong></div>
-        {sp["manual_html"]}
+    total_drawer_items = sp["drawer_row_count"]
+    auto_drawer_items = sp["drawer_auto_row_count"]
+    man_drawer_items = sp["drawer_manual_row_count"]
+
+    pages_table_rows_html.append(f"""
+    <tr class="page-row" id="row-{page_idx}" data-row-id="{page_idx}" data-cat="{wc}" data-b30="{fgrp}" data-exec="{auto_exec_attr}" data-has-manual="{has_manual_attr}" data-mtypes="{mtags_attr}" data-loc="{loc_code}" data-total-items="{total_drawer_items}" data-auto-items="{auto_drawer_items}" data-man-items="{man_drawer_items}" onclick="toggleDetail({page_idx}, event)">
+      <td data-label="Wave &amp; Region">{wave_badge}{loc_badge}</td>
+      <td data-label="Page URL &amp; Title">
+        <div class="url-line">{a_link(u)}</div>
+        <div class="page-title-line">{title_str} <span class="cat-pill">{html.escape(an["category"])}</span></div>
       </td>
-      <td data-label="Manual Handoff Summary" style="font-size:12px;line-height:1.5;">
-        <strong style="color:var(--amber);font-size:14px;">🛠️ {sp["manual_task_count"]}</strong> Manual Task{"s" if sp["manual_task_count"] != 1 else ""}<br>
-        {"<br>".join(man_summary_lines)}
-        {man_cross_badge}
+      <td data-label="Traffic (YTD)">{analytics_html}</td>
+      <td data-label="Automated" class="col-auto">{auto_col_html}</td>
+      <td data-label="Manual" class="col-man">{man_col_html}</td>
+      <td data-label="Details" style="text-align:right;white-space:nowrap;">
+        <button type="button" class="expand-btn" id="btn-exp-{page_idx}" onclick="toggleDetail({page_idx}, event)">View Changes ({total_drawer_items})</button>
+      </td>
+    </tr>
+    <tr class="detail-row" id="detail-{page_idx}" style="display:none;">
+      <td colspan="6" class="detail-cell">
+        <div class="drawer-wrap">
+          <div class="drawer-header">
+            <div><strong>Page Change Breakdown:</strong> {a_link(u)}</div>
+            <div class="sub-note">Showing exact Before &rarr; After changes for the active view mode</div>
+          </div>
+          {sp["drawer_table_html"]}
+        </div>
       </td>
     </tr>""")
 
-# Add Global Nav Experience Fragment row to Tab 1 (Automated Updates)
-auto_table_rows_html.append(f"""
-    <tr data-cat="w1" data-b30="cat-platform" data-exec="pure-auto" data-loc="us">
-      <td data-label="Wave, Region &amp; Mode"><span class="badge b-w1">Wave 1</span> <span class="badge b-ok">🌐 GLOBAL</span><br><span class="badge b-ok" style="margin-top:4px;display:inline-block;">🤖 100% Automated XF</span><br><span class="badge b-warn" style="margin-top:4px;display:inline-block;">Sitewide Global Nav</span></td>
-      <td data-label="Full Page URL" class="mono">{len(ssi_only_pages):,} Standard Pages<br><span style="color:var(--muted);font-size:11px;">(All listed in CSV; sample: {a_link('https://www.servicenow.com/products/it-service-management.html', None, 'var(--blue)')})</span></td>
-      <td data-label="Traffic &amp; Inclusion">
-        <div style="font-size:14px;font-weight:700;color:var(--green);">6,353,811 <span style="font-size:11px;font-weight:400;color:var(--muted);">Remaining Site Visits</span></div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px;">Updated automatically via 1 Global Nav Experience Fragment publish!</div>
-      </td>
-      <td data-label="Automated Instances (Groovy Script)">
-        <strong>Global Navigation Mega-Menu XF (12–16x) + Header Search Prompt JSON (2x)</strong>
-        <ul style="margin:4px 0 0 16px;padding:0;font-size:12px;line-height:1.45;">
-          <li><span class="badge b-ok">🤖 100% AUTOMATED</span> <strong>0 page-level edits needed across these {len(ssi_only_pages):,} pages.</strong></li>
-          <li><strong>1. Global Navigation Experience Fragment:</strong> Update menu label <code>"AI Control Tower"</code> &rarr; <strong>"Super Intelligence Control Tower"</strong> (or <strong>"SI Control Tower"</strong> if nav width is constrained) and link <code>href</code> &rarr; <code>/products/super-intelligence-control-tower.html</code> across all regional nav fragments.</li>
-          <li><strong>2. Header Search Prompt JSON:</strong> Update <code>"How does AI Control Tower work?"</code> &rarr; <strong>"How does SI Control Tower work?"</strong> (or <strong>"How does Super Intelligence Control Tower work?"</strong>).</li>
-        </ul>
-      </td>
-      <td data-label="Automated Handoff Summary"><strong style="color:var(--green);">🤖 2 XF Edits</strong><br><span style="color:var(--muted);font-size:11px;">Auto-cascades across {len(ssi_only_pages):,} pages</span></td>
-    </tr>
-""")
-
 # ---------------------------------------------------------------------------
-# 8. Build Dedicated 301 Redirects Table Rows (Tab 3: Webpage Slugs + DAM PDFs + DAM Images)
+# 8. Build Dedicated 301 Redirects Table Rows (Webpage Slugs + DAM PDFs + DAM Images)
 # ---------------------------------------------------------------------------
 redirect_rows_html = []
 redirect_idx = 0
@@ -1769,7 +1812,6 @@ webpage_redirect_cnt = 0
 pdf_redirect_cnt = 0
 img_redirect_cnt = 0
 
-# 8a. Webpage URL Slug Redirects (34 crawled body-match slug pages + regional live event & webinar slug endpoints)
 seen_redirect_urls = set()
 slug_pages_sorted = [r for r in unique_body_pages if "ai-control-tower" in r["url"].lower() or "aict" in r["url"].lower()]
 
@@ -1783,23 +1825,22 @@ for r in slug_pages_sorted:
     new_u = re.sub(r"ai-control-tower", "super-intelligence-control-tower", old_u, flags=re.I)
     new_u = re.sub(r"aict", "super-intelligence-control-tower", new_u, flags=re.I)
     loc_code = r.get("locale", get_page_locale(old_u))
-    loc_lbl, loc_cls = LOCALE_BADGE_MAP.get(loc_code, (loc_code.upper(), "b-w3"))
+    loc_lbl, _ = LOCALE_BADGE_MAP.get(loc_code, (loc_code.upper(), "b-w3"))
     wc = r["wave_code"]
     w_badge = '<span class="badge b-w1">Wave 1</span>' if wc == "w1" else ('<span class="badge b-w2">Wave 2</span>' if wc == "w2" else '<span class="badge b-w3">Wave 3</span>')
 
     redirect_rows_html.append(f"""
     <tr data-rtype="webpage" data-rloc="{loc_code}">
       <td data-label="#"><strong>#{redirect_idx}</strong></td>
-      <td data-label="Asset Type &amp; Wave"><span class="badge b-ok">🌐 Webpage Slug</span><br><div style="margin-top:4px;">{w_badge} <span class="badge {loc_cls}">{loc_lbl}</span></div></td>
-      <td data-label="Old Live URL (301 Source)" class="mono">{a_link(old_u, None, 'var(--blue)')}</td>
+      <td data-label="Type &amp; Wave"><span class="badge b-auto">Webpage</span> {w_badge} <span class="badge b-loc">{loc_lbl}</span></td>
+      <td data-label="Old Live URL (301 Source)" class="mono">{a_link(old_u)}</td>
       <td data-label="New Target URL (301 Destination)" class="mono"><code>{html.escape(new_u)}</code></td>
-      <td data-label="HTTP Status &amp; Technical Action">
-        <span class="badge b-w1">HTTP 301 Permanent</span><br>
-        <span style="color:var(--muted);font-size:11.5px;">Move AEM page node, update self-referencing <code>&lt;link rel="canonical"&gt;</code>, <code>og:url</code>, and 14-locale <code>hreflang</code> cluster.</span>
+      <td data-label="Technical Action">
+        <span class="badge b-neutral">HTTP 301</span>
+        <div class="sub-note" style="margin-top:3px;">Move AEM page node, update canonical &amp; hreflang cluster</div>
       </td>
     </tr>""")
 
-# Additional linked regional / webinar / pricing webpage slugs found in in-body links & analytics
 extra_webpage_slugs = [
     ("https://www.servicenow.com/products/ai-control-tower/pricing.html", "us", "w1", "Product Pricing Subpage"),
     ("https://www.servicenow.com/events/on-demand-webinars/put-ai-to-work-with-ai-control-tower.html", "us", "w2", "On-Demand Webinar Landing Page"),
@@ -1825,21 +1866,20 @@ for old_u, loc_code, wc, desc_note in extra_webpage_slugs:
     redirect_idx += 1
     webpage_redirect_cnt += 1
     new_u = re.sub(r"ai-control-tower", "super-intelligence-control-tower", old_u, flags=re.I)
-    loc_lbl, loc_cls = LOCALE_BADGE_MAP.get(loc_code, (loc_code.upper(), "b-w3"))
+    loc_lbl, _ = LOCALE_BADGE_MAP.get(loc_code, (loc_code.upper(), "b-w3"))
     w_badge = '<span class="badge b-w1">Wave 1</span>' if wc == "w1" else '<span class="badge b-w2">Wave 2</span>'
     redirect_rows_html.append(f"""
     <tr data-rtype="webpage" data-rloc="{loc_code}">
       <td data-label="#"><strong>#{redirect_idx}</strong></td>
-      <td data-label="Asset Type &amp; Wave"><span class="badge b-ok">🌐 Webpage Slug</span><br><div style="margin-top:4px;">{w_badge} <span class="badge {loc_cls}">{loc_lbl}</span></div></td>
-      <td data-label="Old Live URL (301 Source)" class="mono">{a_link(old_u, None, 'var(--blue)')}</td>
+      <td data-label="Type &amp; Wave"><span class="badge b-auto">Webpage</span> {w_badge} <span class="badge b-loc">{loc_lbl}</span></td>
+      <td data-label="Old Live URL (301 Source)" class="mono">{a_link(old_u)}</td>
       <td data-label="New Target URL (301 Destination)" class="mono"><code>{html.escape(new_u)}</code></td>
-      <td data-label="HTTP Status &amp; Technical Action">
-        <span class="badge b-w1">HTTP 301 Permanent</span><br>
-        <span style="color:var(--muted);font-size:11.5px;">{html.escape(desc_note)} — redirect legacy CTA links &amp; update AEM node path.</span>
+      <td data-label="Technical Action">
+        <span class="badge b-neutral">HTTP 301</span>
+        <div class="sub-note" style="margin-top:3px;">{html.escape(desc_note)} — redirect legacy links</div>
       </td>
     </tr>""")
 
-# 8b. DAM PDF Filename Slug Redirects
 pdf_slug_candidates = []
 for p in audited_pdfs:
     fp = full_url(p["url"])
@@ -1860,21 +1900,20 @@ for old_pdf in pdf_slug_candidates:
     new_pdf = re.sub(r"ai-control-tower", "super-intelligence-control-tower", old_pdf, flags=re.I)
     new_pdf = re.sub(r"aict", "super-intelligence-control-tower", new_pdf, flags=re.I)
     p_loc = "de" if "/de-de/" in old_pdf else ("fr" if "/fr-fr/" in old_pdf else "us")
-    loc_lbl, loc_cls = LOCALE_BADGE_MAP.get(p_loc, ("🇺🇸 US", "b-ok"))
+    loc_lbl, _ = LOCALE_BADGE_MAP.get(p_loc, ("US", "b-ok"))
     w_badge = '<span class="badge b-w1">Wave 1</span>' if ("ebk-aict-discovery-playbook" in old_pdf or "subscription-unit" in old_pdf or "ds-ai-control-tower" in old_pdf) else '<span class="badge b-w2">Wave 2</span>'
     redirect_rows_html.append(f"""
     <tr data-rtype="pdf" data-rloc="{p_loc}">
       <td data-label="#"><strong>#{redirect_idx}</strong></td>
-      <td data-label="Asset Type &amp; Wave"><span class="badge b-w2">📄 DAM PDF Slug</span><br><div style="margin-top:4px;">{w_badge} <span class="badge {loc_cls}">{loc_lbl}</span></div></td>
-      <td data-label="Old Live URL (301 Source)" class="mono">{a_link(old_pdf, None, 'var(--amber)')}</td>
+      <td data-label="Type &amp; Wave"><span class="badge b-manual">DAM PDF</span> {w_badge} <span class="badge b-loc">{loc_lbl}</span></td>
+      <td data-label="Old Live URL (301 Source)" class="mono">{a_link(old_pdf)}</td>
       <td data-label="New Target URL (301 Destination)" class="mono"><code>{html.escape(new_pdf)}</code></td>
-      <td data-label="HTTP Status &amp; Technical Action">
-        <span class="badge b-w1">HTTP 301 Permanent</span><br>
-        <span style="color:var(--muted);font-size:11.5px;">Publish updated PDF at new DAM path and configure 301 redirect for both <code>.pdf</code> and <code>.pdf.coredownload</code> URLs.</span>
+      <td data-label="Technical Action">
+        <span class="badge b-neutral">HTTP 301</span>
+        <div class="sub-note" style="margin-top:3px;">Publish updated PDF at new DAM path + 301 redirect</div>
       </td>
     </tr>""")
 
-# 8c. DAM Image Filename Slug Redirects
 for im in sorted(img_map.keys()):
     if "logo-aicte.svg" in im.lower():
         continue
@@ -1891,23 +1930,23 @@ for im in sorted(img_map.keys()):
     minfo = MASTER_IMAGES_MAP.get(old_im, {})
     is_baked = minfo.get("has_baked_aict_pixels", False) or "now-ai-control-tower" in old_im or "secure-any-ai-action" in old_im
     w_badge = '<span class="badge b-w1">Wave 1</span>' if is_baked else '<span class="badge b-w2">Wave 2</span>'
-    mode_note = "🛠️ Manual Design Re-render + DAM 301" if is_baked else "🤖 Automated 0-Pixel DAM Move + 301"
+    mode_note = "Manual Design Re-render + DAM 301" if is_baked else "Automated 0-Pixel DAM Move + 301"
     redirect_rows_html.append(f"""
     <tr data-rtype="image" data-rloc="us">
       <td data-label="#"><strong>#{redirect_idx}</strong></td>
-      <td data-label="Asset Type &amp; Wave"><span class="badge b-warn">🖼️ DAM Image Slug</span><br><div style="margin-top:4px;">{w_badge} <span class="badge b-ok">🌐 GLOBAL</span></div></td>
-      <td data-label="Old Live URL (301 Source)" class="mono">{a_link(old_im, None, 'var(--purple)')}</td>
+      <td data-label="Type &amp; Wave"><span class="badge b-loc">DAM Image</span> {w_badge}</td>
+      <td data-label="Old Live URL (301 Source)" class="mono">{a_link(old_im)}</td>
       <td data-label="New Target URL (301 Destination)" class="mono"><code>{html.escape(new_im)}</code></td>
-      <td data-label="HTTP Status &amp; Technical Action">
-        <span class="badge b-w1">HTTP 301 Permanent</span><br>
-        <span style="color:var(--muted);font-size:11.5px;">{mode_note} — prevents broken hotlinks or cached social/OG cards.</span>
+      <td data-label="Technical Action">
+        <span class="badge b-neutral">HTTP 301</span>
+        <div class="sub-note" style="margin-top:3px;">{mode_note}</div>
       </td>
     </tr>""")
 
 total_redirects_count = redirect_idx
 
 # ---------------------------------------------------------------------------
-# 9. Build Category Summary Rows & Media Asset Rows (Tab 5)
+# 9. Build Category Summary Rows & Media Asset Rows
 # ---------------------------------------------------------------------------
 cat_summary_rows_html = []
 for cat_name, st in sorted(cat_rebrand_rollup.items(), key=lambda x: (-x[1]["visits"], -x[1]["pages"])):
@@ -1928,16 +1967,15 @@ for cat_name, st in sorted(cat_rebrand_rollup.items(), key=lambda x: (-x[1]["vis
     cat_summary_rows_html.append(f"""
     <tr>
       <td data-label="Page Category"><strong>{html.escape(cat_name)}</strong></td>
-      <td data-label="Rebrand Pages"><strong>{st["pages"]} total pages</strong><br><span style="color:var(--muted);font-size:11px;">(🇺🇸 {st["us_pages"]} US + 🌍 {st["reg_pages"]} Regional)</span></td>
-      <td data-label="Auto vs. Manual"><strong style="color:var(--green);">🤖 {st["auto_pages"]} Pure Auto</strong> / <strong style="color:var(--amber);">🛠️ {st["manual_pages"]} Manual Hybrid</strong><br><span style="color:var(--muted);font-size:11px;">({st["instances"]:,} total DOM edits)</span></td>
-      <td data-label="US YTD Visits"><strong style="color:var(--green);">{st["visits"]:,}</strong> US YTD visits<br><span style="color:var(--muted);font-size:11px;">({pct_of_rebrand_visits:.1f}% of rebrand traffic | {pct_of_cat_visits:.1f}% of category)</span></td>
-      <td data-label="US Conversions"><strong style="color:var(--amber);">{st["conv"]:,}</strong> conversions<br><span style="color:var(--muted);font-size:11px;">(of {site_conv:,} category conversions)</span></td>
+      <td data-label="Rebrand Pages"><strong>{st["pages"]} pages</strong><div class="sub-note">{st["us_pages"]} US + {st["reg_pages"]} Regional</div></td>
+      <td data-label="Auto vs. Manual"><span class="badge b-auto">{st["auto_pages"]} Auto Only</span> <span class="badge b-manual">{st["manual_pages"]} Has Manual</span><div class="sub-note">{st["instances"]:,} total instances</div></td>
+      <td data-label="US YTD Visits"><strong>{st["visits"]:,}</strong> visits<div class="sub-note">{pct_of_rebrand_visits:.1f}% of rebrand traffic ({pct_of_cat_visits:.1f}% of category)</div></td>
+      <td data-label="US Conversions"><strong>{st["conv"]:,}</strong> conv<div class="sub-note">of {site_conv:,} category conversions</div></td>
       <td data-label="Wave Split">{" ".join(wave_dist)}</td>
     </tr>""")
 
 media_rows_html = []
 
-# Group the 35 baked-in pixel images into their 19 visual design pairs
 baked_design_groups = {}
 zero_pixel_slug_imgs = []
 for fim, minfo in sorted(MASTER_IMAGES_MAP.items()):
@@ -1951,7 +1989,6 @@ for fim, minfo in sorted(MASTER_IMAGES_MAP.items()):
 total_baked_images_count = sum(len(v) for v in baked_design_groups.values())
 total_baked_designs_count = len(baked_design_groups)
 
-# Sort visual design groups so welcome-ai-control-tower and flagship product images appear at the top, then by page count descending
 def _design_sort_key(item):
     bkey, rlist = item
     max_pages = max((x.get("page_count", 0) for x in rlist), default=0)
@@ -1962,18 +1999,18 @@ def _design_sort_key(item):
 for d_idx, (bkey, rlist) in enumerate(sorted(baked_design_groups.items(), key=_design_sort_key), 1):
     rlist.sort(key=lambda x: x["url"])
     primary = rlist[0]
-    url_links_html = "<br>".join(a_link(x["url"], None, "var(--purple)") for x in rlist)
+    url_links_html = "<br>".join(a_link(x["url"]) for x in rlist)
     all_hosts = []
     for x in rlist:
         for hp in x.get("host_pages", []):
             if hp not in all_hosts:
                 all_hosts.append(hp)
     if all_hosts:
-        sample_hosts = ", ".join(a_link(hp, None, "var(--blue)") for hp in all_hosts[:3])
+        sample_hosts = ", ".join(a_link(hp) for hp in all_hosts[:3])
         more_hosts = f" (+ {len(all_hosts)-3} regional/other pages)" if len(all_hosts) > 3 else ""
-        hosts_html = f"<div style='margin-top:6px;color:var(--muted);font-size:11px;'><strong>Used on {len(all_hosts)} page{'s' if len(all_hosts)!=1 else ''}:</strong> {sample_hosts}{more_hosts}</div>"
+        hosts_html = f"<div class='sub-note' style='margin-top:4px;'><strong>Used on {len(all_hosts)} page{'s' if len(all_hosts)!=1 else ''}:</strong> {sample_hosts}{more_hosts}</div>"
     else:
-        hosts_html = "<div style='margin-top:6px;color:var(--muted);font-size:11px;'><strong>Source:</strong> Brand 3.0 Excel DAM Inventory (Unlinked on crawled pages — update in DAM if still active)</div>"
+        hosts_html = "<div class='sub-note' style='margin-top:4px;'><strong>Source:</strong> Brand 3.0 DAM Inventory (Unlinked on crawled pages — update in DAM if active)</div>"
 
     specs_parts = []
     for x in rlist:
@@ -1983,55 +2020,54 @@ for d_idx, (bkey, rlist) in enumerate(sorted(baked_design_groups.items(), key=_d
 
     ocr_disp = clean_ocr_display(primary.get("matched_ocr_lines", []))
     has_slug = any(x.get("has_aict_slug") for x in rlist)
-    slug_badge = '<span class="badge b-w2" style="margin-top:3px;display:inline-block;">+ 301 DAM Slug</span>' if has_slug else '<span class="badge b-w3" style="margin-top:3px;display:inline-block;">Generic Filename (0 Slug Change)</span>'
+    slug_badge = '<span class="badge b-loc" style="margin-top:4px;display:inline-block;">+ 301 DAM Slug</span>' if has_slug else '<span class="badge b-neutral" style="margin-top:4px;display:inline-block;">Keep Generic Filename</span>'
     action_tail = "and rename DAM filename slug with HTTP 301 redirect." if has_slug else "and republish in-place (filename has no AICT slug)."
 
     media_rows_html.append(f"""
-<tr>
-  <td data-label="Execution Mode"><span class="badge b-w1">🛠️ MANUAL DESIGN #{d_idx}</span><br><div style="margin-top:4px"><span class="badge b-warn">{len(rlist)} Rendition{'s' if len(rlist)!=1 else ''}</span><br>{slug_badge}</div></td>
-  <td data-label="Full Clickable Asset URL" class="mono">
+<tr data-mfilter="baked">
+  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual Design #{d_idx}</span><div class="sub-note" style="margin-top:4px;">{len(rlist)} file rendition{'s' if len(rlist)!=1 else ''}</div>{slug_badge}</td>
+  <td data-label="DAM Asset URL &amp; Host Pages" class="mono">
     {url_links_html}
     {hosts_html}
   </td>
   <td data-label="Specs">{specs_html}</td>
-  <td data-label="OCR / PDFKit Finding"><strong>Apple Vision OCR Match:</strong><br><code>"{html.escape(ocr_disp)}"</code></td>
-  <td data-label="Handoff Action"><strong>🛠️ Manual Design / UI Retouch:</strong> Re-render or retouch baked-in <code>AI Control Tower</code> pixel text to <em>"Super Intelligence Control Tower"</em> (or <em>"SI Control Tower"</em>) {action_tail}</td>
+  <td data-label="Detected Text (OCR)"><code>"{html.escape(ocr_disp)}"</code></td>
+  <td data-label="Required Action">Re-render or retouch baked-in <code>AI Control Tower</code> pixel text to <strong>Super Intelligence Control Tower</strong> (or <strong>SI Control Tower</strong>) {action_tail}</td>
 </tr>""")
 
-# Add consolidated row for all 28 Zero-Pixel Slug-Matched Images
-zero_pixel_links_html = "<br>".join(a_link(x["url"], None, "var(--purple)") for x in zero_pixel_slug_imgs[:12])
-if len(zero_pixel_slug_imgs) > 12:
-    zero_pixel_links_html += f"<div style='margin-top:4px;color:var(--muted);font-size:11px;'>+ {len(zero_pixel_slug_imgs)-12} additional `.sm`/`.xs` renditions (all {len(zero_pixel_slug_imgs)} listed in Tab 3 &amp; CSV)</div>"
+zero_pixel_links_html = "<br>".join(a_link(x["url"]) for x in zero_pixel_slug_imgs[:10])
+if len(zero_pixel_slug_imgs) > 10:
+    zero_pixel_links_html += f"<div class='sub-note' style='margin-top:4px;'>+ {len(zero_pixel_slug_imgs)-10} additional `.sm`/`.xs` renditions (all {len(zero_pixel_slug_imgs)} listed in 301 Redirects tab &amp; CSV)</div>"
 
 media_rows_html.append(f"""
-<tr>
-  <td data-label="Execution Mode"><span class="badge b-ok">🤖 AUTO: 0 BAKED PIXELS</span><br><div style="margin-top:4px"><span class="badge b-w2">{len(zero_pixel_slug_imgs)} Slug Images</span></div></td>
-  <td data-label="Full Clickable Asset URL" class="mono">
+<tr data-mfilter="auto-img">
+  <td data-label="Track &amp; Group"><span class="badge b-auto">Auto DAM Rename</span><div class="sub-note" style="margin-top:4px;">{len(zero_pixel_slug_imgs)} image files (0 baked pixels)</div></td>
+  <td data-label="DAM Asset URL &amp; Host Pages" class="mono">
     {zero_pixel_links_html}
   </td>
-  <td data-label="Specs">Various PNG / JPG / WebP<br>({len(zero_pixel_slug_imgs)} files)</td>
-  <td data-label="OCR / PDFKit Finding"><strong>Apple Vision OCR Verified Clean:</strong><br>0 <code>"AI Control Tower"</code> pixels in any of these {len(zero_pixel_slug_imgs)} images!</td>
-  <td data-label="Handoff Action"><strong>🤖 Automated DAM Move + 301 Redirect:</strong> Zero graphic design work needed! Script renames DAM file slugs (<code>ai-control-tower</code> &rarr; <code>super-intelligence-control-tower</code>) and updates HTML <code>alt</code> attributes.</td>
+  <td data-label="Specs">PNG / JPG / WebP<br>({len(zero_pixel_slug_imgs)} files)</td>
+  <td data-label="Detected Text (OCR)">0 baked-in text matches (verified clean by OCR)</td>
+  <td data-label="Required Action"><strong>Zero graphic design work needed.</strong> Script renames DAM file slugs (<code>ai-control-tower</code> &rarr; <code>super-intelligence-control-tower</code>) with 301 redirect and updates HTML <code>alt</code> attributes.</td>
 </tr>
-<tr>
-  <td data-label="Execution Mode"><span class="badge b-w1">🛠️ MANUAL: VECTOR PDF RE-EXPORT</span><br><div style="margin-top:4px"><span class="badge b-warn">6 OCR Matches</span></div></td>
-  <td data-label="Full Clickable Asset URL" class="mono">
-    {a_link('https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/resource-center/e-book/ebk-aict-discovery-playbook.pdf')}<br>
-    <div style="margin-top:6px;color:var(--muted);font-size:11px;"><strong>Linked from:</strong> {a_link('https://www.servicenow.com/standard/resource-center/ebook/ebk-aict-discovery-playbook.html', None, 'var(--blue)')}</div>
+<tr data-mfilter="pdf">
+  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual PDF</span><div class="sub-note" style="margin-top:4px;">6 OCR / Meta Matches</div></td>
+  <td data-label="DAM Asset URL &amp; Host Pages" class="mono">
+    {a_link('https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/resource-center/e-book/ebk-aict-discovery-playbook.pdf')}
+    <div class="sub-note" style="margin-top:4px;"><strong>Linked from:</strong> {a_link('https://www.servicenow.com/standard/resource-center/ebook/ebk-aict-discovery-playbook.html')}</div>
   </td>
   <td data-label="Specs">11 Pages, PDF<br>(231 MB)</td>
-  <td data-label="OCR / PDFKit Finding"><strong>Vision OCR Caught 6 Matches:</strong> Meta title <code>AICT-DISCOVERY-PLAYBOOK-02</code> + 5 flattened vector text matches on Pages 5, 8, 9.</td>
-  <td data-label="Handoff Action"><strong>🛠️ Manual Design Action:</strong> Re-export InDesign source with <em>Super Intelligence Control Tower</em> / <em>SI Control Tower</em> and update metadata title.</td>
+  <td data-label="Detected Text (OCR)">Meta title <code>AICT-DISCOVERY-PLAYBOOK-02</code> + 5 vector text matches on Pages 5, 8, 9</td>
+  <td data-label="Required Action">Re-export InDesign source with <strong>Super Intelligence Control Tower</strong> / <strong>SI Control Tower</strong> and update metadata title.</td>
 </tr>
-<tr>
-  <td data-label="Execution Mode"><span class="badge b-w1">🛠️ MANUAL: LEGAL PDF UPDATE</span><br><div style="margin-top:4px"><span class="badge b-warn">7 PDFKit Matches</span></div></td>
-  <td data-label="Full Clickable Asset URL" class="mono">
-    {a_link('https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/legal/ai-control-tower-servicenow-subscription-unit-overview.pdf')}<br>
-    <div style="margin-top:6px;color:var(--muted);font-size:11px;"><strong>Linked from:</strong> {a_link('https://www.servicenow.com/products/entitlements-packages.html', None, 'var(--blue)')}</div>
+<tr data-mfilter="pdf">
+  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual Legal PDF</span><div class="sub-note" style="margin-top:4px;">7 Text Matches</div></td>
+  <td data-label="DAM Asset URL &amp; Host Pages" class="mono">
+    {a_link('https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/legal/ai-control-tower-servicenow-subscription-unit-overview.pdf')}
+    <div class="sub-note" style="margin-top:4px;"><strong>Linked from:</strong> {a_link('https://www.servicenow.com/products/entitlements-packages.html')}</div>
   </td>
   <td data-label="Specs">4 Pages, PDF<br>(109.7 KB)</td>
-  <td data-label="OCR / PDFKit Finding"><strong>7 Matches:</strong> Page 1 Title/TOC + Page 3 Section Header &amp; 4 Legal clauses.</td>
-  <td data-label="Handoff Action"><strong>🛠️ Manual Legal Action:</strong> Coordinate with Legal to publish updated Subscription Unit Overview PDF and add 301 redirect.</td>
+  <td data-label="Detected Text (OCR)">Page 1 Title/TOC + Page 3 Section Header &amp; 4 Legal clauses</td>
+  <td data-label="Required Action">Coordinate with Legal to publish updated Subscription Unit Overview PDF and configure 301 redirect.</td>
 </tr>
 """)
 
@@ -2043,20 +2079,20 @@ for p in audited_pdfs:
     if m_cnt == 0:
         continue
     hosts = pdf_to_hosts.get(purl, [])
-    host_links = "<br>".join("• " + a_link(h, None, "var(--blue)") for h in hosts[:3]) if hosts else "• " + a_link("https://www.servicenow.com/standard/resource-center.html", None, "var(--blue)")
+    host_links = ", ".join(a_link(h) for h in hosts[:3]) if hosts else a_link("https://www.servicenow.com/standard/resource-center.html")
     sn = html.escape(" | ".join(p.get("snippets", [])[:2]))
     mt = html.escape(p.get("meta_title", "") or "(None)")
     media_rows_html.append(f"""
-<tr>
-  <td data-label="Execution Mode"><span class="badge b-w2">🛠️ MANUAL: LIVE DAM PDF</span><br><div style="margin-top:4px"><span class="badge b-warn">{m_cnt} Matches</span></div></td>
-  <td data-label="Full Clickable Asset URL" class="mono">{a_link(purl)}<div style="margin-top:6px;color:var(--muted);font-size:11px;"><strong>Linked from:</strong><br>{host_links}</div></td>
+<tr data-mfilter="pdf">
+  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual PDF</span><div class="sub-note" style="margin-top:4px;">{m_cnt} Text Matches</div></td>
+  <td data-label="DAM Asset URL &amp; Host Pages" class="mono">{a_link(purl)}<div class="sub-note" style="margin-top:4px;"><strong>Linked from:</strong> {host_links}</div></td>
   <td data-label="Specs">{p.get('pages', 0)} Pages, PDF<br>({p.get('bytes', 0)//1024:,} KB)</td>
-  <td data-label="OCR / PDFKit Finding"><strong>Meta Title:</strong> <code>{mt}</code><br><strong>Extracted Text ({m_cnt} matches):</strong> <code>{sn}</code></td>
-  <td data-label="Handoff Action"><strong>🛠️ Manual Doc Team Action:</strong> Update source PDF text &amp; metadata title to <em>Super Intelligence Control Tower</em> / <em>SI Control Tower</em> and republish.</td>
+  <td data-label="Detected Text (OCR)"><strong>Meta Title:</strong> <code>{mt}</code><br><strong>Snippet:</strong> <code>{sn}</code></td>
+  <td data-label="Required Action">Update source PDF text &amp; metadata title to <strong>Super Intelligence Control Tower</strong> / <strong>SI Control Tower</strong> and republish.</td>
 </tr>""")
 
 # ---------------------------------------------------------------------------
-# 10. Write 5-Tab Handoff HTML Report (Automated, Manual, 301 Redirects, SEO & AIO Strategy, Wave/Media/L10n)
+# 10. Write Clean Enterprise Light UI Handoff HTML Report & Markdown Plan
 # ---------------------------------------------------------------------------
 w1_s = wave_summary["w1"]
 w2_s = wave_summary["w2"]
@@ -2067,25 +2103,36 @@ full_html = f"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ServiceNow Rebrand Handoff Dashboard: Super Intelligence (SI) Control Tower</title>
+<title>ServiceNow Rebrand Execution Handoff: Super Intelligence (SI) Control Tower</title>
 <style>
   :root {{
-    --bg: #08121a;
-    --surface: #0f1e29;
-    --surface-2: #162936;
-    --border: #233b4d;
-    --green: #62d84e;
-    --green-dim: rgba(98, 216, 78, 0.14);
-    --text: #f0f6fa;
-    --muted: #9ab0c2;
-    --amber: #f59e0b;
-    --amber-dim: rgba(245, 158, 11, 0.15);
-    --red: #ef4444;
-    --red-dim: rgba(239, 68, 68, 0.15);
-    --blue: #38bdf8;
-    --blue-dim: rgba(56, 189, 248, 0.15);
-    --purple: #c084fc;
-    --purple-dim: rgba(192, 132, 252, 0.15);
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-2: #f1f5f9;
+    --surface-hover: #f8fafc;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --navy: #032d42;
+    --navy-light: #064463;
+    --text: #0f172a;
+    --muted: #475569;
+    --subtle: #64748b;
+    --green-text: #15803d;
+    --green-bg: #dcfce7;
+    --green-border: #86efac;
+    --amber-text: #b45309;
+    --amber-bg: #fef3c7;
+    --amber-border: #fde68a;
+    --red-text: #b91c1c;
+    --red-bg: #fee2e2;
+    --red-border: #fca5a5;
+    --blue-text: #0369a1;
+    --blue-bg: #e0f2fe;
+    --blue-border: #7dd3fc;
+    --indigo-text: #4338ca;
+    --indigo-bg: #e0e7ff;
+    --indigo-border: #a5b4fc;
+    --brand-green: #62d84e;
   }}
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
   html, body {{
@@ -2093,178 +2140,302 @@ full_html = f"""<!DOCTYPE html>
     overflow-x: hidden;
   }}
   body {{
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
-    line-height: 1.55;
-    padding-bottom: 60px;
+    line-height: 1.5;
+    padding-bottom: 64px;
+    font-size: 13.5px;
+    -webkit-font-smoothing: antialiased;
   }}
   a, .ext-link {{
-    color: var(--blue);
-    text-decoration: underline;
-    text-underline-offset: 2px;
+    color: var(--blue-text);
+    text-decoration: none;
+    font-weight: 500;
     word-break: break-word;
     overflow-wrap: anywhere;
-    cursor: pointer;
   }}
   a:hover, .ext-link:hover {{
-    color: var(--green);
+    text-decoration: underline;
+    color: var(--navy);
   }}
   header {{
-    background: linear-gradient(135deg, #09151e 0%, #102a3b 100%);
-    border-bottom: 1px solid var(--border);
-    padding: clamp(14px, 2.2vw, 24px) clamp(14px, 3vw, 40px);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    backdrop-filter: blur(12px);
+    background: var(--navy);
+    color: #ffffff;
+    border-bottom: 3px solid var(--brand-green);
+    padding: 18px 32px;
   }}
-  .header-top {{
+  .header-inner {{
+    max-width: 1440px;
+    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 12px;
-    max-width: 1440px;
-    margin: 0 auto;
   }}
-  .brand-pill {{
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--green-dim);
-    color: var(--green);
-    border: 1px solid rgba(98, 216, 78, 0.4);
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 11.5px;
+  .eyebrow {{
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.05em;
     text-transform: uppercase;
-    margin-bottom: 6px;
-    max-width: 100%;
-    white-space: normal;
+    letter-spacing: 0.08em;
+    color: var(--brand-green);
+    margin-bottom: 4px;
   }}
-  h1 {{ font-size: clamp(18px, 2.2vw, 24px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; }}
-  h1 span {{ color: var(--green); }}
-  .subtitle {{ color: var(--muted); font-size: clamp(12px, 1.4vw, 14px); margin-top: 4px; }}
-  .container {{ max-width: 1440px; margin: 20px auto; padding: 0 clamp(12px, 3vw, 40px); }}
+  h1 {{
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #ffffff;
+  }}
+  .subtitle {{
+    color: #cbd5e1;
+    font-size: 13px;
+    margin-top: 3px;
+  }}
+  .subtitle a {{
+    color: #7dd3fc;
+  }}
+  .container {{
+    max-width: 1440px;
+    margin: 20px auto;
+    padding: 0 32px;
+  }}
+  /* KPI Summary Bar */
   .kpi-grid {{
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+    grid-template-columns: repeat(5, 1fr);
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
   }}
   .kpi-card {{
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 14px 16px;
-    min-width: 0;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }}
-  .kpi-label {{ color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }}
-  .kpi-value {{ font-size: clamp(19px, 2vw, 24px); font-weight: 800; margin: 5px 0 4px; color: var(--text); }}
-  .kpi-value.green {{ color: var(--green); }}
-  .kpi-value.amber {{ color: var(--amber); }}
-  .kpi-value.blue {{ color: var(--blue); }}
-  .kpi-value.purple {{ color: var(--purple); }}
-  .kpi-sub {{ font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }}
+  .kpi-card:hover {{
+    border-color: var(--blue-text);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+  }}
+  .kpi-label {{
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+  }}
+  .kpi-value {{
+    font-size: 22px;
+    font-weight: 800;
+    margin: 4px 0;
+    color: var(--navy);
+  }}
+  .kpi-value.green {{ color: var(--green-text); }}
+  .kpi-value.amber {{ color: var(--amber-text); }}
+  .kpi-value.blue {{ color: var(--blue-text); }}
+  .kpi-value.indigo {{ color: var(--indigo-text); }}
+  .kpi-sub {{
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.4;
+  }}
+  /* Primary Navigation Tabs */
   .tabs {{
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 20px;
-    padding-bottom: 6px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 18px;
   }}
   .tab-btn {{
-    background: var(--surface);
+    background: transparent;
     color: var(--muted);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 10px 16px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s;
-    text-align: left;
-    line-height: 1.35;
-    flex: 1 1 210px;
+    margin-bottom: -2px;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    border-radius: 6px 6px 0 0;
   }}
-  .tab-btn:hover {{ color: var(--text); background: rgba(255,255,255,0.04); }}
-  .tab-btn.active {{ color: var(--green); border-color: var(--green); background: var(--green-dim); }}
+  .tab-btn:hover {{
+    color: var(--navy);
+    background: var(--surface-2);
+  }}
+  .tab-btn.active {{
+    color: var(--navy);
+    border-bottom-color: var(--navy);
+    background: var(--surface);
+    font-weight: 700;
+  }}
+  .tab-count {{
+    display: inline-block;
+    background: var(--surface-2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-left: 5px;
+  }}
+  .tab-btn.active .tab-count {{
+    background: var(--navy);
+    color: #ffffff;
+    border-color: var(--navy);
+  }}
   .tab-panel {{ display: none; }}
   .tab-panel.active {{ display: block; }}
+
+  /* Cards & Info Banners */
   .card {{
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: clamp(14px, 2vw, 22px);
-    margin-bottom: 20px;
-    min-width: 0;
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
   }}
-  .card h2 {{ font-size: clamp(15px, 1.8vw, 18px); margin-bottom: 6px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; line-height: 1.35; }}
-  .card p.desc {{ color: var(--muted); font-size: 13px; margin-bottom: 14px; }}
-  .alert {{
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-bottom: 16px;
-    border-left: 4px solid var(--green);
-    background: var(--surface-2);
-    font-size: 13px;
-    overflow-wrap: anywhere;
-  }}
-  .alert.amber {{ border-left-color: var(--amber); background: var(--amber-dim); }}
-  .alert.blue {{ border-left-color: var(--blue); background: var(--blue-dim); }}
-  .alert strong {{ display: block; margin-bottom: 4px; font-size: 14px; }}
-  .controls {{
+  .card-header {{
     display: flex;
-    gap: 6px;
-    margin-bottom: 10px;
+    justify-content: space-between;
+    align-items: baseline;
     flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+  }}
+  .card h2 {{
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--navy);
+  }}
+  .card p.desc {{
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 12px;
+  }}
+  .banner {{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--navy);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--text);
+    display: flex;
+    justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }}
+  .banner.green {{ border-left-color: var(--green-text); }}
+  .banner.amber {{ border-left-color: var(--amber-text); }}
+  .banner.blue {{ border-left-color: var(--blue-text); }}
+
+  /* Compact Filter Bar */
+  .filter-bar {{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+  }}
+  .seg-group {{
+    display: inline-flex;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    overflow: hidden;
+  }}
+  .seg-btn {{
+    background: transparent;
+    border: none;
+    border-right: 1px solid var(--border);
+    padding: 6px 11px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+  }}
+  .seg-btn:last-child {{ border-right: none; }}
+  .seg-btn:hover {{ background: var(--surface-2); color: var(--text); }}
+  .seg-btn.active {{
+    background: var(--navy);
+    color: #ffffff;
   }}
   .search-input {{
-    flex: 1 1 240px;
-    min-width: 0;
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
+    flex: 1 1 220px;
+    min-width: 180px;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
     color: var(--text);
-    padding: 9px 12px;
-    border-radius: 8px;
-    font-size: 13px;
+    padding: 6px 11px;
+    border-radius: 6px;
+    font-size: 12.5px;
   }}
-  .filter-btn {{
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    color: var(--muted);
+  .search-input:focus, .select-input:focus {{
+    outline: 2px solid var(--blue-text);
+    outline-offset: -1px;
+  }}
+  .select-input {{
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
     padding: 6px 10px;
-    border-radius: 8px;
-    font-size: 11.5px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+  }}
+  .action-btn {{
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    line-height: 1.3;
   }}
-  .filter-btn.active, .filter-btn:hover {{
-    background: var(--green-dim);
-    color: var(--green);
-    border-color: var(--green);
+  .action-btn:hover {{
+    background: var(--surface-hover);
+    border-color: var(--navy);
   }}
+  .results-counter {{
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-left: auto;
+    white-space: nowrap;
+  }}
+
+  /* Tables */
   .table-wrap {{
     width: 100%;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
   }}
   table {{
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
-    table-layout: auto;
   }}
   th, td {{
     text-align: left;
-    padding: 11px 12px;
+    padding: 10px 12px;
     border-bottom: 1px solid var(--border);
     vertical-align: top;
     overflow-wrap: anywhere;
@@ -2273,578 +2444,799 @@ full_html = f"""<!DOCTYPE html>
   th {{
     background: var(--surface-2);
     color: var(--muted);
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
     font-size: 11px;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
+    border-bottom: 1px solid var(--border-strong);
   }}
-  tr:hover td {{ background: rgba(255,255,255,0.02); }}
+  tr.page-row {{
+    cursor: pointer;
+    transition: background 0.1s;
+  }}
+  tr.page-row:hover td {{
+    background: #f8fafc;
+  }}
+  tr.page-row.expanded td {{
+    background: #f1f5f9;
+    border-bottom-color: transparent;
+  }}
+  .page-url-wrap {{
+    font-weight: 600;
+    font-size: 13px;
+  }}
+  .sub-meta {{
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 2px;
+  }}
+  .sub-note {{
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.4;
+  }}
+  .expand-btn {{
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    color: var(--navy);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }}
+  .expand-btn:hover {{
+    background: var(--navy);
+    color: #ffffff;
+    border-color: var(--navy);
+  }}
+  .chevron {{
+    display: inline-block;
+    font-size: 10px;
+    transition: transform 0.15s ease;
+  }}
+  tr.page-row.expanded .chevron {{
+    transform: rotate(90deg);
+  }}
+
+  /* Collapsible Detail Drawer & Mini-Table */
+  tr.detail-row td.detail-cell {{
+    background: #f8fafc;
+    padding: 0;
+    border-bottom: 2px solid var(--border-strong);
+  }}
+  .drawer-box {{
+    padding: 12px 18px 16px 28px;
+  }}
+  table.detail-mini-table {{
+    width: 100%;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: var(--surface);
+    overflow: hidden;
+    font-size: 12.5px;
+  }}
+  table.detail-mini-table th {{
+    background: #f1f5f9;
+    padding: 7px 10px;
+    font-size: 10.5px;
+  }}
+  table.detail-mini-table td {{
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }}
+  table.detail-mini-table tr:last-child td {{
+    border-bottom: none;
+  }}
+  /* View-mode filtering inside opened detail drawers */
+  #pagesTable[data-view-mode="auto"] tr.detail-item-manual {{
+    display: none !important;
+  }}
+  #pagesTable[data-view-mode="manual"] tr.detail-item-auto {{
+    display: none !important;
+  }}
+
+  /* Before / After Diff Lines */
+  .diff-line {{
+    margin-bottom: 4px;
+    line-height: 1.45;
+  }}
+  .diff-line:last-child {{
+    margin-bottom: 0;
+  }}
+  .diff-label {{
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }}
+  .diff-old .diff-label {{
+    background: #fee2e2;
+    color: #991b1b;
+  }}
+  .diff-old {{
+    color: #475569;
+  }}
+  .diff-new .diff-label {{
+    background: #dcfce7;
+    color: #166534;
+  }}
+  .diff-new {{
+    color: #0f172a;
+    font-weight: 500;
+  }}
+
+  /* Badges */
   .badge {{
     display: inline-block;
-    padding: 3px 7px;
-    border-radius: 6px;
+    padding: 2px 7px;
+    border-radius: 4px;
     font-size: 11px;
     font-weight: 700;
-    white-space: normal;
-    line-height: 1.3;
+    line-height: 1.35;
+    white-space: nowrap;
   }}
-  .b-w1 {{ background: var(--red-dim); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }}
-  .b-w2 {{ background: var(--amber-dim); color: #fcd34d; border: 1px solid rgba(245,158,11,0.3); }}
-  .b-w3 {{ background: var(--blue-dim); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.3); }}
-  .b-ok {{ background: var(--green-dim); color: var(--green); border: 1px solid rgba(98,216,78,0.3); }}
-  .b-warn {{ background: var(--purple-dim); color: #d8b4fe; border: 1px solid rgba(192,132,252,0.3); }}
-  code, .mono {{
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-    font-size: 12px;
-    background: rgba(0,0,0,0.35);
-    padding: 2px 5px;
+  .b-auto, .b-ok {{
+    background: var(--green-bg);
+    color: var(--green-text);
+    border: 1px solid var(--green-border);
+  }}
+  .b-manual, .b-warn {{
+    background: var(--amber-bg);
+    color: var(--amber-text);
+    border: 1px solid var(--amber-border);
+  }}
+  .b-w1 {{
+    background: var(--red-bg);
+    color: var(--red-text);
+    border: 1px solid var(--red-border);
+  }}
+  .b-w2 {{
+    background: var(--amber-bg);
+    color: var(--amber-text);
+    border: 1px solid var(--amber-border);
+  }}
+  .b-w3, .b-info {{
+    background: var(--blue-bg);
+    color: var(--blue-text);
+    border: 1px solid var(--blue-border);
+  }}
+  .b-loc {{
+    background: var(--indigo-bg);
+    color: var(--indigo-text);
+    border: 1px solid var(--indigo-border);
+  }}
+  .b-muted {{
+    background: var(--surface-2);
+    color: var(--muted);
+    border: 1px solid var(--border-strong);
+  }}
+  .task-chip {{
+    display: inline-block;
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fde68a;
     border-radius: 4px;
-    color: #93c5fd;
-    overflow-wrap: anywhere;
-    word-break: break-word;
-    white-space: normal;
+    padding: 1px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    margin: 2px 3px 0 0;
   }}
-  pre {{
-    background: #060d13;
+
+  /* Code & Collapsible Details */
+  code, .mono {{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 11.5px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: #0f172a;
+  }}
+  td.mono {{
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 12px;
+  }}
+  details.code-drawer {{
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }}
+  details.code-drawer summary {{
+    padding: 12px 16px;
+    font-weight: 700;
+    font-size: 13.5px;
+    color: var(--navy);
+    background: var(--surface-2);
+    cursor: pointer;
+    user-select: none;
+  }}
+  details.code-drawer summary:hover {{
+    background: #e2e8f0;
+  }}
+  details.code-drawer .drawer-body {{
+    padding: 14px 16px;
+    border-top: 1px solid var(--border);
+  }}
+  pre {{
+    background: #0f172a;
+    color: #f8fafc;
+    border-radius: 6px;
+    padding: 14px;
     overflow-x: auto;
     white-space: pre-wrap;
     word-break: break-word;
-    font-family: "SFMono-Regular", Consolas, monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 11.5px;
-    color: #e2e8f0;
-    margin: 10px 0;
+    line-height: 1.5;
   }}
 
-  @media (max-width: 1120px) {{
-    header {{
-      position: relative;
-    }}
-    .kpi-grid {{
-      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
-    }}
-    table, thead, tbody, th, td, tr {{
-      display: block;
-      width: 100%;
-    }}
-    thead tr {{
-      position: absolute;
-      top: -9999px;
-      left: -9999px;
-    }}
-    tbody tr {{
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      margin-bottom: 14px;
-      padding: 10px 12px;
-    }}
-    tbody td {{
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      padding: 8px 4px;
-      width: 100% !important;
-    }}
-    tbody td:last-child {{
-      border-bottom: none;
-    }}
-    tbody td[data-label]::before {{
-      content: attr(data-label);
-      display: block;
-      font-size: 10.5px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }}
-  }}
-
-  @media (max-width: 640px) {{
-    .kpi-grid {{
-      grid-template-columns: 1fr 1fr;
-    }}
-    .tab-btn {{
-      flex: 1 1 100%;
-    }}
-    .filter-btn {{
-      flex: 1 1 auto;
-      text-align: center;
-    }}
+  @media (max-width: 1024px) {{
+    .container {{ padding: 0 16px; }}
+    header {{ padding: 14px 16px; }}
+    .kpi-grid {{ grid-template-columns: repeat(2, 1fr); }}
   }}
 </style>
 <script>
-// Tab Switching
-window.showTab = function(tabId, btn) {{
+window.currentViewMode = 'all';
+
+window.switchPrimaryTab = function(panelId, viewMode, btnId) {{
   document.querySelectorAll('.tab-panel').forEach(function(p) {{ p.classList.remove('active'); }});
   document.querySelectorAll('.tab-btn').forEach(function(b) {{ b.classList.remove('active'); }});
-  var panel = document.getElementById(tabId);
+  var panel = document.getElementById(panelId);
   if (panel) panel.classList.add('active');
+  var btn = document.getElementById(btnId);
   if (btn) btn.classList.add('active');
-}};
 
-// Tab 1: Automated Updates Filters
-window.autoCat = 'all';
-window.autoExec = 'all';
-window.autoLoc = 'all';
-
-window.filterAutoCat = function(cat, btn) {{
-  window.autoCat = cat;
-  if (btn && btn.parentElement) {{
-    btn.parentElement.querySelectorAll('.filter-btn').forEach(function(b) {{ b.classList.remove('active'); }});
-    btn.classList.add('active');
+  if (panelId === 'tab-pages' && viewMode) {{
+    window.setPageViewMode(viewMode, false);
   }}
-  window.filterAutoTable();
 }};
 
-window.filterAutoLoc = function(loc, btn) {{
-  window.autoLoc = loc;
-  if (btn && btn.parentElement) {{
-    btn.parentElement.querySelectorAll('.filter-btn').forEach(function(b) {{ b.classList.remove('active'); }});
-    btn.classList.add('active');
+window.setPageViewMode = function(mode, updateTopTab) {{
+  window.currentViewMode = mode;
+  var tbl = document.getElementById('pagesTable');
+  if (tbl) tbl.setAttribute('data-view-mode', mode);
+
+  document.querySelectorAll('.seg-mode-btn').forEach(function(b) {{
+    b.classList.toggle('active', b.getAttribute('data-mode') === mode);
+  }});
+
+  if (updateTopTab !== false) {{
+    document.querySelectorAll('.tab-btn').forEach(function(b) {{ b.classList.remove('active'); }});
+    if (mode === 'all') document.getElementById('btn-tab-all').classList.add('active');
+    if (mode === 'auto') document.getElementById('btn-tab-auto').classList.add('active');
+    if (mode === 'manual') document.getElementById('btn-tab-manual').classList.add('active');
   }}
-  window.filterAutoTable();
-}};
 
-window.filterAutoExec = function(execMode, btn) {{
-  window.autoExec = execMode;
-  if (btn && btn.parentElement) {{
-    btn.parentElement.querySelectorAll('.filter-btn').forEach(function(b) {{ b.classList.remove('active'); }});
-    btn.classList.add('active');
+  var bannerTitle = document.getElementById('pagesBannerTitle');
+  var bannerDesc = document.getElementById('pagesBannerDesc');
+  if (bannerTitle && bannerDesc) {{
+    if (mode === 'all') {{
+      bannerTitle.textContent = 'All Updates Combined (Auto + Manual per Page)';
+      bannerDesc.textContent = 'Showing all {len(unique_body_pages)} pages. Click any row to expand its itemized Before -> After changes. For example, the US Homepage has 2 Auto Swaps (CTA button + tagline) and 1 Manual Task (Hero paragraph context bridge).';
+    }} else if (mode === 'auto') {{
+      bannerTitle.textContent = 'Automated Updates Only ({total_auto_instances:,} Scripted Swaps Across {len(unique_body_pages)} Pages)';
+      bannerDesc.textContent = 'Showing only automated DOM, metadata, link, alt-text, and zero-pixel DAM swaps executed by the AEM Groovy script. Manual tasks are hidden inside expanded rows.';
+    }} else if (mode === 'manual') {{
+      bannerTitle.textContent = 'Manual Updates Queue Only ({pages_needing_manual} Pages with {total_manual_tasks_all} Manual Tasks)';
+      bannerDesc.textContent = 'Filtered to the {pages_needing_manual} pages requiring manual copy/design/authoring action ({total_manual_copy_instances} copy trims & context bridges, 34 page slug moves, {total_baked_images_count} baked-in images across {total_baked_designs_count} visual designs, 13 PDFs, 10 L10n reviews).';
+    }}
   }}
-  window.filterAutoTable();
+
+  window.filterPagesTable();
 }};
 
-window.filterAutoTable = function() {{
-  var searchEl = document.getElementById('autoSearch');
-  var q = searchEl ? searchEl.value.toLowerCase() : '';
-  var rows = document.querySelectorAll('#autoTable tbody tr');
+window.toggleDetail = function(idx) {{
+  var pRow = document.getElementById('row-' + idx);
+  var dRow = document.getElementById('detail-' + idx);
+  if (!pRow || !dRow) return;
+  var isHidden = (dRow.style.display === 'none' || dRow.style.display === '');
+  if (isHidden) {{
+    dRow.style.display = 'table-row';
+    pRow.classList.add('expanded');
+  }} else {{
+    dRow.style.display = 'none';
+    pRow.classList.remove('expanded');
+  }}
+}};
+
+window.expandAllVisible = function(expand) {{
+  var rows = document.querySelectorAll('#pagesTable tbody tr.page-row');
+  var expandedCount = 0;
   rows.forEach(function(r) {{
-    var text = r.innerText.toLowerCase();
-    var cat = r.getAttribute('data-cat');
-    var b30 = r.getAttribute('data-b30');
-    var ex = r.getAttribute('data-exec');
-    var loc = r.getAttribute('data-loc');
-    var matchQ = !q || text.includes(q);
-    var matchCat = true;
-    if (window.autoCat === 'w1' || window.autoCat === 'w2' || window.autoCat === 'w3') {{
-      matchCat = (cat === window.autoCat);
-    }} else if (window.autoCat && window.autoCat.startsWith('cat-')) {{
-      matchCat = (b30 === window.autoCat);
+    if (r.style.display === 'none') return;
+    var idx = r.id.replace('row-', '');
+    var dRow = document.getElementById('detail-' + idx);
+    if (!dRow) return;
+    if (expand && expandedCount < 50) {{
+      dRow.style.display = 'table-row';
+      r.classList.add('expanded');
+      expandedCount++;
+    }} else if (!expand) {{
+      dRow.style.display = 'none';
+      r.classList.remove('expanded');
     }}
-    var matchEx = (window.autoExec === 'all') || (ex === window.autoExec);
-    var matchLoc = true;
-    if (window.autoLoc === 'us') {{
-      matchLoc = (loc === 'us');
-    }} else if (window.autoLoc === 'regional') {{
-      matchLoc = (loc !== 'us');
-    }} else if (window.autoLoc !== 'all') {{
-      matchLoc = (loc === window.autoLoc);
-    }}
-    r.style.display = (matchQ && matchCat && matchEx && matchLoc) ? '' : 'none';
   }});
 }};
 
-// Tab 2: Manual Updates Filters
-window.manCat = 'all';
-window.manType = 'all';
-window.manLoc = 'all';
-
-window.filterManCat = function(cat, btn) {{
-  window.manCat = cat;
-  if (btn && btn.parentElement) {{
-    btn.parentElement.querySelectorAll('.filter-btn').forEach(function(b) {{ b.classList.remove('active'); }});
-    btn.classList.add('active');
-  }}
-  window.filterManTable();
+window.resetPageFilters = function() {{
+  document.getElementById('pageSearch').value = '';
+  document.getElementById('waveSelect').value = 'all';
+  document.getElementById('locSelect').value = 'all';
+  document.getElementById('scopeSelect').value = 'all';
+  window.filterPagesTable();
 }};
 
-window.filterManLoc = function(loc, btn) {{
-  window.manLoc = loc;
-  if (btn && btn.parentElement) {{
-    btn.parentElement.querySelectorAll('.filter-btn').forEach(function(b) {{ b.classList.remove('active'); }});
-    btn.classList.add('active');
-  }}
-  window.filterManTable();
-}};
+window.filterPagesTable = function() {{
+  var q = (document.getElementById('pageSearch').value || '').toLowerCase().trim();
+  var wave = document.getElementById('waveSelect').value;
+  var loc = document.getElementById('locSelect').value;
+  var scope = document.getElementById('scopeSelect').value;
+  var mode = window.currentViewMode || 'all';
 
-window.filterManType = function(mtype, btn) {{
-  window.manType = mtype;
-  if (btn && btn.parentElement) {{
-    btn.parentElement.querySelectorAll('.filter-btn').forEach(function(b) {{ b.classList.remove('active'); }});
-    btn.classList.add('active');
-  }}
-  window.filterManTable();
-}};
+  var rows = document.querySelectorAll('#pagesTable tbody tr.page-row');
+  var visible = 0;
 
-window.filterManTable = function() {{
-  var searchEl = document.getElementById('manSearch');
-  var q = searchEl ? searchEl.value.toLowerCase() : '';
-  var rows = document.querySelectorAll('#manTable tbody tr');
   rows.forEach(function(r) {{
-    var text = r.innerText.toLowerCase();
-    var cat = r.getAttribute('data-cat');
-    var mtypes = r.getAttribute('data-mtypes') || '';
-    var loc = r.getAttribute('data-loc');
-    var matchQ = !q || text.includes(q);
-    var matchCat = (window.manCat === 'all') || (cat === window.manCat);
-    var matchType = (window.manType === 'all') || mtypes.includes(window.manType);
-    var matchLoc = true;
-    if (window.manLoc === 'us') {{
-      matchLoc = (loc === 'us');
-    }} else if (window.manLoc === 'regional') {{
-      matchLoc = (loc !== 'us');
-    }} else if (window.manLoc !== 'all') {{
-      matchLoc = (loc === window.manLoc);
+    var idx = r.id.replace('row-', '');
+    var dRow = document.getElementById('detail-' + idx);
+    var rWave = r.getAttribute('data-cat');
+    var rB30 = r.getAttribute('data-b30');
+    var rExec = r.getAttribute('data-exec');
+    var rLoc = r.getAttribute('data-loc');
+    var rMtypes = r.getAttribute('data-mtypes') || '';
+    var hasMan = r.getAttribute('data-has-manual') === '1';
+
+    var matchMode = true;
+    if (mode === 'manual') {{
+      matchMode = hasMan;
     }}
-    r.style.display = (matchQ && matchCat && matchType && matchLoc) ? '' : 'none';
+
+    var matchWave = (wave === 'all') || (rWave === wave);
+
+    var matchLoc = true;
+    if (loc === 'us') matchLoc = (rLoc === 'us');
+    else if (loc === 'regional') matchLoc = (rLoc !== 'us');
+    else if (loc !== 'all') matchLoc = (rLoc === loc);
+
+    var matchScope = true;
+    if (scope === 'hybrid-auto' || scope === 'pure-auto') {{
+      matchScope = (rExec === scope);
+    }} else if (scope.startsWith('m-')) {{
+      matchScope = rMtypes.includes(scope);
+    }} else if (scope.startsWith('cat-')) {{
+      matchScope = (rB30 === scope);
+    }}
+
+    var matchQ = true;
+    if (q) {{
+      var combinedText = (r.innerText + ' ' + (dRow ? dRow.innerText : '')).toLowerCase();
+      matchQ = combinedText.includes(q);
+    }}
+
+    var show = matchMode && matchWave && matchLoc && matchScope && matchQ;
+    r.style.display = show ? '' : 'none';
+    if (!show && dRow) {{
+      dRow.style.display = 'none';
+      r.classList.remove('expanded');
+    }}
+    if (show) visible++;
   }});
-}};
 
-// Tab 3: 301 Redirects Filters
-window.redType = 'all';
-window.filterRedType = function(rtype, btn) {{
-  window.redType = rtype;
-  if (btn && btn.parentElement) {{
-    btn.parentElement.querySelectorAll('.filter-btn').forEach(function(b) {{ b.classList.remove('active'); }});
-    btn.classList.add('active');
+  var counter = document.getElementById('pagesCounter');
+  if (counter) {{
+    var totalPool = (mode === 'manual') ? {pages_needing_manual} : {len(unique_body_pages)};
+    counter.textContent = 'Showing ' + visible + ' of ' + totalPool + ' pages';
   }}
-  window.filterRedTable();
 }};
 
+// Tab 4: 301 Redirects Filter
 window.filterRedTable = function() {{
-  var searchEl = document.getElementById('redSearch');
-  var q = searchEl ? searchEl.value.toLowerCase() : '';
+  var q = (document.getElementById('redSearch').value || '').toLowerCase().trim();
+  var rtype = document.getElementById('redTypeSelect').value;
   var rows = document.querySelectorAll('#redTable tbody tr');
+  var vis = 0;
   rows.forEach(function(r) {{
     var text = r.innerText.toLowerCase();
-    var rtype = r.getAttribute('data-rtype');
-    var matchQ = !q || text.includes(q);
-    var matchType = (window.redType === 'all') || (rtype === window.redType);
-    r.style.display = (matchQ && matchType) ? '' : 'none';
+    var rt = r.getAttribute('data-rtype');
+    var show = (!q || text.includes(q)) && (rtype === 'all' || rt === rtype);
+    r.style.display = show ? '' : 'none';
+    if (show) vis++;
   }});
+  var c = document.getElementById('redCounter');
+  if (c) c.textContent = 'Showing ' + vis + ' of {total_redirects_count} redirects';
+}};
+
+// Tab 5: Media & PDF Assets Filter
+window.filterMediaTable = function() {{
+  var q = (document.getElementById('mediaSearch').value || '').toLowerCase().trim();
+  var mtype = document.getElementById('mediaTypeSelect').value;
+  var rows = document.querySelectorAll('#mediaTable tbody tr');
+  var vis = 0;
+  rows.forEach(function(r) {{
+    var text = r.innerText.toLowerCase();
+    var mt = r.getAttribute('data-mfilter');
+    var show = (!q || text.includes(q)) && (mtype === 'all' || mt === mtype);
+    r.style.display = show ? '' : 'none';
+    if (show) vis++;
+  }});
+  var c = document.getElementById('mediaCounter');
+  if (c) c.textContent = 'Showing ' + vis + ' asset rows';
 }};
 </script>
 </head>
 <body>
 
 <header>
-  <div class="header-top">
+  <div class="header-inner">
     <div>
-      <div class="brand-pill">ServiceNow Digital UX • Global + Regional Rebrand Execution Handoff</div>
-      <h1>AI Control Tower &rarr; <span>Super Intelligence (SI) Control Tower</span></h1>
-      <div class="subtitle">{len(unique_body_pages)} Total Body-Match Pages ({us_pages_total} US + {regional_pages_total} Regional Across 13 Locales, incl. {a_link('https://www.servicenow.com/uk/', '/uk/')}) • Separate Automated vs. Manual Queues • 301 Redirects • SEO &amp; AIO Strategy</div>
+      <div class="eyebrow">ServiceNow Digital UX • Global &amp; Regional Rebrand Handoff</div>
+      <h1>AI Control Tower &rarr; Super Intelligence (SI) Control Tower</h1>
+      <div class="subtitle">{len(unique_body_pages)} Total Pages ({us_pages_total} US + {regional_pages_total} Regional Across 13 Locales) • Collapsible Page-by-Page Diffs • 301 Redirects • Media &amp; SEO Rules</div>
     </div>
   </div>
 </header>
 
 <div class="container">
+  <!-- KPI SUMMARY BAR (CLICKABLE SHORTCUTS) -->
   <div class="kpi-grid">
-    <div class="kpi-card">
-      <div class="kpi-label">Total Rebrand Scope</div>
-      <div class="kpi-value green">{len(unique_body_pages)} Pages</div>
-      <div class="kpi-sub"><strong>🇺🇸 {us_pages_total} US Pages</strong> + <strong>🌍 {regional_pages_total} Regional Pages</strong> across 13 locales (0 pages dropped)</div>
+    <div class="kpi-card" onclick="switchPrimaryTab('tab-pages', 'all', 'btn-tab-all')">
+      <div class="kpi-label">All Updates (Combined)</div>
+      <div class="kpi-value">{len(unique_body_pages)} Pages</div>
+      <div class="kpi-sub"><strong>{us_pages_total} US</strong> + <strong>{regional_pages_total} Regional</strong> (13 locales). View Auto + Manual together per page.</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Wave 1 Impact ({w1_s['pages']} Pages)</div>
-      <div class="kpi-value green">96.2% Traffic</div>
-      <div class="kpi-sub"><strong>{w1_s['us_pages']} US + {w1_s['reg_pages']} Regional</strong> (incl. {a_link('https://www.servicenow.com/uk/', '/uk/')}, {a_link('https://www.servicenow.com/de/', '/de/')}, {a_link('https://www.servicenow.com/fr/', '/fr/')}) • <strong>{w1_s['visits']:,} visits</strong></div>
+    <div class="kpi-card" onclick="switchPrimaryTab('tab-pages', 'auto', 'btn-tab-auto')">
+      <div class="kpi-label">Automated Swaps</div>
+      <div class="kpi-value green">{total_auto_instances:,} Swaps</div>
+      <div class="kpi-sub"><strong>{pages_100pct_auto} pages 100% Auto</strong> + {pages_needing_manual} hybrid pages + {len(ssi_only_pages):,} Global Nav XF pages.</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">🤖 Automated Updates (Tab 1)</div>
-      <div class="kpi-value blue">{total_auto_instances:,} Swaps</div>
-      <div class="kpi-sub">Across all <strong>{len(unique_body_pages)} pages</strong> (<strong>{pages_100pct_auto} pure auto</strong> + <strong>{pages_needing_manual} hybrid</strong>) + {len(ssi_only_pages):,} Global Nav XF pages</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">🛠️ Manual Updates (Tab 2)</div>
+    <div class="kpi-card" onclick="switchPrimaryTab('tab-pages', 'manual', 'btn-tab-manual')">
+      <div class="kpi-label">Manual Updates Queue</div>
       <div class="kpi-value amber">{pages_needing_manual} Pages</div>
-      <div class="kpi-sub"><strong>{total_manual_copy_instances} WWSG copy edits</strong>, 34 page slug moves, <strong>{total_baked_images_count} baked-in images ({total_baked_designs_count} visual designs)</strong>, 13 PDFs &amp; 10 L10n reviews</div>
+      <div class="kpi-sub"><strong>{total_manual_copy_instances} copy edits</strong>, 34 page moves, <strong>{total_baked_images_count} images ({total_baked_designs_count} designs)</strong>, 13 PDFs, 10 L10n.</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">🔀 301 Redirects (Tab 3)</div>
-      <div class="kpi-value purple">{total_redirects_count} Redirects</div>
-      <div class="kpi-sub"><strong>{webpage_redirect_cnt} Webpage slugs</strong> + <strong>{pdf_redirect_cnt} DAM PDFs</strong> + <strong>{img_redirect_cnt} DAM Images</strong> via HTTP 301</div>
+    <div class="kpi-card" onclick="switchPrimaryTab('tab-redirects', null, 'btn-tab-redirects')">
+      <div class="kpi-label">HTTP 301 Redirects</div>
+      <div class="kpi-value indigo">{total_redirects_count} Slugs</div>
+      <div class="kpi-sub"><strong>{webpage_redirect_cnt} Webpages</strong> + <strong>{pdf_redirect_cnt} DAM PDFs</strong> + <strong>{img_redirect_cnt} DAM Images</strong>.</div>
+    </div>
+    <div class="kpi-card" onclick="switchPrimaryTab('tab-seo', null, 'btn-tab-seo')">
+      <div class="kpi-label">Wave 1 Priority Scope</div>
+      <div class="kpi-value blue">96.2% Traffic</div>
+      <div class="kpi-sub"><strong>{w1_s['pages']} Wave 1 pages</strong> ({w1_s['us_pages']} US + {w1_s['reg_pages']} Regional • {w1_s['visits']:,} visits).</div>
     </div>
   </div>
 
+  <!-- PRIMARY NAVIGATION TABS -->
   <div class="tabs">
-    <button id="btn-tab-automated" class="tab-btn active" onclick="showTab('tab-automated', this)">1. 🤖 Automated Updates ({len(unique_body_pages)} Pages • {total_auto_instances:,} Bulk Swaps)</button>
-    <button id="btn-tab-manual" class="tab-btn" onclick="showTab('tab-manual', this)">2. 🛠️ Manual Updates ({pages_needing_manual} Pages • {total_manual_tasks_all} Manual Tasks)</button>
-    <button id="btn-tab-redirects" class="tab-btn" onclick="showTab('tab-redirects', this)">3. 🔀 301 Redirects ({total_redirects_count} URL &amp; DAM Slugs)</button>
-    <button id="btn-tab-seo" class="tab-btn" onclick="showTab('tab-seo', this)">4. 🔍 SEO &amp; AIO Strategy (SI vs. Super Intelligence)</button>
-    <button id="btn-tab-waves" class="tab-btn" onclick="showTab('tab-waves', this)">5. 📊 Wave Rollout &amp; Media/L10n Summary</button>
+    <button id="btn-tab-all" class="tab-btn active" onclick="switchPrimaryTab('tab-pages', 'all', 'btn-tab-all')">
+      All Updates <span class="tab-count">{len(unique_body_pages)} Pages</span>
+    </button>
+    <button id="btn-tab-auto" class="tab-btn" onclick="switchPrimaryTab('tab-pages', 'auto', 'btn-tab-auto')">
+      Automated Only <span class="tab-count">{total_auto_instances:,} Swaps</span>
+    </button>
+    <button id="btn-tab-manual" class="tab-btn" onclick="switchPrimaryTab('tab-pages', 'manual', 'btn-tab-manual')">
+      Manual Only <span class="tab-count">{pages_needing_manual} Pages / {total_manual_tasks_all} Tasks</span>
+    </button>
+    <button id="btn-tab-redirects" class="tab-btn" onclick="switchPrimaryTab('tab-redirects', null, 'btn-tab-redirects')">
+      301 Redirects <span class="tab-count">{total_redirects_count}</span>
+    </button>
+    <button id="btn-tab-media" class="tab-btn" onclick="switchPrimaryTab('tab-media', null, 'btn-tab-media')">
+      Media &amp; PDFs <span class="tab-count">{total_baked_images_count} Baked / 13 PDFs</span>
+    </button>
+    <button id="btn-tab-seo" class="tab-btn" onclick="switchPrimaryTab('tab-seo', null, 'btn-tab-seo')">
+      SEO, Naming &amp; Rollout Rules
+    </button>
   </div>
 
-  <!-- TAB 1: AUTOMATED UPDATES -->
-  <div id="tab-automated" class="tab-panel active">
-    <div class="alert blue">
-      <strong>🤖 Automated Bulk Update Queue (All {len(unique_body_pages)} Pages Have Automated Instances — Including the {pages_needing_manual} Hybrid Pages!):</strong>
-      This tab lists ONLY the <strong>100% automated DOM, metadata, link, alt-text, and 0-pixel DAM image swaps</strong> executed by the AEM Groovy script across all {len(unique_body_pages)} pages ({us_pages_total} US + {regional_pages_total} Regional). For the <strong>{pages_needing_manual} hybrid pages</strong> (such as {a_link('https://www.servicenow.com/products/ai-control-tower.html')}, {a_link('https://www.servicenow.com/platform/responsible-ai.html')}, and {a_link('https://www.servicenow.com/fr/products/ai-control-tower.html')}) that have <em>both</em> automated bulk swaps and manual tasks, their automated instances are shown here in Tab 1 (including the H1 Hero <code>Super Intelligence Control Tower</code> swap), while their manual tasks are itemized separately in <strong>Tab 2 (🛠️ Manual Updates)</strong>!
-    </div>
-
-    <div class="card">
-      <h2>Tab 1: Automated Bulk Updates ({len(unique_body_pages)} Pages: {pages_100pct_auto} Pure Automated + {pages_needing_manual} Hybrid Pages)</h2>
-      <p class="desc">Filter by <strong>Wave</strong>, <strong>Region / Locale</strong>, <strong>Automation Scope</strong> (Pure Auto vs. Hybrid URLs that also appear in Tab 2), or <strong>Page Category</strong>.</p>
-
-      <div class="controls">
-        <input type="text" id="autoSearch" class="search-input" placeholder="Search Automated Queue by URL (e.g. /uk/, /de/, /fr/), title, automated copy snippet, 'SI Control Tower'..." onkeyup="filterAutoTable()">
-        <button class="filter-btn active" onclick="filterAutoCat('all', this)">All Pages ({len(unique_body_pages)})</button>
-        <button class="filter-btn" onclick="filterAutoCat('w1', this)">Wave 1 ({w1_s['pages']} pages • 96.2% Traffic)</button>
-        <button class="filter-btn" onclick="filterAutoCat('w2', this)">Wave 2 ({w2_s['pages']} pages • 3.6% Traffic)</button>
-        <button class="filter-btn" onclick="filterAutoCat('w3', this)">Wave 3 ({w3_s['pages']} pages • 0.2% Traffic)</button>
-      </div>
-      <div class="controls">
-        <span style="font-size:12px;color:var(--muted);font-weight:600;margin-right:4px;">Region / Locale:</span>
-        <button class="filter-btn active" onclick="filterAutoLoc('all', this)">All Regions ({len(unique_body_pages)})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('us', this)">🇺🇸 US ({locale_counts['us']})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('regional', this)">🌍 All Regional ({regional_pages_total})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('uk', this)">🇬🇧 UK ({locale_counts['uk']})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('au', this)">🇦🇺 AU ({locale_counts['au']})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('in', this)">🇮🇳 IN ({locale_counts['in']})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('de', this)">🇩🇪 DE ({locale_counts['de']})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('fr', this)">🇫🇷 FR ({locale_counts['fr']})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('fr-ca', this)">🇨🇦 FR-CA ({locale_counts['fr-ca']})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('es', this)">🇪🇸 ES ({locale_counts['es']})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('latam', this)">🌎 LATAM ({locale_counts['latam']})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('br', this)">🇧🇷 BR ({locale_counts['br']})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('it', this)">🇮🇹 IT ({locale_counts['it']})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('nl', this)">🇳🇱 NL ({locale_counts['nl']})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('jp', this)">🇯🇵 JP ({locale_counts['jp']})</button>
-        <button class="filter-btn" onclick="filterAutoLoc('kr', this)">🇰🇷 KR ({locale_counts['kr']})</button>
-      </div>
-      <div class="controls">
-        <span style="font-size:12px;color:var(--muted);font-weight:600;margin-right:4px;">Automation Scope:</span>
-        <button class="filter-btn active" onclick="filterAutoExec('all', this)">All Automated Pages ({len(unique_body_pages)})</button>
-        <button class="filter-btn" onclick="filterAutoExec('pure-auto', this)">🤖 100% Pure Automated ({pages_100pct_auto})</button>
-        <button class="filter-btn" onclick="filterAutoExec('hybrid-auto', this)">🔀 Hybrid URLs (Also Have Manual Tasks in Tab 2: {pages_needing_manual})</button>
-        <span style="font-size:12px;color:var(--muted);font-weight:600;margin-left:6px;margin-right:4px;">Category:</span>
-        <button class="filter-btn" onclick="filterAutoCat('cat-product', this)">Product</button>
-        <button class="filter-btn" onclick="filterAutoCat('cat-solutions', this)">Solutions &amp; Apps</button>
-        <button class="filter-btn" onclick="filterAutoCat('cat-platform', this)">Homepage &amp; Platform</button>
-        <button class="filter-btn" onclick="filterAutoCat('cat-events', this)">Events</button>
-        <button class="filter-btn" onclick="filterAutoCat('cat-resources', this)">Resources &amp; ePDFs</button>
-        <button class="filter-btn" onclick="filterAutoCat('cat-editorial', this)">Workflow &amp; Blogs</button>
-      </div>
-
-      <div class="table-wrap">
-        <table id="autoTable">
-          <thead>
-            <tr>
-              <th style="width:14%;">Wave, Region &amp; Track</th>
-              <th style="width:20%;">Full Clickable Page URL</th>
-              <th style="width:15%;">Traffic &amp; Inclusion Basis</th>
-              <th style="width:38%;">Automated Instances Only (🤖 Groovy Bulk Swap: Meta, Body, Links, Alt &amp; 0-Pixel DAM)</th>
-              <th style="width:13%;">Automated Summary</th>
-            </tr>
-          </thead>
-          <tbody>
-            {"".join(auto_table_rows_html)}
-          </tbody>
-        </table>
+  <!-- ===================================================================== -->
+  <!-- PANEL 1: UNIFIED COLLAPSIBLE PAGES TABLE (ALL / AUTOMATED / MANUAL)   -->
+  <!-- ===================================================================== -->
+  <div id="tab-pages" class="tab-panel active">
+    <div class="banner">
+      <div>
+        <strong id="pagesBannerTitle">All Updates Combined (Auto + Manual per Page)</strong>
+        <div id="pagesBannerDesc" style="color:var(--muted);font-size:12.5px;margin-top:2px;">
+          Showing all {len(unique_body_pages)} pages. Click any row to expand its itemized Before &rarr; After changes. For example, the US Homepage has 2 Auto Swaps (CTA button + tagline) and 1 Manual Task (Hero paragraph context bridge).
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- TAB 2: MANUAL UPDATES -->
-  <div id="tab-manual" class="tab-panel">
-    <div class="alert amber">
-      <strong>🛠️ Manual Update Queue ({pages_needing_manual} Pages with {total_manual_tasks_all} Total Manual Tasks — Separated from Automated Swaps!):</strong>
-      Every page listed below ALSO has automated bulk swaps in <strong>Tab 1 (🤖 Automated Updates)</strong> that run first via the AEM Groovy script. This tab isolates ONLY the <strong>manual tasks</strong> required on these {pages_needing_manual} pages: <strong>{total_manual_copy_instances} WWSG Copy Edits</strong> (where pre-existing flagship FAQ/Marquee copy exceeded 50/175/250 chars), <strong>34 AEM Page Node Slug Moves &amp; 301s</strong>, <strong>{total_baked_images_count} Baked-In Image Re-renders ({total_baked_designs_count} distinct visual designs</strong> verified via Apple Vision OCR across 388 pages + 8,113 Brand 3.0 DAM assets, including <code>welcome-ai-control-tower-.sm.png</code> on <code>/platform/responsible-ai.html</code>), <strong>13 Live/Vector PDF Updates</strong>, and <strong>10 Non-English Flagship L10n Grammar Reviews</strong>.
+    <!-- SINGLE COMPACT FILTER BAR -->
+    <div class="filter-bar">
+      <div class="seg-group" role="group" aria-label="View Mode">
+        <button type="button" class="seg-btn seg-mode-btn active" data-mode="all" onclick="setPageViewMode('all', true)">All (Auto + Manual)</button>
+        <button type="button" class="seg-btn seg-mode-btn" data-mode="auto" onclick="setPageViewMode('auto', true)">Automated Only</button>
+        <button type="button" class="seg-btn seg-mode-btn" data-mode="manual" onclick="setPageViewMode('manual', true)">Manual Only ({pages_needing_manual})</button>
+      </div>
+
+      <input type="text" id="pageSearch" class="search-input" placeholder="Search URL, title, or Before/After text..." onkeyup="filterPagesTable()">
+
+      <select id="waveSelect" class="select-input" onchange="filterPagesTable()">
+        <option value="all">All Waves ({len(unique_body_pages)})</option>
+        <option value="w1">Wave 1 ({w1_s['pages']} pages • 96.2% Traffic)</option>
+        <option value="w2">Wave 2 ({w2_s['pages']} pages • 3.6% Traffic)</option>
+        <option value="w3">Wave 3 ({w3_s['pages']} pages • 0.2% Traffic)</option>
+      </select>
+
+      <select id="locSelect" class="select-input" onchange="filterPagesTable()">
+        <option value="all">All Regions ({len(unique_body_pages)})</option>
+        <option value="us">US Only ({locale_counts['us']})</option>
+        <option value="regional">All Regional ({regional_pages_total})</option>
+        <option value="uk">UK /uk/ ({locale_counts['uk']})</option>
+        <option value="au">Australia /au/ ({locale_counts['au']})</option>
+        <option value="in">India /in/ ({locale_counts['in']})</option>
+        <option value="de">Germany /de/ ({locale_counts['de']})</option>
+        <option value="fr">France /fr/ ({locale_counts['fr']})</option>
+        <option value="fr-ca">Canada FR /fr-ca/ ({locale_counts['fr-ca']})</option>
+        <option value="es">Spain /es/ ({locale_counts['es']})</option>
+        <option value="latam">LATAM /latam/ ({locale_counts['latam']})</option>
+        <option value="br">Brazil /br/ ({locale_counts['br']})</option>
+        <option value="it">Italy /it/ ({locale_counts['it']})</option>
+        <option value="nl">Netherlands /nl/ ({locale_counts['nl']})</option>
+        <option value="jp">Japan /jp/ ({locale_counts['jp']})</option>
+        <option value="kr">Korea /kr/ ({locale_counts['kr']})</option>
+      </select>
+
+      <select id="scopeSelect" class="select-input" onchange="filterPagesTable()">
+        <option value="all">All Scope &amp; Task Types</option>
+        <optgroup label="Automation vs. Manual Split">
+          <option value="hybrid-auto">Has Both Auto + Manual ({pages_needing_manual} pages)</option>
+          <option value="pure-auto">100% Automated Only ({pages_100pct_auto} pages)</option>
+        </optgroup>
+        <optgroup label="Manual Task Type">
+          <option value="m-copy">Manual: Copy Edit / Context Bridge ({manual_type_counts['m-copy']} pages)</option>
+          <option value="m-slug">Manual: 301 URL Slug Move ({manual_type_counts['m-slug']} pages)</option>
+          <option value="m-img">Manual: Baked-In Image Re-render ({manual_type_counts['m-img']} pages)</option>
+          <option value="m-pdf">Manual: Live/Vector PDF Update ({manual_type_counts['m-pdf']} pages)</option>
+          <option value="m-l10n">Manual: L10n Grammar Review ({manual_type_counts['m-l10n']} pages)</option>
+        </optgroup>
+        <optgroup label="Page Category">
+          <option value="cat-product">Category: Product Pages</option>
+          <option value="cat-solutions">Category: Solutions &amp; Apps</option>
+          <option value="cat-platform">Category: Homepage &amp; Platform</option>
+          <option value="cat-events">Category: Events &amp; Webinars</option>
+          <option value="cat-resources">Category: Resources &amp; ePDFs</option>
+          <option value="cat-editorial">Category: Workflow &amp; Blogs</option>
+        </optgroup>
+      </select>
+
+      <button type="button" class="action-btn" onclick="expandAllVisible(true)" title="Expand first 50 visible rows">Expand Visible</button>
+      <button type="button" class="action-btn" onclick="expandAllVisible(false)">Collapse All</button>
+      <button type="button" class="action-btn" onclick="resetPageFilters()">Reset</button>
+
+      <span id="pagesCounter" class="results-counter">Showing {len(unique_body_pages)} of {len(unique_body_pages)} pages</span>
     </div>
 
-    <div class="card">
-      <h2>Tab 2: Manual Updates Queue ({pages_needing_manual} Pages • {total_manual_tasks_all} Manual Tasks)</h2>
-      <p class="desc">Filter by <strong>Manual Task Type</strong> (<code>Copy Edit</code>, <code>301 Slug</code>, <code>Baked-In Image</code>, <code>PDF Update</code>, <code>L10n Review</code>), <strong>Wave</strong>, or <strong>Region / Locale</strong>.</p>
-
-      <div class="controls">
-        <input type="text" id="manSearch" class="search-input" placeholder="Search Manual Queue by URL, WWSG rewrite, PDF filename, image filename, locale..." onkeyup="filterManTable()">
-        <button class="filter-btn active" onclick="filterManCat('all', this)">All Manual Pages ({pages_needing_manual})</button>
-        <button class="filter-btn" onclick="filterManCat('w1', this)">Wave 1 ({manual_wave_counts['w1']} pages)</button>
-        <button class="filter-btn" onclick="filterManCat('w2', this)">Wave 2 ({manual_wave_counts['w2']} pages)</button>
-        <button class="filter-btn" onclick="filterManCat('w3', this)">Wave 3 ({manual_wave_counts['w3']} pages)</button>
-      </div>
-      <div class="controls">
-        <span style="font-size:12px;color:var(--muted);font-weight:600;margin-right:4px;">Manual Task Type:</span>
-        <button class="filter-btn active" onclick="filterManType('all', this)">All Task Types ({pages_needing_manual} pages)</button>
-        <button class="filter-btn" onclick="filterManType('m-copy', this)">✍️ Copy Edit: WWSG Trim ({manual_type_counts['m-copy']} pages / {total_manual_copy_instances} instances)</button>
-        <button class="filter-btn" onclick="filterManType('m-slug', this)">🔀 301 URL Slug Move ({manual_type_counts['m-slug']} pages)</button>
-        <button class="filter-btn" onclick="filterManType('m-img', this)">🖼️ Baked-In Image Re-render ({manual_type_counts['m-img']} pages)</button>
-        <button class="filter-btn" onclick="filterManType('m-pdf', this)">📄 Live/Vector PDF Update ({manual_type_counts['m-pdf']} pages)</button>
-        <button class="filter-btn" onclick="filterManType('m-l10n', this)">🌐 L10n Grammar Review ({manual_type_counts['m-l10n']} pages)</button>
-      </div>
-      <div class="controls">
-        <span style="font-size:12px;color:var(--muted);font-weight:600;margin-right:4px;">Region / Locale:</span>
-        <button class="filter-btn active" onclick="filterManLoc('all', this)">All Regions ({pages_needing_manual})</button>
-        <button class="filter-btn" onclick="filterManLoc('us', this)">🇺🇸 US ({manual_locale_counts['us']})</button>
-        <button class="filter-btn" onclick="filterManLoc('regional', this)">🌍 All Regional ({pages_needing_manual - manual_locale_counts['us']})</button>
-        <button class="filter-btn" onclick="filterManLoc('uk', this)">🇬🇧 UK ({manual_locale_counts['uk']})</button>
-        <button class="filter-btn" onclick="filterManLoc('au', this)">🇦🇺 AU ({manual_locale_counts['au']})</button>
-        <button class="filter-btn" onclick="filterManLoc('in', this)">🇮🇳 IN ({manual_locale_counts['in']})</button>
-        <button class="filter-btn" onclick="filterManLoc('de', this)">🇩🇪 DE ({manual_locale_counts['de']})</button>
-        <button class="filter-btn" onclick="filterManLoc('fr', this)">🇫🇷 FR ({manual_locale_counts['fr']})</button>
-        <button class="filter-btn" onclick="filterManLoc('fr-ca', this)">🇨🇦 FR-CA ({manual_locale_counts['fr-ca']})</button>
-        <button class="filter-btn" onclick="filterManLoc('es', this)">🇪🇸 ES ({manual_locale_counts['es']})</button>
-        <button class="filter-btn" onclick="filterManLoc('latam', this)">🌎 LATAM ({manual_locale_counts['latam']})</button>
-        <button class="filter-btn" onclick="filterManLoc('br', this)">🇧🇷 BR ({manual_locale_counts['br']})</button>
-        <button class="filter-btn" onclick="filterManLoc('it', this)">🇮🇹 IT ({manual_locale_counts['it']})</button>
-        <button class="filter-btn" onclick="filterManLoc('nl', this)">🇳🇱 NL ({manual_locale_counts['nl']})</button>
-        <button class="filter-btn" onclick="filterManLoc('jp', this)">🇯🇵 JP ({manual_locale_counts['jp']})</button>
-        <button class="filter-btn" onclick="filterManLoc('kr', this)">🇰🇷 KR ({manual_locale_counts['kr']})</button>
-      </div>
-
-      <div class="table-wrap">
-        <table id="manTable">
-          <thead>
-            <tr>
-              <th style="width:14%;">Wave, Region &amp; Track</th>
-              <th style="width:20%;">Full Clickable Page URL</th>
-              <th style="width:15%;">Traffic &amp; Inclusion Basis</th>
-              <th style="width:38%;">Manual Tasks Only (🛠️ WWSG Copy Edits, 301 Slug, Baked-In Images, PDFs &amp; L10n)</th>
-              <th style="width:13%;">Manual Summary</th>
-            </tr>
-          </thead>
-          <tbody>
-            {"".join(manual_table_rows_html)}
-          </tbody>
-        </table>
-      </div>
+    <div class="table-wrap">
+      <table id="pagesTable" data-view-mode="all">
+        <thead>
+          <tr>
+            <th style="width:12%;">Wave &amp; Region</th>
+            <th style="width:36%;">Page URL &amp; Category</th>
+            <th style="width:16%;">US Traffic &amp; Basis</th>
+            <th style="width:22%;">Update Scope (Auto vs. Manual)</th>
+            <th style="width:14%;">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {"".join(pages_table_rows_html)}
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- TAB 3: 301 REDIRECTS -->
+  <!-- ===================================================================== -->
+  <!-- PANEL 2: 301 REDIRECTS                                                -->
+  <!-- ===================================================================== -->
   <div id="tab-redirects" class="tab-panel">
-    <div class="alert">
-      <strong>🔀 Complete HTTP 301 Permanent Redirect Inventory ({total_redirects_count} Total URL &amp; DAM Slug Migrations):</strong>
-      To preserve 100% of organic search equity, external backlinks, bookmark links, and embedded asset paths during the clean cutover to <strong>Super Intelligence Control Tower</strong>, deploy HTTP 301 permanent redirects across all <strong>{webpage_redirect_cnt} Webpage URL slugs</strong> (US + 13 regional locales), <strong>{pdf_redirect_cnt} DAM PDF filenames</strong>, and <strong>{img_redirect_cnt} DAM Image filenames</strong>.
-    </div>
-
-    <div class="card">
-      <h2>Part 1: Itemized 301 Redirect Mapping Table ({total_redirects_count} Redirects: {webpage_redirect_cnt} Webpages + {pdf_redirect_cnt} PDFs + {img_redirect_cnt} Images)</h2>
-      <div class="controls">
-        <input type="text" id="redSearch" class="search-input" placeholder="Search 301 Redirects by old URL, new URL, locale (/uk/, /de/, /fr/), .pdf, .png..." onkeyup="filterRedTable()">
-        <button class="filter-btn active" onclick="filterRedType('all', this)">All 301 Redirects ({total_redirects_count})</button>
-        <button class="filter-btn" onclick="filterRedType('webpage', this)">🌐 Webpage Slugs ({webpage_redirect_cnt})</button>
-        <button class="filter-btn" onclick="filterRedType('pdf', this)">📄 DAM PDF Slugs ({pdf_redirect_cnt})</button>
-        <button class="filter-btn" onclick="filterRedType('image', this)">🖼️ DAM Image Slugs ({img_redirect_cnt})</button>
-      </div>
-      <div class="table-wrap">
-        <table id="redTable">
-          <thead>
-            <tr>
-              <th style="width:6%;">#</th>
-              <th style="width:16%;">Asset Type, Wave &amp; Locale</th>
-              <th style="width:32%;">Old Live URL (Clickable 301 Source)</th>
-              <th style="width:30%;">New Target URL (301 Destination)</th>
-              <th style="width:16%;">Status &amp; Technical Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {"".join(redirect_rows_html)}
-          </tbody>
-        </table>
+    <div class="banner">
+      <div>
+        <strong>HTTP 301 Permanent Redirect Inventory ({total_redirects_count} Total URL &amp; DAM Slug Migrations)</strong>
+        <div style="color:var(--muted);font-size:12.5px;margin-top:2px;">
+          Covers {webpage_redirect_cnt} Webpage URL slugs (US + 13 regional locales), {pdf_redirect_cnt} DAM PDF filenames, and {img_redirect_cnt} DAM Image filenames.
+        </div>
       </div>
     </div>
 
-    <div class="card">
-      <h2>Part 2: Ready-to-Deploy Apache Dispatcher (<code>mod_rewrite</code>) &amp; Akamai Edge Redirector Rules</h2>
-      <p class="desc">Drop-in configuration block handling all US + 13 regional webpage slugs, DAM PDFs (including <code>.coredownload</code>), and DAM images with a single regex ruleset.</p>
-      <pre># ==============================================================================
-# ServiceNow Apache Dispatcher / Akamai Edge Redirector — 301 Cutover Rules
+    <details class="code-drawer">
+      <summary>View Ready-to-Deploy Apache Dispatcher (mod_rewrite) &amp; Akamai Edge Redirector Rules</summary>
+      <div class="drawer-body">
+        <p class="sub-note" style="margin-bottom:8px;">Drop-in configuration handling all US + 13 regional webpage slugs, DAM PDFs (including <code>.coredownload</code>), and DAM images.</p>
+        <pre># ServiceNow Apache Dispatcher / Akamai Edge Redirector — 301 Cutover Rules
 # Product Rename: AI Control Tower (AICT) -> Super Intelligence Control Tower
-# ==============================================================================
 RewriteEngine On
 
-# 1. Flagship Product Page, Pricing Subpage + All 13 Regional Locales (/uk, /au, /in, /de, /fr, /fr-ca, /es, /latam, /br, /it, /nl, /jp, /kr)
+# 1. Flagship Product Page, Pricing Subpage + All 13 Regional Locales
 RewriteRule ^(/([a-z]{{2}}(-[a-z]{{2}})?|latam))?/products/ai-control-tower(/pricing)?\\.html$ $1/products/super-intelligence-control-tower$4.html [R=301,L,NC]
 
-# 2. Contact Us, Webinar Promo & Discovery Playbook eBook (aict / ai-control-tower slugs)
+# 2. Contact Us, Webinar Promo &amp; Discovery Playbook eBook
 RewriteRule ^/contact-us-aict\\.html$ /contact-us-super-intelligence-control-tower.html [R=301,L,NC]
 RewriteRule ^/lpwbr/meet-ai-control-tower-enterprise-ai-governance-at-machine-speed\\.html$ /lpwbr/meet-super-intelligence-control-tower-enterprise-ai-governance-at-machine-speed.html [R=301,L,NC]
 RewriteRule ^/standard/resource-center/ebook/ebk-aict-discovery-playbook\\.html$ /standard/resource-center/ebook/ebk-super-intelligence-control-tower-discovery-playbook.html [R=301,L,NC]
 
-# 3. Live Events, Knowledge Sessions & On-Demand Webinars (US + 13 Regional Locales)
+# 3. Live Events, Knowledge Sessions &amp; On-Demand Webinars (US + 13 Regional Locales)
 RewriteRule ^(/([a-z]{{2}}(-[a-z]{{2}})?|latam))?/events/live/ai-control-tower\\.html$ $1/events/live/super-intelligence-control-tower.html [R=301,L,NC]
 RewriteRule ^/events/on-demand-webinars/put-ai-to-work-with-ai-control-tower\\.html$ /events/on-demand-webinars/put-ai-to-work-with-super-intelligence-control-tower.html [R=301,L,NC]
 RewriteRule ^/events/knowledge/2024/sessions/now-on-now--turning-ai-governance-risk-into-reward-with-the-ai-control-tower\\.html$ /events/knowledge/2024/sessions/now-on-now--turning-ai-governance-risk-into-reward-with-the-super-intelligence-control-tower.html [R=301,L,NC]
 
-# 4. Resource Center White Papers, Solution Briefs & eBooks (US + DE/FR/UK)
+# 4. Resource Center White Papers, Solution Briefs &amp; eBooks (US + DE/FR/UK)
 RewriteRule ^(/([a-z]{{2}}(-[a-z]{{2}})?|latam))?/standard/resource-center/(white-paper|solution-brief|ebook)/(.*)ai-control-tower(.*)\\.html$ $1/standard/resource-center/$4/$5super-intelligence-control-tower$6.html [R=301,L,NC]
 
-# 5. Workflow Articles, Regional Blogs & Documentation Landing Page
+# 5. Workflow Articles, Regional Blogs &amp; Documentation Landing Page
 RewriteRule ^/workflow/ai/(.*)ai-control-tower\\.html$ /workflow/ai/$1super-intelligence-control-tower.html [R=301,L,NC]
 RewriteRule ^/(uk|de|nl)/blogs/2025/(.*)ai-control-tower$ /$1/blogs/2025/$2super-intelligence-control-tower [R=301,L,NC]
 RewriteRule ^/docs/r/intelligent-experiences/ai-control-tower/ai-control-tower-landing\\.html$ /docs/r/intelligent-experiences/super-intelligence-control-tower/super-intelligence-control-tower-landing.html [R=301,L,NC]
 
-# 6. DAM PDFs & .coredownload Endpoints (EN-US, DE-DE, FR-FR)
+# 6. DAM PDFs &amp; .coredownload Endpoints (EN-US, DE-DE, FR-FR)
 RewriteRule ^/content/dam/servicenow-assets/public/(.*)/ebk-aict-discovery-playbook\\.pdf(\\.coredownload)?$ /content/dam/servicenow-assets/public/$1/ebk-super-intelligence-control-tower-discovery-playbook.pdf$2 [R=301,L,NC]
 RewriteRule ^/content/dam/servicenow-assets/public/(.*)/(.*)ai-control-tower(.*)\\.pdf(\\.coredownload)?$ /content/dam/servicenow-assets/public/$1/$2super-intelligence-control-tower$3.pdf$4 [R=301,L,NC]
 
 # 7. DAM Images (.png, .jpg, .webp — excludes partner logo-aicte.svg)
 RewriteCond %{{REQUEST_URI}} !logo-aicte\\.svg$ [NC]
 RewriteRule ^/content/dam/servicenow-assets/public/(.*)/(.*)ai-control-tower(.*)\\.(png|jpg|jpeg|webp)$ /content/dam/servicenow-assets/public/$1/$2super-intelligence-control-tower$3.$4 [R=301,L,NC]</pre>
+      </div>
+    </details>
+
+    <div class="filter-bar">
+      <input type="text" id="redSearch" class="search-input" placeholder="Search old URL, new URL, locale, .pdf, .png..." onkeyup="filterRedTable()">
+      <select id="redTypeSelect" class="select-input" onchange="filterRedTable()">
+        <option value="all">All Redirect Types ({total_redirects_count})</option>
+        <option value="webpage">Webpage URL Slugs ({webpage_redirect_cnt})</option>
+        <option value="pdf">DAM PDF Slugs ({pdf_redirect_cnt})</option>
+        <option value="image">DAM Image Slugs ({img_redirect_cnt})</option>
+      </select>
+      <span id="redCounter" class="results-counter">Showing {total_redirects_count} of {total_redirects_count} redirects</span>
+    </div>
+
+    <div class="table-wrap">
+      <table id="redTable">
+        <thead>
+          <tr>
+            <th style="width:5%;">#</th>
+            <th style="width:16%;">Asset Type, Wave &amp; Locale</th>
+            <th style="width:33%;">Old Live URL (301 Source)</th>
+            <th style="width:30%;">New Target URL (301 Destination)</th>
+            <th style="width:16%;">Technical Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {"".join(redirect_rows_html)}
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <!-- TAB 4: SEO & AIO STRATEGY (SI VS. SUPER INTELLIGENCE) -->
+  <!-- ===================================================================== -->
+  <!-- PANEL 3: MEDIA & PDF ASSETS                                           -->
+  <!-- ===================================================================== -->
+  <div id="tab-media" class="tab-panel">
+    <div class="banner">
+      <div>
+        <strong>DAM Image &amp; PDF Asset Handoff ({total_baked_images_count} Baked-In Image Files Across {total_baked_designs_count} Visual Designs + {total_zero_pixel_images_count} Zero-Pixel Images + 13 PDFs)</strong>
+        <div style="color:var(--muted);font-size:12.5px;margin-top:2px;">
+          Verified via 4-layer discovery (388 live pages + 8,113 Brand 3.0 DAM assets + responsive variant probing + Apple Vision OCR). Includes <code>welcome-ai-control-tower-.sm.png</code> on <code>/platform/responsible-ai.html</code>.
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <input type="text" id="mediaSearch" class="search-input" placeholder="Search asset filename, host page URL, or detected OCR text..." onkeyup="filterMediaTable()">
+      <select id="mediaTypeSelect" class="select-input" onchange="filterMediaTable()">
+        <option value="all">All Media &amp; PDF Assets</option>
+        <option value="baked-img">Manual: Baked-In Pixel Images ({total_baked_designs_count} Design Groups / {total_baked_images_count} Files)</option>
+        <option value="pdf">Manual: Live/Vector PDFs (13 Files)</option>
+        <option value="auto-img">Automated: Zero-Pixel Filename Moves ({total_zero_pixel_images_count} Files)</option>
+      </select>
+      <span id="mediaCounter" class="results-counter">Showing all asset groups</span>
+    </div>
+
+    <div class="table-wrap">
+      <table id="mediaTable">
+        <thead>
+          <tr>
+            <th style="width:14%;">Track &amp; Group</th>
+            <th style="width:34%;">DAM Asset URL &amp; Host Pages</th>
+            <th style="width:12%;">Specs</th>
+            <th style="width:20%;">Detected Text (OCR / PDF)</th>
+            <th style="width:20%;">Required Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {"".join(media_rows_html)}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- PANEL 4: SEO, NAMING & ROLLOUT RULES                                  -->
+  <!-- ===================================================================== -->
   <div id="tab-seo" class="tab-panel">
-    <div class="alert blue">
-      <strong>🔍 Semrush MCP + Live SERP &amp; AIO (AI Overview / LLM Citation) Optimization Audit:</strong>
-      Connected to the <strong>Semrush MCP Server</strong> (<code>https://mcp.semrush.com/v2/mcp</code> via OAuth 2.0 PKCE authentication; corporate sub-account API unit status verified alongside full live DOM, Google SERP pixel-width, Schema.org, and LLM retrieval-augmented generation [RAG] entity analysis across all {len(unique_body_pages)} pages). Below is the complete SEO &amp; AIO decision framework governing when to use <strong><code>Super Intelligence Control Tower</code> (32 chars)</strong> vs. <strong><code>SI Control Tower</code> (16 chars)</strong>.
-    </div>
-
     <div class="card">
-      <h2>Part 1: Entity Canonicalization for AIO (ChatGPT / Perplexity / Google AI Overviews) vs. SERP Pixel Limits</h2>
-      <p class="desc">Why pairing the 32-char Full Canonical Name on primary anchors with the 16-char <code>SI Control Tower</code> shorthand on constrained UI components maximizes both LLM entity citation and Google SERP click-through rate.</p>
+      <div class="card-header">
+        <h2>1. Naming Rules: When to Use "Super Intelligence Control Tower" (32 Chars) vs. "SI Control Tower" (16 Chars)</h2>
+      </div>
+      <p class="desc">Use the full 32-character canonical name on primary SEO/AIO anchors to establish the product entity for search engines and LLMs. Use the 16-character shorthand (<code>SI Control Tower</code> — exact same length as <code>AI Control Tower</code>) on constrained UI components and secondary mentions.</p>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th style="width:24%;">Optimization Pillar</th>
-              <th style="width:38%;">Technical Mechanism (Google Search &amp; LLM / AIO Retrieval)</th>
-              <th style="width:38%;">Exact Implementation Rule Across the {len(unique_body_pages)} Pages</th>
+              <th style="width:22%;">Placement / Component</th>
+              <th style="width:12%;">Char Limit</th>
+              <th style="width:22%;">Approved Target Form</th>
+              <th style="width:12%;">Track</th>
+              <th style="width:32%;">Exact Target Copy &amp; Rationale</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td data-label="Optimization Pillar"><span class="badge b-ok">1. AIO &amp; LLM Entity Resolution</span><br><strong>Primary Canonical Anchors Use Full Name (32 Chars)</strong></td>
-              <td data-label="Technical Mechanism">
-                • Generative search engines (<strong>Google AI Overviews, ChatGPT Search, Perplexity, Gemini, Claude</strong>) and Google's Knowledge Graph extract the canonical product entity from 5 primary DOM &amp; structured-data signals: <code>&lt;title&gt;</code>, <code>&lt;h1&gt;</code>, First Body Paragraph, Signature Company Tagline, and JSON-LD <code>SoftwareApplication.name</code>.<br>
-                • Using the full name <strong><code>Super Intelligence Control Tower</code></strong> in these 5 primary anchors ensures LLMs index the full semantic phrase <em>"Super Intelligence"</em> alongside <em>"Control Tower"</em>.
-              </td>
-              <td data-label="Exact Implementation Rule">
-                • <strong>Flagship <code>&lt;title&gt;</code>:</strong> <code>Super Intelligence Control Tower - ServiceNow</code> (45/60 chars, ~412px / 600px SERP cap ✓).<br>
-                • <strong>Flagship <code>&lt;h1&gt;</code>:</strong> <code>Super Intelligence Control Tower</code> (32/50 chars ✓ — 100% Automated).<br>
-                • <strong>First Body Mention &amp; Meta Description:</strong> Introduce as <code>Super Intelligence Control Tower (SI Control Tower)</code> on first mention so LLM embeddings bind the 32-char canonical name and 16-char shorthand together.<br>
-                • <strong>Company Positioning Tagline:</strong> Always spell out <code>ServiceNow is the Super Intelligence Control Tower for business reinvention</code> (75/175 chars ✓) across US and all 13 regional homepages.
+              <td><strong>Flagship Product <code>&lt;title&gt;</code> &amp; Social Titles</strong><br>{a_link('https://www.servicenow.com/products/ai-control-tower.html')}</td>
+              <td>&le; 60 chars</td>
+              <td><span class="badge b-auto">Super Intelligence Control Tower</span></td>
+              <td><span class="badge b-auto">Auto</span></td>
+              <td><code>Super Intelligence Control Tower - ServiceNow</code> (45/60 chars). Establishes canonical entity for Google SERPs and AI Overviews.</td>
+            </tr>
+            <tr>
+              <td><strong>Compound <code>&lt;title&gt;</code> Tags</strong><br>(Blogs, Webinars, Solution Briefs)</td>
+              <td>&le; 60 chars</td>
+              <td><span class="badge b-manual">SI Control Tower</span> (when Full &gt; 60)</td>
+              <td><span class="badge b-auto">Auto</span></td>
+              <td>Example: <code>What Is an SI Control Tower? - ServiceNow</code> (41/60 chars). Prevents Google SERP truncation of <code>- ServiceNow</code>.</td>
+            </tr>
+            <tr>
+              <td><strong>Flagship Hero Marquee <code>&lt;h1&gt;</code></strong></td>
+              <td>&le; 50 chars</td>
+              <td><span class="badge b-auto">Super Intelligence Control Tower</span></td>
+              <td><span class="badge b-auto">Auto</span></td>
+              <td><code>Super Intelligence Control Tower</code> (32/50 chars). Direct 1:1 swap with zero legacy product eyebrow text.</td>
+            </tr>
+            <tr>
+              <td><strong>Flagship Hero Marquee Lead Paragraph</strong></td>
+              <td>&le; 175 chars</td>
+              <td><span class="badge b-auto">Super Intelligence Control Tower</span></td>
+              <td><span class="badge b-manual">Manual</span></td>
+              <td><code>Enforce runtime governance for AI at scale. Super Intelligence Control Tower gives you a central hub to discover, secure, govern, observe, and measure enterprise AI.</code> (165/175 chars).</td>
+            </tr>
+            <tr>
+              <td><strong>Homepage &amp; Customer Hero CTA Button + Lead Copy Bridge</strong><br>{a_link('https://www.servicenow.com/')}</td>
+              <td>CTA: &le; 25 chars<br>Body: &le; 220 chars</td>
+              <td>CTA: <span class="badge b-auto">See SI Control Tower</span><br>+ <span class="badge b-manual">Hero Context Bridge</span></td>
+              <td><span class="badge b-auto">Auto CTA</span> +<br><span class="badge b-manual">Manual Copy</span></td>
+              <td>
+                <strong>CTA Button (Auto):</strong> <code>See SI Control Tower</code> (20/25 chars; full name is 36/25 chars and overflows pill button).<br>
+                <strong>Hero Lead Paragraph Bridge (Manual):</strong> Update surrounding paragraph so visitors understand <code>SI = Super Intelligence</code> before clicking:<br>
+                &bull; <strong>Option 1A:</strong> <em>"...ServiceNow&reg; unites all of it in the <strong>Super Intelligence Control Tower</strong>&mdash;so AI doesn't just think. It acts."</em> (219 chars)<br>
+                &bull; <strong>Option 1B:</strong> <em>"...ServiceNow&reg; is the only platform built for all of it&mdash;turning AI into <strong>Super Intelligence (SI)</strong> that acts."</em> (220 chars)
               </td>
             </tr>
             <tr>
-              <td data-label="Optimization Pillar"><span class="badge b-w3">2. Clean Entity Cutover</span><br><strong>Zero Legacy-Name Eyebrows or Parentheticals</strong></td>
-              <td data-label="Technical Mechanism">
-                • Including a retired product name inside H1 eyebrows, meta descriptions, or JSON-LD schema causes <strong>entity split and token dilution</strong> in vector retrieval (RAG chunks match both the old and new tokens, causing AI Overviews and chatbots to hedge or cite the outdated name).<br>
-                • Instead, <strong>HTTP 301 permanent redirects</strong> (Tab 3) transfer 100% of historical backlink authority and anchor signals at the HTTP layer while keeping on-page DOM text 100% clean.
-              </td>
-              <td data-label="Exact Implementation Rule">
-                • <strong>0 legacy-name eyebrows or parentheticals</strong> anywhere in HTML copy, <code>&lt;meta&gt;</code> tags, or JSON-LD.<br>
-                • JSON-LD <code>SoftwareApplication</code> declares <code>"name": "ServiceNow Super Intelligence Control Tower"</code> and <code>"alternateName": ["Super Intelligence Control Tower", "SI Control Tower"]</code>.<br>
-                • All {total_redirects_count} legacy URLs and DAM assets return <code>HTTP 301</code> to their new <code>super-intelligence-control-tower</code> paths.
-              </td>
+              <td><strong>Company Positioning Tagline</strong><br>(Homepages &amp; Platform Hubs)</td>
+              <td>&le; 175 chars</td>
+              <td><span class="badge b-auto">Super Intelligence Control Tower</span></td>
+              <td><span class="badge b-auto">Auto</span></td>
+              <td><code>ServiceNow is the Super Intelligence Control Tower for business reinvention</code> (75/175 chars). Always use full name.</td>
             </tr>
             <tr>
-              <td data-label="Optimization Pillar"><span class="badge b-warn">3. SERP Pixel &amp; WWSG Fit</span><br><strong>Why <code>SI Control Tower</code> (16 Chars) Is Used on Secondary &amp; Constrained Elements</strong></td>
-              <td data-label="Technical Mechanism">
-                • Google Desktop SERPs truncate <code>&lt;title&gt;</code> tags at <strong>~600 pixels (~60 characters)</strong> in 20px Roboto, and WWSG 2026 Q3 enforces strict character caps on Arc components (<code>&le;50</code> chars for Accordion/Marquee/Card headings, <code>&le;100</code> chars for Cards/Action items, <code>&le;125</code> chars for <code>alt</code> text).<br>
-                • Because <strong><code>SI Control Tower</code> is exactly 16 characters (~138px)</strong> — identical to the old 16-char name — it adds <strong>+0 characters and +0 pixels</strong>!
-              </td>
-              <td data-label="Exact Implementation Rule">
-                • Automatically used on <strong>{total_si_short_saves} instances</strong> across the inventory:<br>
-                &nbsp;&nbsp;1. <strong>Compound <code>&lt;title&gt;</code> tags &gt;60 chars</strong> (blogs, webinars, white papers) so <code>" - ServiceNow"</code> never truncates in Google SERPs.<br>
-                &nbsp;&nbsp;2. <strong>FAQ Accordion Headings (&le;50 chars)</strong> after the page <code>&lt;h1&gt;</code> has established the full entity.<br>
-                &nbsp;&nbsp;3. <strong>Tight Arc UI Cards, Buttons &amp; Secondary Nav (&le;50 / &le;100 chars)</strong>.<br>
-                &nbsp;&nbsp;4. <strong>Image <code>alt</code> attributes approaching 125 chars</strong>.<br>
-                &nbsp;&nbsp;5. <strong>100% of former <code>AICT</code> acronym mentions</strong>.
-              </td>
+              <td><strong>FAQ Accordion Headings &amp; Tight UI Cards</strong></td>
+              <td>Heading: &le; 50<br>Card: &le; 100</td>
+              <td><span class="badge b-manual">SI Control Tower</span> (16 chars)</td>
+              <td><span class="badge b-auto">Auto</span> / <span class="badge b-manual">Manual</span></td>
+              <td>Used on {total_si_short_saves} constrained instances (e.g., <code>How is SI Control Tower unique?</code> 31/50 chars; <code>Explore SI Control Tower</code> 24/25 chars) and all former <code>AICT</code> acronyms.</td>
             </tr>
           </tbody>
         </table>
@@ -2852,123 +3244,42 @@ RewriteRule ^/content/dam/servicenow-assets/public/(.*)/(.*)ai-control-tower(.*)
     </div>
 
     <div class="card">
-      <h2>Part 2: Element-by-Element SEO, AIO &amp; WWSG Naming Decision Matrix</h2>
-      <p class="desc">Definitive reference for writers, SEO specialists, and AEM engineers showing the exact target form for every DOM &amp; metadata placement.</p>
+      <div class="card-header">
+        <h2>2. Wave Rollout Summary ({len(unique_body_pages)} Pages: {us_pages_total} US + {regional_pages_total} Regional)</h2>
+      </div>
+      <p class="desc">Regional pages automatically inherit the Wave assignment of their US parent page so global and regional launches stay synchronized.</p>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>DOM / Metadata Placement</th>
-              <th>WWSG / SERP Limit</th>
-              <th>Approved Target Form</th>
-              <th>Execution Track</th>
-              <th>Exact Example &amp; SEO / AIO Rationale</th>
+              <th style="width:10%;">Wave</th>
+              <th style="width:44%;">Included Page Groups</th>
+              <th style="width:22%;">Pages &amp; Execution Split</th>
+              <th style="width:12%;">US YTD Visits</th>
+              <th style="width:12%;">US Conversions</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td data-label="Placement"><strong>1. Flagship Product Page <code>&lt;title&gt;</code></strong><br>{a_link('https://www.servicenow.com/products/ai-control-tower.html')}<br>{a_link('https://www.servicenow.com/uk/products/ai-control-tower.html')}</td>
-              <td data-label="Limit">&le; 60 chars<br>(&le; 600px SERP)</td>
-              <td data-label="Target Form"><span class="badge b-ok">Super Intelligence Control Tower</span><br><em>or Dual-Keyword</em></td>
-              <td data-label="Track"><span class="badge b-ok">🤖 Auto Swap</span></td>
-              <td data-label="Example &amp; Rationale">
-                • <strong>Primary Target:</strong> <code>Super Intelligence Control Tower - ServiceNow</code> <span class="badge b-ok">[45/60 chars • ~412px ✓]</span><br>
-                • <strong>Dual-Keyword SEO Option:</strong> <code>Super Intelligence (SI) Control Tower - ServiceNow</code> <span class="badge b-ok">[50/60 chars • ~458px ✓]</span><br>
-                <em>Captures organic search &amp; AI Overview citations for both the full product name and "SI Control Tower".</em>
-              </td>
+              <td><span class="badge b-w1">Wave 1</span></td>
+              <td>Global Nav Experience Fragment ({len(ssi_only_pages):,} pages) + Flagship Product &amp; Playbook Pages (US + 13 locales) + US &amp; 13 Regional Homepages ({a_link('https://www.servicenow.com/')}, {a_link('https://www.servicenow.com/uk/')}, etc.) + High-Traffic Hubs (&ge;10,000 visits or &ge;250 conversions).</td>
+              <td><strong>{w1_s['pages']} Pages</strong> ({w1_s['us_pages']} US + {w1_s['reg_pages']} Reg)<br><span class="sub-note">{w1_s['auto_pages']} Pure Auto / {w1_s['manual_pages']} Hybrid Manual</span></td>
+              <td><strong>{w1_s['visits']:,}</strong><br><span class="badge b-auto">96.2% Share</span></td>
+              <td><strong>{w1_s['conv']:,}</strong><br><span class="badge b-auto">90.8% Share</span></td>
             </tr>
             <tr>
-              <td data-label="Placement"><strong>2. Compound <code>&lt;title&gt;</code> Tags</strong><br>(Blogs, Webinars, eBooks, Solution Briefs)</td>
-              <td data-label="Limit">&le; 60 chars<br>(&le; 600px SERP)</td>
-              <td data-label="Target Form"><span class="badge b-warn">SI Control Tower</span><br>(when Full &gt; 60 chars)</td>
-              <td data-label="Track"><span class="badge b-ok">🤖 Auto Swap</span></td>
-              <td data-label="Example &amp; Rationale">
-                • <strong>Example:</strong> <code>What Is an SI Control Tower? - ServiceNow</code> <span class="badge b-ok">[41/60 chars ✓]</span> (vs. 57 chars with full name).<br>
-                • <strong>Rule:</strong> Whenever the 32-char name pushes a compound <code>&lt;title&gt;</code> over 60 chars, the Groovy script automatically uses <code>SI Control Tower</code> (16 chars) to prevent SERP ellipsis truncation.
-              </td>
+              <td><span class="badge b-w2">Wave 2</span></td>
+              <td>All remaining Commercial Product, Solution, Capability, Application, Platform, Industry, Event, Resource Center, and active Workflow pages across US + 13 locales.</td>
+              <td><strong>{w2_s['pages']} Pages</strong> ({w2_s['us_pages']} US + {w2_s['reg_pages']} Reg)<br><span class="sub-note">{w2_s['auto_pages']} Pure Auto / {w2_s['manual_pages']} Hybrid Manual</span></td>
+              <td><strong>{w2_s['visits']:,}</strong><br><span class="badge b-manual">3.6% Share</span></td>
+              <td><strong>{w2_s['conv']:,}</strong><br><span class="badge b-manual">8.9% Share</span></td>
             </tr>
             <tr>
-              <td data-label="Placement"><strong>3. Flagship Hero Marquee <code>&lt;h1&gt;</code></strong><br>(<code>&lt;arc-marquee-large slot="heading"&gt;</code>)</td>
-              <td data-label="Limit">&le; 50 chars<br>(WWSG Marquee H1)</td>
-              <td data-label="Target Form"><span class="badge b-ok">Super Intelligence Control Tower</span></td>
-              <td data-label="Track"><span class="badge b-ok">🤖 Auto Swap</span></td>
-              <td data-label="Example &amp; Rationale">
-                • <strong>Target:</strong> <code>Super Intelligence Control Tower</code> <span class="badge b-ok">[32/50 chars ✓]</span><br>
-                • <strong>Clean Cutover:</strong> Direct 1:1 automated swap in the H1 heading with zero legacy eyebrow text.
-              </td>
-            </tr>
-            <tr>
-              <td data-label="Placement"><strong>4. Flagship Hero Marquee Lead Copy &amp; <code>&lt;meta description&gt;</code></strong></td>
-              <td data-label="Limit">Marquee: &le; 175<br>Meta Desc: &le; 160</td>
-              <td data-label="Target Form"><span class="badge b-ok">Super Intelligence Control Tower</span></td>
-              <td data-label="Track"><span class="badge b-w1">🛠️ Manual Copy Trim</span><br>(Marquee)<br><span class="badge b-ok">🤖 Auto Swap</span> (Meta)</td>
-              <td data-label="Example &amp; Rationale">
-                • <strong>Marquee Description (&le;175 chars):</strong> <code>Enforce runtime governance for AI at scale. Super Intelligence Control Tower gives you a central hub to discover, secure, govern, observe, and measure enterprise AI.</code> <span class="badge b-ok">[165/175 chars ✓]</span><br>
-                • <strong>SEO Meta Description (&le;160 chars):</strong> <code>Discover, govern, secure, and measure enterprise AI from one central hub with ServiceNow Super Intelligence (SI) Control Tower.</code> <span class="badge b-ok">[127/160 chars ✓]</span>
-              </td>
-            </tr>
-            <tr>
-              <td data-label="Placement"><strong>5. Signature Company Positioning Tagline</strong><br>({a_link('https://www.servicenow.com/')}, {a_link('https://www.servicenow.com/uk/')}, Platform Hubs)</td>
-              <td data-label="Limit">&le; 175 chars</td>
-              <td data-label="Target Form"><span class="badge b-ok">Always Full Name</span></td>
-              <td data-label="Track"><span class="badge b-ok">🤖 Auto Swap</span></td>
-              <td data-label="Example &amp; Rationale">
-                • <strong>Target:</strong> <code>ServiceNow is the Super Intelligence Control Tower for business reinvention</code> <span class="badge b-ok">[75/175 chars ✓]</span><br>
-                <em>Essential for corporate brand authority and LLM entity association across US and all 13 regional homepages.</em>
-              </td>
-            </tr>
-            <tr>
-              <td data-label="Placement"><strong>6. FAQ Accordion Headings</strong><br>(<code>&lt;arc-accordion-item slot="heading"&gt;</code>)</td>
-              <td data-label="Limit">&le; 50 chars<br>(WWSG Accordion Title)</td>
-              <td data-label="Target Form"><span class="badge b-warn">SI Control Tower</span><br>(16 chars)</td>
-              <td data-label="Track"><span class="badge b-w1">🛠️ Manual Copy Trim</span><br>(Flagship FAQs)</td>
-              <td data-label="Example &amp; Rationale">
-                • Q1: <code>How is SI Control Tower unique?</code> <span class="badge b-ok">[31/50 chars ✓]</span><br>
-                • Q2: <code>Can SI Control Tower discover shadow AI agents?</code> <span class="badge b-ok">[47/50 chars ✓]</span><br>
-                • Q3: <code>How does SI Control Tower handle compliance?</code> <span class="badge b-ok">[44/50 chars ✓]</span><br>
-                • Q4: <code>Does SI Control Tower work with ServiceNow?</code> <span class="badge b-ok">[43/50 chars ✓]</span><br>
-                <em>Because the H1 already establishes <code>Super Intelligence Control Tower</code>, using <code>SI Control Tower</code> in FAQ headings satisfies the 50-char WWSG cap and targets conversational PAA/AIO queries.</em>
-              </td>
-            </tr>
-            <tr>
-              <td data-label="Placement"><strong>7. FAQ Accordion Body Answers</strong><br>(<code>&lt;arc-accordion-item&gt; &lt;arc-copy-block&gt;</code>)</td>
-              <td data-label="Limit">&le; 250 chars<br>(WWSG Accordion Body)</td>
-              <td data-label="Target Form"><span class="badge b-ok">Full Name</span> (A1) +<br><span class="badge b-warn">SI Control Tower</span> (A2–A4)</td>
-              <td data-label="Track"><span class="badge b-w1">🛠️ Manual Copy Trim</span></td>
-              <td data-label="Example &amp; Rationale">
-                • Answer #1 uses <code>Super Intelligence Control Tower</code> (224/250 chars ✓) to reinforce the full entity inside `FAQPage` schema.<br>
-                • Answers #3 &amp; #4 use <code>SI Control Tower</code> (210/250 and 177/250 chars ✓) to stay crisp and under the 250-char WWSG cap.
-              </td>
-            </tr>
-            <tr>
-              <td data-label="Placement"><strong>8. CTA Buttons (<code>&lt;arc-button&gt;</code> Pill &amp; Link CTAs)</strong><br>({a_link('https://www.servicenow.com/')} Hero Marquee, Feature Tabs, Cards)</td>
-              <td data-label="Limit">15 chars target<br>(&le; 25 chars max)</td>
-              <td data-label="Target Form"><span class="badge b-warn">SI Control Tower</span><br>(16 chars)</td>
-              <td data-label="Track"><span class="badge b-ok">🤖 Auto Swap</span><br>(Groovy <code>maxCap = 25</code>)</td>
-              <td data-label="Example &amp; Rationale">
-                • <strong>Homepage Hero CTA ({a_link('https://www.servicenow.com/')}):</strong> <code>See SI Control Tower</code> <span class="badge b-ok">[20/25 chars ✓]</span> (exact same 20-char width as <code>See AI Control Tower</code>; full name <code>See Super Intelligence Control Tower</code> is 36/25 chars ⚠️ and overflows the green pill button).<br>
-                • <strong>Feature Tab / Card CTA:</strong> <code>Explore SI Control Tower</code> <span class="badge b-ok">[24/25 chars ✓]</span> + automated link swap to <code>/products/super-intelligence-control-tower.html</code>.
-              </td>
-            </tr>
-            <tr>
-              <td data-label="Placement"><strong>9. Secondary Nav, Feature Cards, Action Items &amp; Former <code>AICT</code> Acronyms</strong></td>
-              <td data-label="Limit">Nav/Heading: &le; 50<br>Card/Action: &le; 100</td>
-              <td data-label="Target Form"><span class="badge b-warn">SI Control Tower</span><br>(when Full overflows)</td>
-              <td data-label="Track"><span class="badge b-ok">🤖 Auto Swap</span></td>
-              <td data-label="Example &amp; Rationale">
-                • Secondary Nav: <code>Super Intelligence Control Tower</code> (32/50 chars ✓ — full name fits!).<br>
-                • Action Card (&le;100 chars): <code>Review our product doc to learn what you’ll get from SI Control Tower.</code> <span class="badge b-ok">[70/100 chars ✓]</span>.<br>
-                • All former <code>AICT</code> acronyms swap 1:1 to <code>SI Control Tower</code>.
-              </td>
-            </tr>
-            <tr>
-              <td data-label="Placement"><strong>10. HTML Image <code>alt</code> Attributes</strong><br>(<code>&lt;arc-image alt="..."&gt;</code>)</td>
-              <td data-label="Limit">&le; 125 chars<br>(WWSG Accessibility)</td>
-              <td data-label="Target Form"><span class="badge b-warn">SI Control Tower</span><br>(when Full &gt; 125 chars)</td>
-              <td data-label="Track"><span class="badge b-ok">🤖 Auto Swap</span></td>
-              <td data-label="Example &amp; Rationale">
-                • Strips redundant <em>"Video showing / Screenshot of"</em> prefixes and uses <code>SI Control Tower</code> when needed so all 11 flagship <code>alt</code> attributes fit inside 98–103 chars (&le;125 chars ✓).
-              </td>
+              <td><span class="badge b-w3">Wave 3</span></td>
+              <td>Long-tail archival Blogs, low-traffic Workflow articles (&lt;100 visits), Customer Stories, Partner Finder, University, and Docs across US + 13 locales.</td>
+              <td><strong>{w3_s['pages']} Pages</strong> ({w3_s['us_pages']} US + {w3_s['reg_pages']} Reg)<br><span class="sub-note">{w3_s['auto_pages']} Pure Auto / {w3_s['manual_pages']} Hybrid Manual</span></td>
+              <td><strong>{w3_s['visits']:,}</strong><br><span class="badge b-w3">0.2% Share</span></td>
+              <td><strong>{w3_s['conv']:,}</strong><br><span class="badge b-w3">0.3% Share</span></td>
             </tr>
           </tbody>
         </table>
@@ -2976,81 +3287,116 @@ RewriteRule ^/content/dam/servicenow-assets/public/(.*)/(.*)ai-control-tower(.*)
     </div>
 
     <div class="card">
-      <h2>Part 3: Ready-to-Embed JSON-LD Structured Data (<code>SoftwareApplication</code> + <code>FAQPage</code> for AIO &amp; Rich Results)</h2>
-      <p class="desc">Embed on {a_link('https://www.servicenow.com/products/ai-control-tower.html')} (after move to <code>/products/super-intelligence-control-tower.html</code>) and localized counterparts. Declares both <code>Super Intelligence Control Tower</code> and <code>SI Control Tower</code> with zero legacy product names.</p>
-      <pre>&lt;script type="application/ld+json"&gt;
-{{
-  "@context": "https://schema.org",
-  "@graph": [
-    {{
-      "@type": "SoftwareApplication",
-      "@id": "https://www.servicenow.com/products/super-intelligence-control-tower.html#software",
-      "name": "ServiceNow Super Intelligence Control Tower",
-      "alternateName": [
-        "Super Intelligence Control Tower",
-        "SI Control Tower"
-      ],
-      "applicationCategory": "BusinessApplication",
-      "ApplicationSubCategory": "Enterprise AI Governance, Observability, and Management Platform",
-      "operatingSystem": "ServiceNow AI Platform",
-      "url": "https://www.servicenow.com/products/super-intelligence-control-tower.html",
-      "description": "Enforce runtime governance for AI at scale. Super Intelligence Control Tower (SI Control Tower) gives you a central hub to discover, secure, govern, observe, and measure enterprise AI.",
-      "brand": {{
-        "@type": "Brand",
-        "name": "ServiceNow"
-      }},
-      "offers": {{
-        "@type": "Offer",
-        "url": "https://www.servicenow.com/contact-us-super-intelligence-control-tower.html"
-      }}
-    }},
-    {{
-      "@type": "FAQPage",
-      "@id": "https://www.servicenow.com/products/super-intelligence-control-tower.html#faq",
-      "mainEntity": [
-        {{
-          "@type": "Question",
-          "name": "How is SI Control Tower unique?",
-          "acceptedAnswer": {{
-            "@type": "Answer",
-            "text": "Most vendors only cover one area or their own cloud. Super Intelligence Control Tower unifies AI discovery, observability, governance, security, and value metrics to give you one source of truth for AI assets across clouds and vendors."
-          }}
-        }},
-        {{
-          "@type": "Question",
-          "name": "Can SI Control Tower discover shadow AI agents?",
-          "acceptedAnswer": {{
-            "@type": "Answer",
-            "text": "Yes. Super Intelligence Control Tower continuously discovers AI agents, models, and workflows across your enterprise—including third-party and shadow AI—and registers them in your unified inventory."
-          }}
-        }},
-        {{
-          "@type": "Question",
-          "name": "How does SI Control Tower handle compliance?",
-          "acceptedAnswer": {{
-            "@type": "Answer",
-            "text": "SI Control Tower provides automated, auditable compliance gates with out-of-the-box governance workflows and content packs for the EU AI Act, NIST AI RMF, and state regulations like the California AI Transparency Act."
-          }}
-        }},
-        {{
-          "@type": "Question",
-          "name": "Does SI Control Tower work with ServiceNow?",
-          "acceptedAnswer": {{
-            "@type": "Answer",
-            "text": "Yes. SI Control Tower is built into the ServiceNow AI Platform and your CMDB. Contact your account team to see how it compounds the value of your existing ServiceNow investments."
-          }}
-        }}
-      ]
-    }}
-  ]
-}}
-&lt;/script&gt;</pre>
+      <div class="card-header">
+        <h2>3. Regional Localization Matrix (13 Locales • {regional_pages_total} Regional Pages)</h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:18%;">Region / Locale</th>
+              <th style="width:12%;">Pages</th>
+              <th style="width:28%;">Key URLs (Homepage &amp; Flagship)</th>
+              <th style="width:18%;">Current Live Term</th>
+              <th style="width:24%;">Approved Target Full Name &amp; Short Form</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>UK (<code>/uk/</code>), AU (<code>/au/</code>), IN (<code>/in/</code>)</strong></td>
+              <td>{locale_counts['uk']} UK / {locale_counts['au']} AU / {locale_counts['in']} IN</td>
+              <td class="mono">{a_link('https://www.servicenow.com/uk/')}<br>{a_link('https://www.servicenow.com/uk/products/ai-control-tower.html')}</td>
+              <td><code>AI Control Tower</code></td>
+              <td><strong>Super Intelligence Control Tower</strong><br><span class="sub-note">Short: <code>SI Control Tower</code></span></td>
+            </tr>
+            <tr>
+              <td><strong>Germany (<code>/de/</code>)</strong></td>
+              <td>{locale_counts['de']} Pages</td>
+              <td class="mono">{a_link('https://www.servicenow.com/de/')}<br>{a_link('https://www.servicenow.com/de/products/ai-control-tower.html')}</td>
+              <td><code>KI-Kontrollturm</code></td>
+              <td><strong>Super-Intelligenz-Kontrollturm</strong><br><span class="sub-note">Short: <code>SI-Kontrollturm</code></span></td>
+            </tr>
+            <tr>
+              <td><strong>France (<code>/fr/</code>) &amp; Canada FR (<code>/fr-ca/</code>)</strong></td>
+              <td>{locale_counts['fr']} FR / {locale_counts['fr-ca']} FR-CA</td>
+              <td class="mono">{a_link('https://www.servicenow.com/fr/')}<br>{a_link('https://www.servicenow.com/fr/products/ai-control-tower.html')}</td>
+              <td><code>Tour de contrôle IA</code></td>
+              <td><strong>Tour de contrôle Super Intelligence</strong><br><span class="sub-note">Short: <code>Tour de contrôle SI</code></span></td>
+            </tr>
+            <tr>
+              <td><strong>Spain (<code>/es/</code>) &amp; LATAM (<code>/latam/</code>)</strong></td>
+              <td>{locale_counts['es']} ES / {locale_counts['latam']} LATAM</td>
+              <td class="mono">{a_link('https://www.servicenow.com/es/')}<br>{a_link('https://www.servicenow.com/es/products/ai-control-tower.html')}</td>
+              <td><code>Torre de control de IA</code></td>
+              <td><strong>Torre de control de Superinteligencia</strong><br><span class="sub-note">Short: <code>Torre de control de SI</code></span></td>
+            </tr>
+            <tr>
+              <td><strong>Brazil (<code>/br/</code>)</strong></td>
+              <td>{locale_counts['br']} Pages</td>
+              <td class="mono">{a_link('https://www.servicenow.com/br/')}<br>{a_link('https://www.servicenow.com/br/products/ai-control-tower.html')}</td>
+              <td><code>Torre de controle de IA</code></td>
+              <td><strong>Torre de controle de Superinteligência</strong><br><span class="sub-note">Short: <code>Torre de controle de SI</code></span></td>
+            </tr>
+            <tr>
+              <td><strong>Italy (<code>/it/</code>)</strong></td>
+              <td>{locale_counts['it']} Pages</td>
+              <td class="mono">{a_link('https://www.servicenow.com/it/')}<br>{a_link('https://www.servicenow.com/it/products/ai-control-tower.html')}</td>
+              <td><code>Torre di controllo AI</code></td>
+              <td><strong>Torre di controllo della Super Intelligenza</strong><br><span class="sub-note">Short: <code>Torre di controllo SI</code></span></td>
+            </tr>
+            <tr>
+              <td><strong>Netherlands (<code>/nl/</code>)</strong></td>
+              <td>{locale_counts['nl']} Pages</td>
+              <td class="mono">{a_link('https://www.servicenow.com/nl/')}<br>{a_link('https://www.servicenow.com/nl/products/ai-control-tower.html')}</td>
+              <td><code>AI-controletoren</code></td>
+              <td><strong>Superintelligentie-controletoren</strong><br><span class="sub-note">Short: <code>SI-controletoren</code></span></td>
+            </tr>
+            <tr>
+              <td><strong>Japan (<code>/jp/</code>)</strong></td>
+              <td>{locale_counts['jp']} Pages</td>
+              <td class="mono">{a_link('https://www.servicenow.com/jp/')}<br>{a_link('https://www.servicenow.com/jp/products/ai-control-tower.html')}</td>
+              <td><code>AI コントロールタワー</code></td>
+              <td><strong>スーパーインテリジェンス・コントロールタワー</strong><br><span class="sub-note">Short: <code>SI コントロールタワー</code></span></td>
+            </tr>
+            <tr>
+              <td><strong>Korea (<code>/kr/</code>)</strong></td>
+              <td>{locale_counts['kr']} Pages</td>
+              <td class="mono">{a_link('https://www.servicenow.com/kr/')}<br>{a_link('https://www.servicenow.com/kr/products/ai-control-tower.html')}</td>
+              <td><code>AI 컨트롤 타워</code></td>
+              <td><strong>슈퍼 인텔리전스 컨트롤 타워</strong><br><span class="sub-note">Short: <code>SI 컨트롤 타워</code></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <div class="card">
-      <h2>Part 4: Ready-to-Run AEM Groovy Console Script (Executes All {total_auto_instances:,} Automated Swaps Across US + 13 Regional Locales)</h2>
-      <p class="desc">Automatically updates JCR text, meta, link, CTA button, and alt properties across US and all 13 regional sites, using <code>Super Intelligence Control Tower</code> by default and automatically falling back to <code>SI Control Tower</code> when a component property has a strict character cap (such as &le;25 chars on <code>&lt;arc-button&gt;</code> CTAs).</p>
-      <pre>// AEM Groovy Console Script — Global + Regional Automated Swap with WWSG Length-Aware "SI Control Tower" Fallback
+    <details class="code-drawer">
+      <summary>View 31-Category Page Breakdown Table ({len(unique_body_pages)} Pages)</summary>
+      <div class="drawer-body">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Page Category</th>
+                <th>Pages (US + Regional)</th>
+                <th>Automated vs. Manual Split</th>
+                <th>US YTD Visits (% Share)</th>
+                <th>US Conversions</th>
+                <th>Wave Split</th>
+              </tr>
+            </thead>
+            <tbody>
+              {"".join(cat_summary_rows_html)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </details>
+
+    <details class="code-drawer">
+      <summary>View Ready-to-Run AEM Groovy Console Script ({total_auto_instances:,} Automated Swaps Across US + 13 Locales)</summary>
+      <div class="drawer-body">
+        <pre>// AEM Groovy Console Script — Global + Regional Automated Swap with WWSG Length-Aware "SI Control Tower" Fallback
 import javax.jcr.Node
 
 boolean dryRun = true // Set to false after reviewing dry-run output
@@ -3070,21 +3416,18 @@ paths.each {{ rootPath -&gt;
                 String orig = val
                 String pName = prop.name.toLowerCase()
 
-                // 1. Update internal URL &amp; DAM slugs
                 if (!val.contains("logo-aicte.svg")) {{
                     val = val.replaceAll("(?i)/products/ai-control-tower", "/products/super-intelligence-control-tower")
                     val = val.replaceAll("(?i)contact-us-aict", "contact-us-super-intelligence-control-tower")
                     val = val.replaceAll("(?i)ebk-aict-discovery-playbook", "ebk-super-intelligence-control-tower-discovery-playbook")
                 }}
 
-                // 2. Determine if property has a tight WWSG / SERP character cap
                 int maxCap = 0
                 if (pName.contains("cta") || pName.contains("button") || pName.contains("linktext") || pName.contains("action") || (orig.trim().length() &lt;= 36 &amp;&amp; orig.trim().matches("(?i)^(See|Explore|Extend|Discover|Try|Get|Watch|View|Infos zu|Voir|D[\\u00e9e]couvrir|Ver|Explorar|Veja|Scopri|Bekijk)\\\\s+.*|.*(\\u3092\\u898b\\u308b|\\ubcf4\\uae30)$"))) maxCap = 25
                 else if (pName.contains("jcr:title") || pName.contains("navtitle") || pName.contains("heading")) maxCap = 50
                 else if (pName.contains("pagetitle") || pName.contains("seotitle")) maxCap = 60
                 else if (pName.contains("alt")) maxCap = 125
 
-                // 3. Apply English + 10-language localized replacement (Full Name vs. Short "SI" fallback)
                 String fullCandidate = val
                     .replaceAll("(?i)\\\\bAI Control Tower\\\\b", "Super Intelligence Control Tower")
                     .replaceAll("(?i)\\\\bAICT\\\\b", "SI Control Tower")
@@ -3125,208 +3468,38 @@ paths.each {{ rootPath -&gt;
 }}
 if (!dryRun) session.save()
 println "Total properties updated: ${{updatedProps}} (dryRun=${{dryRun}})"</pre>
-    </div>
+      </div>
+    </details>
+
+    <details class="code-drawer">
+      <summary>View JSON-LD Structured Data Schema (SoftwareApplication + FAQPage)</summary>
+      <div class="drawer-body">
+        <pre>&lt;script type="application/ld+json"&gt;
+{{
+  "@context": "https://schema.org",
+  "@graph": [
+    {{
+      "@type": "SoftwareApplication",
+      "@id": "https://www.servicenow.com/products/super-intelligence-control-tower.html#software",
+      "name": "ServiceNow Super Intelligence Control Tower",
+      "alternateName": [
+        "Super Intelligence Control Tower",
+        "SI Control Tower"
+      ],
+      "applicationCategory": "BusinessApplication",
+      "ApplicationSubCategory": "Enterprise AI Governance, Observability, and Management Platform",
+      "operatingSystem": "ServiceNow AI Platform",
+      "url": "https://www.servicenow.com/products/super-intelligence-control-tower.html",
+      "description": "Enforce runtime governance for AI at scale. Super Intelligence Control Tower (SI Control Tower) gives you a central hub to discover, secure, govern, observe, and measure enterprise AI.",
+      "brand": {{ "@type": "Brand", "name": "ServiceNow" }}
+    }}
+  ]
+}}
+&lt;/script&gt;</pre>
+      </div>
+    </details>
   </div>
 
-  <!-- TAB 5: WAVE ROLLOUT & MEDIA / L10N SUMMARY -->
-  <div id="tab-waves" class="tab-panel">
-    <div class="alert">
-      <strong>Wave Rollout Strategy (US Traffic + 13-Locale Regional Inheritance, No Hardcoded Dates):</strong>
-      Pages are grouped into <strong>Wave 1, Wave 2, and Wave 3</strong> using the Page Category &amp; Traffic Prioritization model, and <strong>every regional counterpart automatically inherits the Wave of its US parent page</strong>.
-    </div>
-
-    <div class="card">
-      <h2>Part 1: Wave Rollout Breakdown Across All {len(unique_body_pages)} Pages ({us_pages_total} US + {regional_pages_total} Regional)</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Wave</th>
-              <th>Selection Criteria (Page Category + Traffic &amp; Regional Inheritance Rules)</th>
-              <th>Pages (US + Regional) &amp; Execution Split</th>
-              <th>US YTD Visits (% Share)</th>
-              <th>US YTD Conversions (% Share)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td data-label="Wave"><span class="badge b-w1">Wave 1</span></td>
-              <td data-label="Selection Criteria">
-                • <strong>Global Nav Experience Fragment + Search Prompt JSON:</strong> {len(ssi_only_pages):,} pages auto-updated.<br>
-                • <strong>Flagship Product &amp; Playbook Pages (US + All 13 Locales):</strong> {a_link('https://www.servicenow.com/products/ai-control-tower.html')}, {a_link('https://www.servicenow.com/uk/products/ai-control-tower.html')}, etc., plus {a_link('https://www.servicenow.com/contact-us-aict.html')} &amp; {a_link('https://www.servicenow.com/standard/resource-center/ebook/ebk-aict-discovery-playbook.html')}.<br>
-                • <strong>Tier-1 Hubs (US + All 13 Regional Locales):</strong> <code>Homepage</code> (including {a_link('https://www.servicenow.com/')} and all 13 regional homepages: {a_link('https://www.servicenow.com/uk/')}, {a_link('https://www.servicenow.com/au/')}, {a_link('https://www.servicenow.com/de/')}, {a_link('https://www.servicenow.com/fr/')}, etc.), <code>Platform - Main Page</code>, <code>Products by Category</code>, <code>What is ServiceNow</code>, <code>Core AI Pages</code>, <code>Events - Homepage</code>, <code>Customer - Homepage</code>, <code>Impact Pages</code>.<br>
-                • <strong>High-Traffic / High-Conversion Promoted Pages (+ Regional Counterparts):</strong> Any rebrand page with <strong>YTD Visits &ge; 10,000</strong> OR <strong>YTD Form Conversions &ge; 250</strong> OR <strong>Priority Score &ge; 3.33</strong>.
-              </td>
-              <td data-label="Pages &amp; Execution Split"><strong>{w1_s['pages']} Pages</strong> ({w1_s['us_pages']} US + {w1_s['reg_pages']} Reg)<br><span style="color:var(--muted);font-size:11px;">({w1_s['instances']:,} total edits)</span><br><span style="color:var(--green);font-size:11.5px;">🤖 {w1_s['auto_pages']} Pure Auto</span> / <span style="color:var(--amber);font-size:11.5px;">🛠️ {w1_s['manual_pages']} Manual Hybrid</span></td>
-              <td data-label="US YTD Visits"><strong style="color:var(--green);font-size:15px;">{w1_s['visits']:,}</strong><br><span class="badge b-ok">96.2% of Traffic</span></td>
-              <td data-label="US YTD Conversions"><strong style="color:var(--amber);font-size:15px;">{w1_s['conv']:,}</strong><br><span class="badge b-ok">90.8% of Conversions</span></td>
-            </tr>
-            <tr>
-              <td data-label="Wave"><span class="badge b-w2">Wave 2</span></td>
-              <td data-label="Selection Criteria">
-                • <strong>All Remaining Commercial &amp; Solution Categories (US + All 13 Regional Locales):</strong> <code>Product Pages</code>, <code>Solutions</code>, <code>Capability Pages</code>, <code>Application Pages</code>, <code>Platform - Other Pages</code>, <code>Industry Pages</code>, <code>What is Pages</code>.<br>
-                • <strong>Resource Center, Active Events &amp; Corporate Pages (US + Regional):</strong> <code>Resource Center</code>, <code>Ungated ePDF Pages</code>, <code>Events</code>, <code>Contact Us Page</code>, <code>Company Pages</code>.<br>
-                • <strong>Active Workflow Editorial Pages:</strong> <code>Workflow</code> articles with <strong>YTD Visits &ge; 100</strong> or <strong>Conversions &ge; 1</strong>.
-              </td>
-              <td data-label="Pages &amp; Execution Split"><strong>{w2_s['pages']} Pages</strong> ({w2_s['us_pages']} US + {w2_s['reg_pages']} Reg)<br><span style="color:var(--muted);font-size:11px;">({w2_s['instances']:,} total edits)</span><br><span style="color:var(--green);font-size:11.5px;">🤖 {w2_s['auto_pages']} Pure Auto</span> / <span style="color:var(--amber);font-size:11.5px;">🛠️ {w2_s['manual_pages']} Manual Hybrid</span></td>
-              <td data-label="US YTD Visits"><strong style="color:var(--amber);font-size:15px;">{w2_s['visits']:,}</strong><br><span class="badge b-w2">3.6% of Traffic</span></td>
-              <td data-label="US YTD Conversions"><strong style="color:var(--amber);font-size:15px;">{w2_s['conv']:,}</strong><br><span class="badge b-w2">8.9% of Conversions</span></td>
-            </tr>
-            <tr>
-              <td data-label="Wave"><span class="badge b-w3">Wave 3</span></td>
-              <td data-label="Selection Criteria">
-                • <strong>Long-Tail Archival Blogs:</strong> 2018–2025 <code>Blogs Pages</code> (only 3,399 combined YTD visits).<br>
-                • <strong>Low-Traffic Archival Workflow Articles (&lt;100 YTD visits):</strong> 48 older <code>Workflow</code> articles.<br>
-                • <strong>Customer Stories, Partner Finder, University &amp; Docs (US + Regional):</strong> <code>Customer Pages</code>, <code>Partners</code>, <code>University</code>, and <code>Docs</code>.
-              </td>
-              <td data-label="Pages &amp; Execution Split"><strong>{w3_s['pages']} Pages</strong> ({w3_s['us_pages']} US + {w3_s['reg_pages']} Reg)<br><span style="color:var(--muted);font-size:11px;">({w3_s['instances']:,} total edits)</span><br><span style="color:var(--green);font-size:11.5px;">🤖 {w3_s['auto_pages']} Pure Auto</span> / <span style="color:var(--amber);font-size:11.5px;">🛠️ {w3_s['manual_pages']} Manual Hybrid</span></td>
-              <td data-label="US YTD Visits"><strong style="color:var(--blue);font-size:15px;">{w3_s['visits']:,}</strong><br><span class="badge b-w3">0.2% of Traffic</span></td>
-              <td data-label="US YTD Conversions"><strong style="color:var(--blue);font-size:15px;">{w3_s['conv']:,}</strong><br><span class="badge b-w3">0.3% of Conversions</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Part 2: Page Category Summary Across All {len(unique_body_pages)} Rebrand Pages (31 Categories)</h2>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Page Category</th>
-              <th>Rebrand Pages (US + Regional)</th>
-              <th>Automated vs. Manual Hybrid Pages</th>
-              <th>US YTD Visits (% Share)</th>
-              <th>US Form Conversions</th>
-              <th>Wave Split</th>
-            </tr>
-          </thead>
-          <tbody>
-            {"".join(cat_summary_rows_html)}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Part 3: Complete DAM Image &amp; PDF Handoff Summary ({total_baked_images_count} Baked-In Images [{total_baked_designs_count} Visual Designs] + {total_zero_pixel_images_count} Zero-Pixel Slug Images + 24 PDFs)</h2>
-      <p class="desc">Comprehensive 4-Layer Discovery (Live 388-Page Component Scan + 8,113 Brand 3.0 Excel DAM Assets + Responsive Variant Probe + Apple Vision OCR): <strong>{total_baked_images_count} images ({total_baked_designs_count} visual designs)</strong> have confirmed baked-in pixel text requiring design work (including <code>welcome-ai-control-tower-.sm.png</code> on <code>/platform/responsible-ai.html</code>), <strong>{total_zero_pixel_images_count} slug-matched images</strong> have 0 baked-in text and only need an automated DAM filename move + 301 redirect, and <strong>13 PDFs</strong> contain live/vector text requiring document updates.</p>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Execution Mode &amp; Type</th>
-              <th>Full Clickable DAM Asset URL &amp; Host Pages</th>
-              <th>Specs</th>
-              <th>OCR / PDFKit Finding</th>
-              <th>Handoff Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {"".join(media_rows_html)}
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Part 4: Complete 13-Locale Regional Inventory &amp; Localization Handoff ({regional_pages_total} Regional Pages)</h2>
-      <p class="desc">Every single regional page with live <code>AI Control Tower</code>, localized equivalents, or <code>/products/ai-control-tower.html</code> links is included in Tabs 1–3 and the CSV.</p>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Region / Locale</th>
-              <th>Pages in Inventory</th>
-              <th>Key Live URLs (Homepage &amp; Flagship Product Page)</th>
-              <th>Current Live Term</th>
-              <th>Target Full Name &amp; Short (<code>SI</code>) Option</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td data-label="Region / Locale"><strong>🇬🇧 United Kingdom (<code>/uk/</code>)</strong></td>
-              <td data-label="Pages in Inventory"><strong>{locale_counts['uk']} Pages</strong></td>
-              <td data-label="Key Live URLs" class="mono">{a_link('https://www.servicenow.com/uk/')}<br>{a_link('https://www.servicenow.com/uk/products/ai-control-tower.html')}</td>
-              <td data-label="Current Live Term"><code>AI Control Tower</code></td>
-              <td data-label="Target Full &amp; Short Name"><strong>Super Intelligence Control Tower</strong> (Short: <strong>SI Control Tower</strong>) — <em>🤖 Automated via AEM Live Copy</em></td>
-            </tr>
-            <tr>
-              <td data-label="Region / Locale"><strong>🇦🇺 Australia (<code>/au/</code>)</strong></td>
-              <td data-label="Pages in Inventory"><strong>{locale_counts['au']} Pages</strong></td>
-              <td data-label="Key Live URLs" class="mono">{a_link('https://www.servicenow.com/au/')}<br>{a_link('https://www.servicenow.com/au/products/ai-control-tower.html')}</td>
-              <td data-label="Current Live Term"><code>AI Control Tower</code></td>
-              <td data-label="Target Full &amp; Short Name"><strong>Super Intelligence Control Tower</strong> (Short: <strong>SI Control Tower</strong>) — <em>🤖 Automated via AEM Live Copy</em></td>
-            </tr>
-            <tr>
-              <td data-label="Region / Locale"><strong>🇮🇳 India (<code>/in/</code>)</strong></td>
-              <td data-label="Pages in Inventory"><strong>{locale_counts['in']} Pages</strong></td>
-              <td data-label="Key Live URLs" class="mono">{a_link('https://www.servicenow.com/in/')}<br>{a_link('https://www.servicenow.com/in/products/ai-control-tower.html')}</td>
-              <td data-label="Current Live Term"><code>AI Control Tower</code></td>
-              <td data-label="Target Full &amp; Short Name"><strong>Super Intelligence Control Tower</strong> (Short: <strong>SI Control Tower</strong>) — <em>🤖 Automated via AEM Live Copy</em></td>
-            </tr>
-            <tr>
-              <td data-label="Region / Locale"><strong>🇩🇪 Germany (<code>/de/</code>)</strong></td>
-              <td data-label="Pages in Inventory"><strong>{locale_counts['de']} Pages</strong></td>
-              <td data-label="Key Live URLs" class="mono">{a_link('https://www.servicenow.com/de/')}<br>{a_link('https://www.servicenow.com/de/products/ai-control-tower.html')}</td>
-              <td data-label="Current Live Term"><code>KI-Kontrollturm</code></td>
-              <td data-label="Target Full &amp; Short Name"><strong>Super-Intelligenz-Kontrollturm</strong> (Short: <strong>SI-Kontrollturm</strong>)</td>
-            </tr>
-            <tr>
-              <td data-label="Region / Locale"><strong>🇫🇷 France (<code>/fr/</code>) &amp; 🇨🇦 Canada FR (<code>/fr-ca/</code>)</strong></td>
-              <td data-label="Pages in Inventory"><strong>{locale_counts['fr']} FR + {locale_counts['fr-ca']} FR-CA Pages</strong></td>
-              <td data-label="Key Live URLs" class="mono">{a_link('https://www.servicenow.com/fr/')}<br>{a_link('https://www.servicenow.com/fr/products/ai-control-tower.html')}<br>{a_link('https://www.servicenow.com/fr-ca/products/ai-control-tower.html')}</td>
-              <td data-label="Current Live Term"><code>Tour de contrôle IA</code></td>
-              <td data-label="Target Full &amp; Short Name"><strong>Tour de contrôle Super Intelligence</strong> (Short: <strong>Tour de contrôle SI</strong>)</td>
-            </tr>
-            <tr>
-              <td data-label="Region / Locale"><strong>🇪🇸 Spain (<code>/es/</code>) &amp; 🌎 LATAM (<code>/latam/</code>)</strong></td>
-              <td data-label="Pages in Inventory"><strong>{locale_counts['es']} ES + {locale_counts['latam']} LATAM Pages</strong></td>
-              <td data-label="Key Live URLs" class="mono">{a_link('https://www.servicenow.com/es/')}<br>{a_link('https://www.servicenow.com/es/products/ai-control-tower.html')}<br>{a_link('https://www.servicenow.com/latam/products/ai-control-tower.html')}</td>
-              <td data-label="Current Live Term"><code>Torre de control de IA</code></td>
-              <td data-label="Target Full &amp; Short Name"><strong>Torre de control de Superinteligencia</strong> (Short: <strong>Torre de control de SI</strong>)</td>
-            </tr>
-            <tr>
-              <td data-label="Region / Locale"><strong>🇧🇷 Brazil (<code>/br/</code>)</strong></td>
-              <td data-label="Pages in Inventory"><strong>{locale_counts['br']} Pages</strong></td>
-              <td data-label="Key Live URLs" class="mono">{a_link('https://www.servicenow.com/br/')}<br>{a_link('https://www.servicenow.com/br/products/ai-control-tower.html')}</td>
-              <td data-label="Current Live Term"><code>Torre de controle de IA</code></td>
-              <td data-label="Target Full &amp; Short Name"><strong>Torre de controle de Superinteligência</strong> (Short: <strong>Torre de controle de SI</strong>)</td>
-            </tr>
-            <tr>
-              <td data-label="Region / Locale"><strong>🇮🇹 Italy (<code>/it/</code>)</strong></td>
-              <td data-label="Pages in Inventory"><strong>{locale_counts['it']} Pages</strong></td>
-              <td data-label="Key Live URLs" class="mono">{a_link('https://www.servicenow.com/it/')}<br>{a_link('https://www.servicenow.com/it/products/ai-control-tower.html')}</td>
-              <td data-label="Current Live Term"><code>Torre di controllo AI</code></td>
-              <td data-label="Target Full &amp; Short Name"><strong>Torre di controllo della Super Intelligenza</strong> (Short: <strong>Torre di controllo SI</strong>)</td>
-            </tr>
-            <tr>
-              <td data-label="Region / Locale"><strong>🇳🇱 Netherlands (<code>/nl/</code>)</strong></td>
-              <td data-label="Pages in Inventory"><strong>{locale_counts['nl']} Pages</strong></td>
-              <td data-label="Key Live URLs" class="mono">{a_link('https://www.servicenow.com/nl/')}<br>{a_link('https://www.servicenow.com/nl/products/ai-control-tower.html')}</td>
-              <td data-label="Current Live Term"><code>AI-controletoren</code></td>
-              <td data-label="Target Full &amp; Short Name"><strong>Superintelligentie-controletoren</strong> (Short: <strong>SI-controletoren</strong>)</td>
-            </tr>
-            <tr>
-              <td data-label="Region / Locale"><strong>🇯🇵 Japan (<code>/jp/</code>)</strong></td>
-              <td data-label="Pages in Inventory"><strong>{locale_counts['jp']} Pages</strong></td>
-              <td data-label="Key Live URLs" class="mono">{a_link('https://www.servicenow.com/jp/')}<br>{a_link('https://www.servicenow.com/jp/products/ai-control-tower.html')}</td>
-              <td data-label="Current Live Term"><code>AI コントロールタワー</code></td>
-              <td data-label="Target Full &amp; Short Name"><strong>スーパーインテリジェンス・コントロールタワー</strong> (Short: <strong>SI コントロールタワー</strong>)</td>
-            </tr>
-            <tr>
-              <td data-label="Region / Locale"><strong>🇰🇷 Korea (<code>/kr/</code>)</strong></td>
-              <td data-label="Pages in Inventory"><strong>{locale_counts['kr']} Pages</strong></td>
-              <td data-label="Key Live URLs" class="mono">{a_link('https://www.servicenow.com/kr/')}<br>{a_link('https://www.servicenow.com/kr/products/ai-control-tower.html')}</td>
-              <td data-label="Current Live Term"><code>AI 컨트롤 타워</code></td>
-              <td data-label="Target Full &amp; Short Name"><strong>슈퍼 인텔리전스 컨트롤 타워</strong> (Short: <strong>SI 컨트롤 타워</strong>)</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
 </div>
 
 </body>
@@ -3340,96 +3513,29 @@ plan_md = f"""# Super Intelligence Control Tower (SI Control Tower) — Global &
 
 > [!IMPORTANT]
 > **Full Global + Regional Coverage ({len(unique_body_pages)} Pages Across US + 13 Regional Locales + 63 Audited DAM Images)**
-> Because the traffic prioritization workbook only tracks US (`en-US`) visits, **zero regional pages are removed due to missing traffic data**. Every regional page that requires a copy or link update is included and inherits the Wave of its US parent page:
+> Every regional page that requires a copy or link update is included and inherits the Wave of its US parent page:
 > - **{len(unique_body_pages)} Total Body-Match Pages**: **{us_pages_total} US pages** + **{regional_pages_total} Regional pages** across **13 locales** (UK: {locale_counts['uk']}, DE: {locale_counts['de']}, FR: {locale_counts['fr']}, JP: {locale_counts['jp']}, NL: {locale_counts['nl']}, BR: {locale_counts['br']}, AU: {locale_counts['au']}, ES: {locale_counts['es']}, KR: {locale_counts['kr']}, FR-CA: {locale_counts['fr-ca']}, IT: {locale_counts['it']}, LATAM: {locale_counts['latam']}, IN: {locale_counts['in']}).
-> - **All 13 Regional Homepages Included in Wave 1**: Includes [servicenow.com/uk/](https://www.servicenow.com/uk/) alongside [servicenow.com/](https://www.servicenow.com/) and all 12 other regional homepages ([/au/](https://www.servicenow.com/au/), [/in/](https://www.servicenow.com/in/), [/de/](https://www.servicenow.com/de/), [/fr/](https://www.servicenow.com/fr/), [/fr-ca/](https://www.servicenow.com/fr-ca/), [/es/](https://www.servicenow.com/es/), [/latam/](https://www.servicenow.com/latam/), [/br/](https://www.servicenow.com/br/), [/it/](https://www.servicenow.com/it/), [/nl/](https://www.servicenow.com/nl/), [/jp/](https://www.servicenow.com/jp/), [/kr/](https://www.servicenow.com/kr/)).
-> - **Complete 4-Layer Apple Vision OCR Image Audit (63 Total Images = {total_baked_images_count} Baked-In Pixel Images [{total_baked_designs_count} Visual Designs] + {total_zero_pixel_images_count} Zero-Pixel Slug-Matched Images)**: Combines the 388-page component-proximity scan, the **8,113-row Brand 3.0 DAM Excel export** (`response_results_brand-3.0 assets.xlsx`), responsive `.sm`/`.xs`/`.xl` variant probing, and native macOS Apple Vision `VNRecognizeTextRequest` OCR. Includes [welcome-ai-control-tower-.sm.png](https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/images/ds-backgrounds/welcome-ai-control-tower-.sm.png) (and `.xs.png`) on [servicenow.com/platform/responsible-ai.html](https://www.servicenow.com/platform/responsible-ai.html) (+ 13 regional locales and `/standard/other-documents/responsible-ai-guidelines-2025.html`).
-> - **Synchronized Handoff Deliverables**:
->   - **5-Tab Interactive HTML Dashboard**: [aict-rebrand-interactive-report.html](file:///Users/tamer.mina/Documents/Antigravity/aict-rebrand-interactive-report.html) (`1. 🤖 Automated Updates`, `2. 🛠️ Manual Updates`, `3. 🔀 301 Redirects`, `4. 🔍 SEO & AIO Strategy`, `5. 📊 Wave Rollout & Media/L10n Summary`)
->   - **Master CSV Inventory**: [aict-rebrand-inventory.csv](file:///Users/tamer.mina/Documents/Antigravity/aict-rebrand-inventory.csv) (with separate `Automated_Edits_Count`, `Manual_Tasks_Count`, `Automated_Changes_Breakdown`, and `Manual_Changes_Breakdown` columns)
->   - **Master Image OCR Inventory JSON**: [master_image_ocr_inventory.json](file:///Users/tamer.mina/Documents/Antigravity/master_image_ocr_inventory.json)
->   - **Generator Script**: [sync_all_three_artifacts.py](file:///Users/tamer.mina/Documents/Antigravity/sync_all_three_artifacts.py)
+> - **Clean Enterprise Light UI Dashboard**: [aict-rebrand-interactive-report.html](file:///Users/tamer.mina/Documents/Antigravity/aict-rebrand-interactive-report.html) features progressive disclosure (collapsible 1-line page rows that expand into itemized Before -> After tables), deduplicated metadata/link labels, compact dropdown filters, and zero emojis.
+> - **Master CSV Inventory**: [aict-rebrand-inventory.csv](file:///Users/tamer.mina/Documents/Antigravity/aict-rebrand-inventory.csv)
 
 ---
 
-## 1. Automated Updates (Tab 1) vs. Manual Updates (Tab 2) Split
+## 1. Automated vs. Manual Execution Split
 
-Out of **{len(unique_body_pages)} total body-match pages** (**{total_auto_instances + total_manual_copy_instances:,} text/meta/alt instances**), **{round(pages_100pct_auto / len(unique_body_pages) * 100, 1)}% of pages ({pages_100pct_auto} pages)** are **100% automated**, and **all {len(unique_body_pages)} pages** receive automated DOM/meta/link updates in **Tab 1 (`🤖 Automated Updates`)**. **{pages_needing_manual} hybrid pages** require additional manual tasks in **Tab 2 (`🛠️ Manual Updates`)** — and because those {pages_needing_manual} pages have *both* automated bulk swaps and manual tasks, they appear in **both Tab 1 (showing their automated swaps) and Tab 2 (showing their manual tasks)** with one-click cross-links:
-
-| Track & Owner | Dashboard Tab & Scope | Exact Action & Why It Is Automated or Manual |
+| Track & Owner | Scope | Action Summary |
 | :--- | :--- | :--- |
-| **🤖 Track A1: Automated Global Nav XF**<br>*Owner: AEM Platform Admin* | **Tab 1 (`🤖 Automated Updates`)**<br>**2 Centralized XFs** (Cascades to {len(ssi_only_pages):,} pages) | Single Experience Fragment update swaps `"AI Control Tower"` → `"Super Intelligence Control Tower"` (or `"SI Control Tower"`) and updates the nav link across US + 13 locales. |
-| **🤖 Track A2: Automated AEM Groovy Swap**<br>*Owner: AEM Engineering* | **Tab 1 (`🤖 Automated Updates`)**<br>**All {len(unique_body_pages)} Pages ({pages_100pct_auto} Pure Auto + {pages_needing_manual} Hybrid)**<br>**{total_auto_instances:,} Automated Instances** | Deterministic AEM Groovy script updates `<title>`, `<meta>`, `<h1>` Hero headings (`Super Intelligence Control Tower`, 32/50 chars ✓), body copy, internal links, and image `alt` tags. Automatically uses `"SI Control Tower"` (16 chars) on **{total_si_short_saves} instances** where the 32-char name would exceed WWSG character limits. |
-| **🛠️ Track M1: Manual WWSG Copy Edits**<br>*Owner: Digital UX Copywriter* | **Tab 2 (`🛠️ Manual Updates`)**<br>**{total_manual_copy_instances} Copy Instances** across Flagship Product & Resource pages | Apply the pre-written WWSG trims on [servicenow.com/products/ai-control-tower.html](https://www.servicenow.com/products/ai-control-tower.html) (+ 13 regional copies like [/uk/products/ai-control-tower.html](https://www.servicenow.com/uk/products/ai-control-tower.html) and [/fr/products/ai-control-tower.html](https://www.servicenow.com/fr/products/ai-control-tower.html)) where existing Marquee lead copy or FAQ Accordion answers exceeded 175/250 chars. |
-| **🛠️ Track M2: Manual AEM Move & 301 Redirects**<br>*Owner: AEM Authoring & Web Ops* | **Tab 2 (`🛠️ Manual Updates`) & Tab 3 (`🔀 301 Redirects`)**<br>**{total_redirects_count} Total 301 Redirects** ({webpage_redirect_cnt} Webpages + {pdf_redirect_cnt} PDFs + {img_redirect_cnt} Images) | Move AEM page nodes ([/products/ai-control-tower.html](https://www.servicenow.com/products/ai-control-tower.html) and regional/resource counterparts → `.../super-intelligence-control-tower.html`) and deploy the Apache Dispatcher / Akamai `301` redirect ruleset. |
-| **🛠️ Track M3: Manual Design & PDF Updates**<br>*Owner: Creative, Docs & Legal* | **Tab 2 (`🛠️ Manual Updates`)**<br>**{total_baked_images_count} Baked-In Images ({total_baked_designs_count} Visual Designs)**<br>**13 Live / Vector PDFs** | Re-render/retouch all **{total_baked_images_count} baked-in pixel images ({total_baked_designs_count} visual designs)** — including [welcome-ai-control-tower-.sm.png](https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/images/ds-backgrounds/welcome-ai-control-tower-.sm.png) on [servicenow.com/platform/responsible-ai.html](https://www.servicenow.com/platform/responsible-ai.html), [itbg-ai-control-tower.sm.jpg](https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/images/ds-Cards/itbg-ai-control-tower.sm.jpg), [discover-every-ai-asset.sm.jpg](https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/images/ds-screenshots/discover-every-ai-asset.sm.jpg), [govern-and-control-ai-risk.sm.jpg](https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/images/ds-screenshots/govern-and-control-ai-risk.sm.jpg), [now-ai-control-tower.sm.png](https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/images/company-library/media/now-ai-control-tower.sm.png), [secure-any-ai-action.sm.jpg](https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/images/ds-screenshots/secure-any-ai-action.sm.jpg), etc.; update [ebk-aict-discovery-playbook.pdf](https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/resource-center/e-book/ebk-aict-discovery-playbook.pdf), [ai-control-tower-servicenow-subscription-unit-overview.pdf](https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/legal/ai-control-tower-servicenow-subscription-unit-overview.pdf), and 11 Resource Center PDFs. |
-| **🛠️ Track M4: Manual Localization QA**<br>*Owner: Regional Web Leads* | **Tab 2 (`🛠️ Manual Updates`)**<br>**10 Non-English Flagships**<br>(DE, FR, FR-CA, ES, LATAM, BR, IT, NL, JP, KR) | Linguistic review of gender/article agreement on the 10 translated flagship product pages before publish. |
-
----
-
-## 2. Dedicated 301 Redirects Inventory (Tab 3 — {total_redirects_count} Total Redirects)
-
-To ensure a **100% clean entity cutover** without legacy product-name eyebrows or parentheticals in on-page copy, **HTTP 301 Permanent Redirects** transfer all historical search authority, backlinks, and bookmarked URLs across **{total_redirects_count} URL and DAM slugs**:
-- **{webpage_redirect_cnt} Webpage Slug Redirects**: All 34 crawled body-match slug URLs (including US + 13 regional `/products/ai-control-tower.html`, `/contact-us-aict.html`, `/events/live/ai-control-tower.html`, `/workflow/ai/...`, `/standard/resource-center/...`, `/docs/...`, and regional blogs) + 3 additional US webinar/pricing endpoints (`/products/ai-control-tower/pricing.html`, `/events/on-demand-webinars/put-ai-to-work-with-ai-control-tower.html`, `/lpwbr/meet-ai-control-tower-enterprise-ai-governance-at-machine-speed.html`) + 13 regional `/<locale>/events/live/ai-control-tower.html` endpoints.
-- **{pdf_redirect_cnt} DAM PDF Slug Redirects**: All 10 Resource Center eBook/White Paper/Solution Brief PDFs (EN-US, DE-DE, FR-FR) + 1 Legal Subscription Unit Overview PDF (`ai-control-tower-servicenow-subscription-unit-overview.pdf`) + 1 Data Sheet PDF (`ds-ai-control-tower.pdf`), including `.pdf.coredownload` endpoints.
-- **{img_redirect_cnt} DAM Image Slug Redirects**: All **{img_redirect_cnt} `ai-control-tower` DAM images** (`.png`, `.jpg`, `.webp` across live pages + the 8,113-asset Brand 3.0 DAM export, including `welcome-ai-control-tower-.sm.png`/`.xs.png`, `itbg-ai-control-tower.sm.jpg`/`.xs.jpg`, `now-ai-control-tower.sm.png`/`.xs.png`, `k26-post-ai-control-tower-xl.png`/`.xs.png`, `homepage-ai-control-tower.sm.jpg`/`.xs.jpg`, `homepage-paitw-ai-control-tower.sm.png`/`.xs.png`, etc.), explicitly excluding false positive `logo-aicte.svg` (All India Council for Technical Education).
-
----
-
-## 3. SEO & AIO Strategy: `Super Intelligence Control Tower` vs. `SI Control Tower` (Tab 4)
-
-Connected to the **Semrush MCP Server** alongside full live DOM, Google SERP pixel-width (~600px / 60-char `<title>` cap), Schema.org JSON-LD, and LLM Retrieval-Augmented Generation (RAG) entity analysis across all {len(unique_body_pages)} pages:
-
-| Placement | Approved Target Form | Execution Track | SEO, AIO (LLM Citation) & WWSG Rationale |
-| :--- | :--- | :--- | :--- |
-| **1. Flagship Product `<title>`** ([ai-control-tower.html](https://www.servicenow.com/products/ai-control-tower.html)) | **`Super Intelligence Control Tower - ServiceNow`** *(45/60 chars, ~412px)*<br>or **`Super Intelligence (SI) Control Tower - ServiceNow`** *(50/60 chars, ~458px)* | **🤖 Auto Swap** | Establishes canonical entity resolution for Google Search, Google AI Overviews, ChatGPT Search, and Perplexity while staying well under the 60-char / 600px SERP truncation limit. |
-| **2. Flagship Hero Marquee `<h1>`** | **`Super Intelligence Control Tower`** *(32/50 chars)* | **🤖 Auto Swap** | Clean 1:1 automated swap inside the 50-char WWSG Marquee `<h1>` limit with zero legacy eyebrow text. |
-| **3. First Body Mention & `<meta description>`** | **`Super Intelligence Control Tower (SI Control Tower)`** | **🤖 Auto Swap** (Meta)<br>**🛠️ Manual Trim** (Marquee) | Introduces the 16-char shorthand alongside the 32-char canonical name so LLM embeddings and search engines bind both entities together. |
-| **4. Company Positioning Tagline** ([servicenow.com/](https://www.servicenow.com/), [servicenow.com/uk/](https://www.servicenow.com/uk/)) | **`ServiceNow is the Super Intelligence Control Tower for business reinvention`** *(75/175 chars)* | **🤖 Auto Swap** | Always spell out the full 32-char name in the signature company positioning tagline across US and all 13 regional homepages. |
-| **5. Compound `<title>` Tags >60 Chars** (Blogs, Webinars, White Papers) | **`SI Control Tower`** *(16 chars, +0 char / +0px delta)* | **🤖 Auto Swap** | Prevents Google SERP truncation of `" - ServiceNow"` on long resource/blog titles (e.g., `What Is an SI Control Tower? - ServiceNow`, 41/60 chars ✓). |
-| **6. Constrained UI Components & Former `AICT` Mentions** | **`SI Control Tower`** *(16 chars, +0 char / +0px delta)* | **🤖 Auto Swap** | Automatically applied on **{total_si_short_saves} instances** where +16 chars would overflow a 50-char FAQ Accordion heading, 100-char card/action link, or 125-char image `alt` attribute, and replaces all `AICT` acronyms 1:1. |
-| **7. JSON-LD `SoftwareApplication` Schema** | `name`: **`ServiceNow Super Intelligence Control Tower`**<br>`alternateName`: **`["Super Intelligence Control Tower", "SI Control Tower"]`** | **🤖 Auto Swap** | Declares both the canonical name and official shorthand in structured data with zero legacy product names. |
-
----
-
-## 4. Regional Homepage & 13-Locale Coverage (Including UK)
-
-All **{regional_pages_total} regional pages across 13 locales** are mapped to their US parent pages so no regional market is left with legacy copy or broken links:
-
-| Locale & Pages | Clickable Regional Homepage & Flagship Product Page | Target Full Name / Short `SI` Form |
-| :--- | :--- | :--- |
-| **🇺🇸 US** (`en-US`) — **{locale_counts['us']} Pages** | • Homepage: [servicenow.com/](https://www.servicenow.com/)<br>• Flagship: [/products/ai-control-tower.html](https://www.servicenow.com/products/ai-control-tower.html) | **Super Intelligence Control Tower**<br>Short: **SI Control Tower** |
-| **🇬🇧 UK** (`en-GB`) — **{locale_counts['uk']} Pages** | • Homepage: [servicenow.com/uk/](https://www.servicenow.com/uk/)<br>• Flagship: [/uk/products/ai-control-tower.html](https://www.servicenow.com/uk/products/ai-control-tower.html) | **Super Intelligence Control Tower**<br>Short: **SI Control Tower** |
-| **🇦🇺 Australia** (`en-AU`) — **{locale_counts['au']} Pages** | • Homepage: [servicenow.com/au/](https://www.servicenow.com/au/)<br>• Flagship: [/au/products/ai-control-tower.html](https://www.servicenow.com/au/products/ai-control-tower.html) | **Super Intelligence Control Tower**<br>Short: **SI Control Tower** |
-| **🇮🇳 India** (`en-IN`) — **{locale_counts['in']} Pages** | • Homepage: [servicenow.com/in/](https://www.servicenow.com/in/)<br>• Flagship: [/in/products/ai-control-tower.html](https://www.servicenow.com/in/products/ai-control-tower.html) | **Super Intelligence Control Tower**<br>Short: **SI Control Tower** |
-| **🇩🇪 Germany** (`de-DE`) — **{locale_counts['de']} Pages** | • Homepage: [servicenow.com/de/](https://www.servicenow.com/de/)<br>• Flagship: [/de/products/ai-control-tower.html](https://www.servicenow.com/de/products/ai-control-tower.html) | **Super-Intelligenz-Kontrollturm**<br>Short: **SI-Kontrollturm** |
-| **🇫🇷 France** (`fr-FR`) — **{locale_counts['fr']} Pages** | • Homepage: [servicenow.com/fr/](https://www.servicenow.com/fr/)<br>• Flagship: [/fr/products/ai-control-tower.html](https://www.servicenow.com/fr/products/ai-control-tower.html) | **Tour de contrôle Super Intelligence**<br>Short: **Tour de contrôle SI** |
-| **🇨🇦 Canada FR** (`fr-CA`) — **{locale_counts['fr-ca']} Pages** | • Homepage: [servicenow.com/fr-ca/](https://www.servicenow.com/fr-ca/)<br>• Flagship: [/fr-ca/products/ai-control-tower.html](https://www.servicenow.com/fr-ca/products/ai-control-tower.html) | **Tour de contrôle Super Intelligence**<br>Short: **Tour de contrôle SI** |
-| **🇪🇸 Spain** (`es-ES`) — **{locale_counts['es']} Pages** | • Homepage: [servicenow.com/es/](https://www.servicenow.com/es/)<br>• Flagship: [/es/products/ai-control-tower.html](https://www.servicenow.com/es/products/ai-control-tower.html) | **Torre de control de Superinteligencia**<br>Short: **Torre de control de SI** |
-| **🌎 LATAM** (`es-419`) — **{locale_counts['latam']} Pages** | • Homepage: [servicenow.com/latam/](https://www.servicenow.com/latam/)<br>• Flagship: [/latam/products/ai-control-tower.html](https://www.servicenow.com/latam/products/ai-control-tower.html) | **Torre de control de Superinteligencia**<br>Short: **Torre de control de SI** |
-| **🇧🇷 Brazil** (`pt-BR`) — **{locale_counts['br']} Pages** | • Homepage: [servicenow.com/br/](https://www.servicenow.com/br/)<br>• Flagship: [/br/products/ai-control-tower.html](https://www.servicenow.com/br/products/ai-control-tower.html) | **Torre de controle de Superinteligência**<br>Short: **Torre de controle de SI** |
-| **🇮🇹 Italy** (`it-IT`) — **{locale_counts['it']} Pages** | • Homepage: [servicenow.com/it/](https://www.servicenow.com/it/)<br>• Flagship: [/it/products/ai-control-tower.html](https://www.servicenow.com/it/products/ai-control-tower.html) | **Torre di controllo della Super Intelligenza**<br>Short: **Torre di controllo SI** |
-| **🇳🇱 Netherlands** (`nl-NL`) — **{locale_counts['nl']} Pages** | • Homepage: [servicenow.com/nl/](https://www.servicenow.com/nl/)<br>• Flagship: [/nl/products/ai-control-tower.html](https://www.servicenow.com/nl/products/ai-control-tower.html) | **Superintelligentie-controletoren**<br>Short: **SI-controletoren** |
-| **🇯🇵 Japan** (`ja-JP`) — **{locale_counts['jp']} Pages** | • Homepage: [servicenow.com/jp/](https://www.servicenow.com/jp/)<br>• Flagship: [/jp/products/ai-control-tower.html](https://www.servicenow.com/jp/products/ai-control-tower.html) | **スーパーインテリジェンス・コントロールタワー**<br>Short: **SI コントロールタワー** |
-| **🇰🇷 Korea** (`ko-KR`) — **{locale_counts['kr']} Pages** | • Homepage: [servicenow.com/kr/](https://www.servicenow.com/kr/)<br>• Flagship: [/kr/products/ai-control-tower.html](https://www.servicenow.com/kr/products/ai-control-tower.html) | **슈퍼 인텔리전스 컨트롤 타워**<br>Short: **SI 컨트롤 타워** |
-
----
-
-## 5. Wave Rollout Summary (Tab 5 — No Hardcoded Dates)
-
-Regional pages automatically inherit the Wave assignment of their US (`en-US`) parent page:
-
-| Wave | Pages & Regional Split | Execution Split & Traffic | Included Page Groups |
-| :--- | :--- | :--- | :--- |
-| **Wave 1** | **{w1_s['pages']} Total Pages**<br>• 🇺🇸 {w1_s['us_pages']} US Pages<br>• 🌍 {w1_s['reg_pages']} Regional Pages<br>*({w1_s['instances']:,} total edits)* | • **🤖 {w1_s['auto_pages']} Pure Auto / 🛠️ {w1_s['manual_pages']} Hybrid Manual**<br>• **{w1_s['visits']:,} US Visits** *(96.2%)*<br>• **{w1_s['conv']:,} Conversions** *(90.8%)* | Global Nav/Search XFs + US & all 13 Regional Homepages ([servicenow.com/](https://www.servicenow.com/), [servicenow.com/uk/](https://www.servicenow.com/uk/), [/de/](https://www.servicenow.com/de/), [/fr/](https://www.servicenow.com/fr/), etc.) + Flagship Product Pages ([/products/ai-control-tower.html](https://www.servicenow.com/products/ai-control-tower.html) & all 13 locales) + Top Traffic Hub Pages ([/ai.html](https://www.servicenow.com/ai.html), [/now-platform.html](https://www.servicenow.com/now-platform.html), etc.). |
-| **Wave 2** | **{w2_s['pages']} Total Pages**<br>• 🇺🇸 {w2_s['us_pages']} US Pages<br>• 🌍 {w2_s['reg_pages']} Regional Pages<br>*({w2_s['instances']:,} total edits)* | • **🤖 {w2_s['auto_pages']} Pure Auto / 🛠️ {w2_s['manual_pages']} Hybrid Manual**<br>• **{w2_s['visits']:,} US Visits** *(3.6%)*<br>• **{w2_s['conv']:,} Conversions** *(8.9%)* | All remaining Commercial Product, Solution, Capability, Application, Platform, Industry, Event, and Resource Center pages across US + 13 regional locales. |
-| **Wave 3** | **{w3_s['pages']} Total Pages**<br>• 🇺🇸 {w3_s['us_pages']} US Pages<br>• 🌍 {w3_s['reg_pages']} Regional Pages<br>*({w3_s['instances']:,} total edits)* | • **🤖 {w3_s['auto_pages']} Pure Auto / 🛠️ {w3_s['manual_pages']} Hybrid Manual**<br>• **{w3_s['visits']:,} US Visits** *(0.2%)*<br>• **{w3_s['conv']:,} Conversions** *(0.3%)* | Long-tail Archival Blogs, Low-traffic Workflow articles (<100 visits), Customer Stories, Partners, University, and Docs across US + 13 regional locales. |
-| **Total** | **{len(unique_body_pages)} Total Pages**<br>• **🇺🇸 {us_pages_total} US**<br>• **🌍 {regional_pages_total} Regional** | • **🤖 {pages_100pct_auto} Pure Auto (94.9%)**<br>• **🛠️ {pages_needing_manual} Hybrid Manual (5.1%)**<br>• **{total_rebrand_visits:,} US Visits (100%)** | Complete global + regional rebrand handoff inventory. |
+| **Track A1: Automated Global Nav XF**<br>*Owner: AEM Platform Admin* | **2 Centralized XFs** ({len(ssi_only_pages):,} pages) | Single Experience Fragment update swaps `"AI Control Tower"` to `"Super Intelligence Control Tower"` (or `"SI Control Tower"`) and updates the nav link across US + 13 locales. |
+| **Track A2: Automated AEM Groovy Swap**<br>*Owner: AEM Engineering* | **All {len(unique_body_pages)} Pages** ({pages_100pct_auto} Pure Auto + {pages_needing_manual} Hybrid)<br>**{total_auto_instances:,} Automated Swaps** | Updates `<title>`, `<meta>`, `<h1>` Hero headings (`Super Intelligence Control Tower`, 32/50 chars), body copy, CTA buttons (`See SI Control Tower`, 20/25 chars), internal links, and image `alt` tags. Automatically uses `"SI Control Tower"` (16 chars) on **{total_si_short_saves} instances** where the 32-char name would exceed WWSG character limits. |
+| **Track M1: Manual WWSG Copy Edits**<br>*Owner: Digital UX Copywriter* | **{total_manual_copy_instances} Copy Edits** across {manual_type_counts['m-copy']} pages | Apply the Hero paragraph context bridge on Homepage/Customer Experience pages (introducing `Super Intelligence Control Tower` / `Super Intelligence (SI)` above the `See SI Control Tower` CTA) and WWSG copy trims on flagship Marquee/FAQ components. |
+| **Track M2: Manual AEM Move & 301 Redirects**<br>*Owner: AEM Authoring & Web Ops* | **{total_redirects_count} Total 301 Redirects** ({webpage_redirect_cnt} Webpages + {pdf_redirect_cnt} PDFs + {img_redirect_cnt} Images) | Move AEM page nodes (`/products/ai-control-tower.html` -> `/products/super-intelligence-control-tower.html`) and deploy Apache Dispatcher / Akamai 301 rules. |
+| **Track M3: Manual Design & PDF Updates**<br>*Owner: Creative, Docs & Legal* | **{total_baked_images_count} Baked-In Images ({total_baked_designs_count} Visual Designs)** + **13 PDFs** | Re-render/retouch all {total_baked_images_count} baked-in pixel images ({total_baked_designs_count} design groups, including `welcome-ai-control-tower-.sm.png` on `/platform/responsible-ai.html`) and update 13 live/vector PDFs. |
+| **Track M4: Manual Localization QA**<br>*Owner: Regional Web Leads* | **10 Non-English Flagship Pages** | Linguistic review of gender/article agreement on DE, FR, FR-CA, ES, LATAM, BR, IT, NL, JP, and KR flagship product pages. |
 """
 
 open(OUT_MD, "w", encoding="utf-8").write(plan_md)
-print(f"Successfully generated 5-tab handoff dashboard {OUT_HTML}, {OUT_CSV}, and {OUT_MD}")
+print(f"Successfully generated clean enterprise light handoff dashboard {OUT_HTML}, {OUT_CSV}, and {OUT_MD}")
 print(f"Total Body-Match Pages: {len(unique_body_pages)} (US: {us_pages_total} + Regional: {regional_pages_total})")
 print(f"Pages 100% Auto: {pages_100pct_auto} | Pages Needing Manual: {pages_needing_manual} | Auto Instances: {total_auto_instances} | Manual Copy Instances: {total_manual_copy_instances} | Manual Tasks All: {total_manual_tasks_all} | SI Short Fits: {total_si_short_saves}")
 print(f"Total 301 Redirects: {total_redirects_count} (Webpages: {webpage_redirect_cnt}, PDFs: {pdf_redirect_cnt}, Images: {img_redirect_cnt})")
+
 
