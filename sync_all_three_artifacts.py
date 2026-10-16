@@ -388,12 +388,16 @@ def make_si_short_target(cur_text, full_target_text, allow_tagline_short=False):
     """
     Produces the 16-char 'SI Control Tower' short variant (exact same 16-char length as 'AI Control Tower'),
     plus localized SI short variants across all 10 non-English locales.
-    Note: Keep company positioning tagline ('the Super Intelligence Control Tower for business reinvention') in full
-    unless inside a strict 50-char heading cap (allow_tagline_short=True).
+    Note: Always keep company positioning taglines ('the Super Intelligence Control Tower for business/government reinvention')
+    in full 'Super Intelligence Control Tower' with capitalized 'Control Tower'.
     """
-    if "business reinvention" in cur_text.lower() and not allow_tagline_short:
-        return full_target_text
-    short_t = full_target_text.replace("ServiceNow Super Intelligence Control Tower", "SI Control Tower")
+    full_t = re.sub(r"(?i)\bsuper\s+intelligence\s+control\s+tower\b", "Super Intelligence Control Tower", full_target_text)
+    full_t = re.sub(r"(?i)\bsi\s+control\s+tower\b", "SI Control Tower", full_t)
+    if cur_text.strip().startswith("The ") and full_t.startswith("the "):
+        full_t = "T" + full_t[1:]
+    if "business reinvention" in cur_text.lower() or "government reinvention" in cur_text.lower():
+        return full_t
+    short_t = full_t.replace("ServiceNow Super Intelligence Control Tower", "SI Control Tower")
     short_t = short_t.replace("Super Intelligence Control Tower", "SI Control Tower")
     localized_short_swaps = [
         ("Super-Intelligenz-Kontrollturm", "SI-Kontrollturm"),
@@ -417,8 +421,8 @@ def make_si_short_target(cur_text, full_target_text, allow_tagline_short=False):
         ("torre de controle de superinteligência", "torre de controle de SI"),
         ("Torre di controllo della Super Intelligenza", "Torre di controllo SI"),
         ("Torre di controllo della superintelligenza", "Torre di controllo SI"),
-        ("torre di controllo della Super Intelligenza", "torre di controllo SI"),
-        ("torre di controllo della superintelligenza", "torre di controllo SI"),
+        ("torre di controllo della Super Intelligenza", "Torre di controllo SI"),
+        ("torre di controllo della superintelligenza", "Torre di controllo SI"),
         ("Scopri l'SI Control Tower", "Scopri SI Control Tower"),
         ("Scopri l'Super Intelligence Control Tower", "Scopri SI Control Tower"),
         ("Superintelligentie-controletoren", "SI-controletoren"),
@@ -456,6 +460,14 @@ def audit_wwsg_instance(inst, page_url=""):
     cur = inst.get("current_text", "").strip()
     is_flagship_page = ("ai-control-tower.html" in page_url)
 
+    # Always enforce Title Case 'Control Tower' in target text, even when live copy had lowercase 'AI control tower'
+    tgt = re.sub(r"(?i)\bsuper\s+intelligence\s+control\s+tower\b", "Super Intelligence Control Tower", tgt)
+    tgt = re.sub(r"(?i)\bsi\s+control\s+tower\b", "SI Control Tower", tgt)
+    tgt = re.sub(r"\ban\s+Super\s+Intelligence\s+Control\s+Tower\b", "a Super Intelligence Control Tower", tgt)
+    if cur.startswith("The ") and tgt.startswith("the "):
+        tgt = "T" + tgt[1:]
+    had_lowercase_ct = bool(re.search(r"control\s+tower", cur))
+
     is_cta_btn = is_cta_button_instance(cur, loc)
     display_loc = loc
     if is_cta_btn:
@@ -473,6 +485,9 @@ def audit_wwsg_instance(inst, page_url=""):
     if is_cta_btn:
         limit = 25
         comp_name = "CTA button (<arc-button>, WWSG ≤25 chars max / 15 target)"
+    elif "business reinvention" in cur.lower() or "government reinvention" in cur.lower():
+        limit = 175
+        comp_name = "Company positioning tagline"
     elif "arc-secondary-nav" in loc:
         limit = 50
         comp_name = "Secondary nav title"
@@ -519,7 +534,7 @@ def audit_wwsg_instance(inst, page_url=""):
         limit = 160
         comp_name = "SEO <meta description>"
 
-    si_short = make_si_short_target(cur, tgt, allow_tagline_short=(limit == 50))
+    si_short = make_si_short_target(cur, tgt, allow_tagline_short=False)
     t_len = len(tgt)
     si_len = len(si_short)
 
@@ -555,6 +570,10 @@ def audit_wwsg_instance(inst, page_url=""):
         char_check = f"{comp_name}: [Full={t_len} chars | Short 'SI'={si_len} chars]"
         short_note = f"{t_len} chars"
         is_over = False
+
+    if had_lowercase_ct:
+        short_note += " • Capitalize 'Control Tower'"
+        char_check += " [Title-Case 'Control Tower']"
 
     flags = []
     rewrite = recommended_auto_target
@@ -954,7 +973,7 @@ def build_split_page_breakdowns(r):
             f"<td><strong>Page URL Slug &amp; 301 Redirect</strong><div class='sub-note'>AEM page move + canonical &amp; hreflang</div></td>"
             f"<td class='mono'>{a_link(u)}</td>"
             f"<td class='mono'><code>{html.escape(new_u)}</code></td>"
-            f"<td>HTTP 301 Permanent Redirect <span class='link-pill' onclick=\"showTab('tab-redirects', document.getElementById('btn-tab-redirects'))\">View 301 Rules</span></td>"
+            f"<td>HTTP 301 Permanent Redirect <span class='link-pill' onclick=\"event.stopPropagation(); switchPrimaryTab('tab-redirects', null, 'btn-tab-redirects')\">View 301 Rules</span></td>"
             f"</tr>"
         )
         manual_csv_items.append(f"[MANUAL: URL SLUG & 301] Move {u} -> {new_u}")
@@ -1840,7 +1859,7 @@ for page_idx, r in enumerate(unique_body_pages, 1):
       <td data-label="Automated" class="col-auto">{auto_col_html}</td>
       <td data-label="Manual" class="col-man">{man_col_html}</td>
       <td data-label="Details" style="text-align:right;white-space:nowrap;">
-        <button type="button" class="expand-btn" id="btn-exp-{page_idx}" onclick="toggleDetail({page_idx}, event)">View Changes ({total_drawer_items})</button>
+        <button type="button" class="expand-btn" id="btn-exp-{page_idx}" onclick="event.stopPropagation(); toggleDetail({page_idx}, event)">View Changes ({total_drawer_items})</button>
       </td>
     </tr>
     <tr class="detail-row" id="detail-{page_idx}" style="display:none;">
@@ -2786,8 +2805,88 @@ full_html = f"""<!DOCTYPE html>
 </style>
 <script>
 window.currentViewMode = 'all';
+window.currentPrimaryTab = 'all';
+window.isRestoringUrlState = false;
 
-window.switchPrimaryTab = function(panelId, viewMode, btnId) {{
+window.syncUrlState = function(usePushState) {{
+  if (window.isRestoringUrlState) return;
+  try {{
+    var params = new URLSearchParams();
+    var tab = window.currentPrimaryTab || 'all';
+    if (tab && tab !== 'all') {{
+      params.set('tab', tab);
+    }}
+
+    if (tab === 'all' || tab === 'auto' || tab === 'manual') {{
+      var waveEl = document.getElementById('waveSelect');
+      var locEl = document.getElementById('locSelect');
+      var scopeEl = document.getElementById('scopeSelect');
+      var qEl = document.getElementById('pageSearch');
+      if (waveEl && waveEl.value && waveEl.value !== 'all') params.set('wave', waveEl.value);
+      if (locEl && locEl.value && locEl.value !== 'all') params.set('loc', locEl.value);
+      if (scopeEl && scopeEl.value && scopeEl.value !== 'all') params.set('scope', scopeEl.value);
+      if (qEl && qEl.value.trim()) params.set('q', qEl.value.trim());
+
+      var openIds = [];
+      document.querySelectorAll('#pagesTable tbody tr.page-row.expanded').forEach(function(r) {{
+        if (r.style.display !== 'none') {{
+          var idNum = r.getAttribute('data-row-id');
+          if (idNum) openIds.push(idNum);
+        }}
+      }});
+      if (openIds.length > 0 && openIds.length <= 25) {{
+        params.set('open', openIds.join(','));
+      }} else if (openIds.length > 25) {{
+        params.set('open', 'visible');
+      }}
+    }} else if (tab === 'redirects') {{
+      var rtEl = document.getElementById('redTypeSelect');
+      var rqEl = document.getElementById('redSearch');
+      if (rtEl && rtEl.value && rtEl.value !== 'all') params.set('rtype', rtEl.value);
+      if (rqEl && rqEl.value.trim()) params.set('rq', rqEl.value.trim());
+    }} else if (tab === 'media') {{
+      var mtEl = document.getElementById('mediaTypeSelect');
+      var mqEl = document.getElementById('mediaSearch');
+      if (mtEl && mtEl.value && mtEl.value !== 'all') params.set('mtype', mtEl.value);
+      if (mqEl && mqEl.value.trim()) params.set('mq', mqEl.value.trim());
+    }}
+
+    var qs = params.toString();
+    var newUrl = window.location.pathname + (qs ? '?' + qs : '') + window.location.hash;
+    if (usePushState) {{
+      window.history.pushState(null, '', newUrl);
+    }} else {{
+      window.history.replaceState(null, '', newUrl);
+    }}
+  }} catch (e) {{}}
+}};
+
+window.copyShareableLink = function(btnEl) {{
+  window.syncUrlState(false);
+  var url = window.location.href;
+  var done = function() {{
+    if (!btnEl) return;
+    var orig = btnEl.getAttribute('data-orig-label') || btnEl.textContent;
+    btnEl.setAttribute('data-orig-label', orig);
+    btnEl.textContent = 'Copied Direct Link!';
+    btnEl.style.borderColor = '#15803d';
+    btnEl.style.color = '#15803d';
+    setTimeout(function() {{
+      btnEl.textContent = orig;
+      btnEl.style.borderColor = '';
+      btnEl.style.color = '';
+    }}, 1800);
+  }};
+  if (navigator.clipboard && navigator.clipboard.writeText) {{
+    navigator.clipboard.writeText(url).then(done).catch(function() {{
+      window.prompt('Copy shareable link:', url);
+    }});
+  }} else {{
+    window.prompt('Copy shareable link:', url);
+  }}
+}};
+
+window.switchPrimaryTab = function(panelId, viewMode, btnId, skipUrlSync) {{
   document.querySelectorAll('.tab-panel').forEach(function(p) {{ p.classList.remove('active'); }});
   document.querySelectorAll('.tab-btn').forEach(function(b) {{ b.classList.remove('active'); }});
   var panel = document.getElementById(panelId);
@@ -2795,13 +2894,26 @@ window.switchPrimaryTab = function(panelId, viewMode, btnId) {{
   var btn = document.getElementById(btnId);
   if (btn) btn.classList.add('active');
 
-  if (panelId === 'tab-pages' && viewMode) {{
-    window.setPageViewMode(viewMode, false);
+  if (panelId === 'tab-pages') {{
+    var m = viewMode || 'all';
+    window.currentPrimaryTab = m;
+    window.setPageViewMode(m, false, true);
+  }} else if (panelId === 'tab-redirects') {{
+    window.currentPrimaryTab = 'redirects';
+  }} else if (panelId === 'tab-media') {{
+    window.currentPrimaryTab = 'media';
+  }} else if (panelId === 'tab-seo') {{
+    window.currentPrimaryTab = 'seo';
+  }}
+
+  if (!skipUrlSync) {{
+    window.syncUrlState(true);
   }}
 }};
 
-window.setPageViewMode = function(mode, updateTopTab) {{
+window.setPageViewMode = function(mode, updateTopTab, skipUrlSync) {{
   window.currentViewMode = mode;
+  window.currentPrimaryTab = mode;
   var tbl = document.getElementById('pagesTable');
   if (tbl) tbl.setAttribute('data-view-mode', mode);
 
@@ -2831,40 +2943,58 @@ window.setPageViewMode = function(mode, updateTopTab) {{
     }}
   }}
 
-  window.filterPagesTable();
-}};
-
-window.toggleDetail = function(idx) {{
-  var pRow = document.getElementById('row-' + idx);
-  var dRow = document.getElementById('detail-' + idx);
-  if (!pRow || !dRow) return;
-  var isHidden = (dRow.style.display === 'none' || dRow.style.display === '');
-  if (isHidden) {{
-    dRow.style.display = 'table-row';
-    pRow.classList.add('expanded');
-  }} else {{
-    dRow.style.display = 'none';
-    pRow.classList.remove('expanded');
+  window.filterPagesTable(true);
+  if (!skipUrlSync) {{
+    window.syncUrlState(true);
   }}
 }};
 
-window.expandAllVisible = function(expand) {{
+window.toggleDetail = function(idx, event, skipUrlSync) {{
+  if (event && event.target && event.target.closest('a')) return;
+  var pRow = document.getElementById('row-' + idx);
+  var dRow = document.getElementById('detail-' + idx);
+  var btn = document.getElementById('btn-exp-' + idx);
+  if (!pRow || !dRow) return;
+  var isHidden = (dRow.style.display === 'none' || dRow.style.display === '');
+  var totalItems = pRow.getAttribute('data-total-items') || '';
+  if (isHidden) {{
+    dRow.style.display = 'table-row';
+    pRow.classList.add('expanded');
+    if (btn) btn.textContent = 'Hide Changes (' + totalItems + ')';
+  }} else {{
+    dRow.style.display = 'none';
+    pRow.classList.remove('expanded');
+    if (btn) btn.textContent = 'View Changes (' + totalItems + ')';
+  }}
+  if (!skipUrlSync) {{
+    window.syncUrlState(false);
+  }}
+}};
+
+window.expandAllVisible = function(expand, skipUrlSync) {{
   var rows = document.querySelectorAll('#pagesTable tbody tr.page-row');
   var expandedCount = 0;
   rows.forEach(function(r) {{
     if (r.style.display === 'none') return;
     var idx = r.id.replace('row-', '');
     var dRow = document.getElementById('detail-' + idx);
+    var btn = document.getElementById('btn-exp-' + idx);
+    var totalItems = r.getAttribute('data-total-items') || '';
     if (!dRow) return;
     if (expand && expandedCount < 50) {{
       dRow.style.display = 'table-row';
       r.classList.add('expanded');
+      if (btn) btn.textContent = 'Hide Changes (' + totalItems + ')';
       expandedCount++;
     }} else if (!expand) {{
       dRow.style.display = 'none';
       r.classList.remove('expanded');
+      if (btn) btn.textContent = 'View Changes (' + totalItems + ')';
     }}
   }});
+  if (!skipUrlSync) {{
+    window.syncUrlState(false);
+  }}
 }};
 
 window.resetPageFilters = function() {{
@@ -2872,10 +3002,11 @@ window.resetPageFilters = function() {{
   document.getElementById('waveSelect').value = 'all';
   document.getElementById('locSelect').value = 'all';
   document.getElementById('scopeSelect').value = 'all';
-  window.filterPagesTable();
+  window.expandAllVisible(false, true);
+  window.filterPagesTable(false);
 }};
 
-window.filterPagesTable = function() {{
+window.filterPagesTable = function(skipUrlSync) {{
   var q = (document.getElementById('pageSearch').value || '').toLowerCase().trim();
   var wave = document.getElementById('waveSelect').value;
   var loc = document.getElementById('locSelect').value;
@@ -2888,6 +3019,8 @@ window.filterPagesTable = function() {{
   rows.forEach(function(r) {{
     var idx = r.id.replace('row-', '');
     var dRow = document.getElementById('detail-' + idx);
+    var btn = document.getElementById('btn-exp-' + idx);
+    var totalItems = r.getAttribute('data-total-items') || '';
     var rWave = r.getAttribute('data-cat');
     var rB30 = r.getAttribute('data-b30');
     var rExec = r.getAttribute('data-exec');
@@ -2927,6 +3060,7 @@ window.filterPagesTable = function() {{
     if (!show && dRow) {{
       dRow.style.display = 'none';
       r.classList.remove('expanded');
+      if (btn) btn.textContent = 'View Changes (' + totalItems + ')';
     }}
     if (show) visible++;
   }});
@@ -2936,10 +3070,14 @@ window.filterPagesTable = function() {{
     var totalPool = (mode === 'manual') ? {pages_needing_manual} : {len(unique_body_pages)};
     counter.textContent = 'Showing ' + visible + ' of ' + totalPool + ' pages';
   }}
+
+  if (!skipUrlSync) {{
+    window.syncUrlState(false);
+  }}
 }};
 
 // Tab 4: 301 Redirects Filter
-window.filterRedTable = function() {{
+window.filterRedTable = function(skipUrlSync) {{
   var q = (document.getElementById('redSearch').value || '').toLowerCase().trim();
   var rtype = document.getElementById('redTypeSelect').value;
   var rows = document.querySelectorAll('#redTable tbody tr');
@@ -2953,10 +3091,13 @@ window.filterRedTable = function() {{
   }});
   var c = document.getElementById('redCounter');
   if (c) c.textContent = 'Showing ' + vis + ' of {total_redirects_count} redirects';
+  if (!skipUrlSync) {{
+    window.syncUrlState(false);
+  }}
 }};
 
 // Tab 5: Media & PDF Assets Filter
-window.filterMediaTable = function() {{
+window.filterMediaTable = function(skipUrlSync) {{
   var q = (document.getElementById('mediaSearch').value || '').toLowerCase().trim();
   var mtype = document.getElementById('mediaTypeSelect').value;
   var rows = document.querySelectorAll('#mediaTable tbody tr');
@@ -2970,7 +3111,83 @@ window.filterMediaTable = function() {{
   }});
   var c = document.getElementById('mediaCounter');
   if (c) c.textContent = 'Showing ' + vis + ' asset rows';
+  if (!skipUrlSync) {{
+    window.syncUrlState(false);
+  }}
 }};
+
+window.applyStateFromUrl = function() {{
+  window.isRestoringUrlState = true;
+  try {{
+    var params = new URLSearchParams(window.location.search);
+    var tab = params.get('tab') || params.get('mode') || 'all';
+
+    // Reset all controls first
+    var ps = document.getElementById('pageSearch');
+    var ws = document.getElementById('waveSelect');
+    var ls = document.getElementById('locSelect');
+    var ss = document.getElementById('scopeSelect');
+    if (ps) ps.value = params.get('q') || '';
+    if (ws && params.get('wave')) ws.value = params.get('wave'); else if (ws) ws.value = 'all';
+    if (ls && params.get('loc')) ls.value = params.get('loc'); else if (ls) ls.value = 'all';
+    if (ss && params.get('scope')) ss.value = params.get('scope'); else if (ss) ss.value = 'all';
+
+    var rs = document.getElementById('redSearch');
+    var rts = document.getElementById('redTypeSelect');
+    if (rs) rs.value = params.get('rq') || '';
+    if (rts && params.get('rtype')) rts.value = params.get('rtype'); else if (rts) rts.value = 'all';
+
+    var ms = document.getElementById('mediaSearch');
+    var mts = document.getElementById('mediaTypeSelect');
+    if (ms) ms.value = params.get('mq') || '';
+    if (mts && params.get('mtype')) mts.value = params.get('mtype'); else if (mts) mts.value = 'all';
+
+    if (tab === 'redirects' || tab === 'tab-redirects') {{
+      window.switchPrimaryTab('tab-redirects', null, 'btn-tab-redirects', true);
+      window.filterRedTable(true);
+    }} else if (tab === 'media' || tab === 'tab-media') {{
+      window.switchPrimaryTab('tab-media', null, 'btn-tab-media', true);
+      window.filterMediaTable(true);
+    }} else if (tab === 'seo' || tab === 'tab-seo') {{
+      window.switchPrimaryTab('tab-seo', null, 'btn-tab-seo', true);
+    }} else {{
+      var vMode = (tab === 'auto' || tab === 'manual') ? tab : 'all';
+      var bId = (vMode === 'auto') ? 'btn-tab-auto' : ((vMode === 'manual') ? 'btn-tab-manual' : 'btn-tab-all');
+      window.switchPrimaryTab('tab-pages', vMode, bId, true);
+      window.expandAllVisible(false, true);
+
+      var openParam = params.get('open');
+      if (openParam === 'visible' || openParam === 'all') {{
+        window.expandAllVisible(true, true);
+      }} else if (openParam) {{
+        var firstRow = null;
+        openParam.split(',').forEach(function(idStr) {{
+          var cleanId = idStr.trim();
+          if (!cleanId) return;
+          var pRow = document.getElementById('row-' + cleanId);
+          var dRow = document.getElementById('detail-' + cleanId);
+          if (pRow && dRow && pRow.style.display !== 'none') {{
+            window.toggleDetail(cleanId, null, true);
+            if (!firstRow) firstRow = pRow;
+          }}
+        }});
+        if (firstRow) {{
+          setTimeout(function() {{
+            firstRow.scrollIntoView({{ behavior: 'smooth', block: 'center' }});
+          }}, 100);
+        }}
+      }}
+    }}
+  }} catch (e) {{}}
+  window.isRestoringUrlState = false;
+}};
+
+window.addEventListener('DOMContentLoaded', function() {{
+  window.applyStateFromUrl();
+}});
+window.addEventListener('popstate', function() {{
+  window.applyStateFromUrl();
+}});
 </script>
 </head>
 <body>
@@ -2981,6 +3198,9 @@ window.filterMediaTable = function() {{
       <div class="eyebrow">ServiceNow Digital UX • Global &amp; Regional Rebrand Handoff</div>
       <h1>AI Control Tower &rarr; Super Intelligence (SI) Control Tower</h1>
       <div class="subtitle">{len(unique_body_pages)} Total Pages ({us_pages_total} US + {regional_pages_total} Regional Across 13 Locales) • Collapsible Page-by-Page Diffs • 301 Redirects • Media &amp; SEO Rules</div>
+    </div>
+    <div>
+      <button type="button" class="action-btn" onclick="copyShareableLink(this)" title="Copy direct deep-link URL to current tab, filters, and expanded rows" style="font-weight:700;padding:8px 14px;border-color:#cbd5e1;">Copy Direct Link</button>
     </div>
   </div>
 </header>
@@ -3112,6 +3332,7 @@ window.filterMediaTable = function() {{
       <button type="button" class="action-btn" onclick="expandAllVisible(true)" title="Expand first 50 visible rows">Expand Visible</button>
       <button type="button" class="action-btn" onclick="expandAllVisible(false)">Collapse All</button>
       <button type="button" class="action-btn" onclick="resetPageFilters()">Reset</button>
+      <button type="button" class="action-btn" onclick="copyShareableLink(this)" title="Copy direct link to this filtered view">Share View</button>
 
       <span id="pagesCounter" class="results-counter">Showing {len(unique_body_pages)} of {len(unique_body_pages)} pages</span>
     </div>
@@ -3120,11 +3341,12 @@ window.filterMediaTable = function() {{
       <table id="pagesTable" data-view-mode="all">
         <thead>
           <tr>
-            <th style="width:12%;">Wave &amp; Region</th>
-            <th style="width:36%;">Page URL &amp; Category</th>
-            <th style="width:16%;">US Traffic &amp; Basis</th>
-            <th style="width:22%;">Update Scope (Auto vs. Manual)</th>
-            <th style="width:14%;">Details</th>
+            <th style="width:11%;">Wave &amp; Region</th>
+            <th style="width:34%;">Page URL &amp; Category</th>
+            <th style="width:15%;">US Traffic &amp; Basis</th>
+            <th style="width:14%;">Automated</th>
+            <th style="width:14%;">Manual</th>
+            <th style="width:12%;text-align:right;">Details</th>
           </tr>
         </thead>
         <tbody>
@@ -3195,6 +3417,7 @@ RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)(ai-control-tower|aict)(.
         <option value="pdf">DAM PDF Slugs ({pdf_redirect_cnt})</option>
         <option value="image">DAM Image Slugs ({img_redirect_cnt})</option>
       </select>
+      <button type="button" class="action-btn" onclick="copyShareableLink(this)" title="Copy direct link to this filtered view">Share View</button>
       <span id="redCounter" class="results-counter">Showing {total_redirects_count} of {total_redirects_count} redirects</span>
     </div>
 
@@ -3237,6 +3460,7 @@ RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)(ai-control-tower|aict)(.
         <option value="pdf">Manual: Live/Vector PDFs (13 Files)</option>
         <option value="auto-img">Automated: Zero-Pixel Filename Moves ({total_zero_pixel_images_count} Files)</option>
       </select>
+      <button type="button" class="action-btn" onclick="copyShareableLink(this)" title="Copy direct link to this filtered view">Share View</button>
       <span id="mediaCounter" class="results-counter">Showing all asset groups</span>
     </div>
 
@@ -3324,7 +3548,7 @@ RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)(ai-control-tower|aict)(.
               <td>&le; 175 chars</td>
               <td><span class="badge b-auto">Super Intelligence Control Tower</span></td>
               <td><span class="badge b-auto">Auto</span></td>
-              <td><code>ServiceNow is the Super Intelligence Control Tower for business reinvention</code> (75/175 chars). Always use full name.</td>
+              <td><code>ServiceNow is the Super Intelligence Control Tower for business reinvention</code> (75/175 chars) and <code>The Super Intelligence Control Tower for business reinvention</code> (61/175 chars). Always use full name and capitalize <strong>Control Tower</strong> (Title Case required even where live copy had lowercase <code>AI control tower</code>).</td>
             </tr>
             <tr>
               <td><strong>FAQ Accordion Headings &amp; Tight UI Cards</strong></td>
