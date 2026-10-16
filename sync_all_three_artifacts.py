@@ -1435,11 +1435,9 @@ def build_split_page_breakdowns(r):
             f"Image Swaps: {' | '.join(img_swap_csv_parts) if img_swap_csv_parts else 'None'} | Alts: {' || '.join(alt_csv_parts) if alt_csv_parts else 'None'}"
         )
 
-    # F. Linked Non-FAQ PDFs with Internal Matches (Manual)
+    # F. Linked PDF Document Moves & Path Swaps (100% Automated on Webpages)
     live_pdfs = [p for p in pdfs if pdf_match_lookup.get(p, (0,))[0] > 0 or "ds-ai-control-tower" in p]
     if live_pdfs:
-        manual_reasons.append(f"PDF Update ({len(live_pdfs)})")
-        manual_filter_tags.add("m-pdf")
         pdf_csv_parts = []
         for idx, p in enumerate(live_pdfs, 1):
             fp = full_url(p)
@@ -1450,27 +1448,30 @@ def build_split_page_breakdowns(r):
                 new_fp = re.sub(r"(?i)aict", "sict", new_fp)
                 pdf_target_html = (
                     f"<div class='mono'><code>{html.escape(new_fp)}</code></div>"
-                    f"<div class='sub-note' style='margin-top:2px;'>Update internal PDF text &amp; metadata to <strong>Super Intelligence Control Tower / SICT</strong></div>"
+                    f"<div class='sub-note' style='margin-top:2px;'>Automated PDF move &amp; link path swap to updated PDF copy (<strong>Super Intelligence Control Tower / SICT</strong>)</div>"
                 )
                 pdf_csv_parts.append(f"{fp} -> {new_fp}")
             else:
-                pdf_target_html = "Update internal PDF text &amp; metadata to <strong>Super Intelligence Control Tower / SICT</strong>"
+                pdf_target_html = (
+                    f"<div class='mono'><code>{html.escape(fp)}</code></div>"
+                    f"<div class='sub-note' style='margin-top:2px;'>Automated link sync to updated PDF copy (<strong>Super Intelligence Control Tower / SICT</strong>)</div>"
+                )
                 pdf_csv_parts.append(fp)
             if m_info and m_info[0] > 0:
                 m_cnt, p_pages, _ = m_info
-                p_note = f"{m_cnt} matches across {p_pages} PDF pages • Re-export" + (" + rename filename (HTTP 301)" if has_pdf_slug else "")
+                p_note = f"Automated PDF move & link swap" + (" + HTTP 301" if has_pdf_slug else "") + f" ({m_cnt} matches across {p_pages} PDF pages)"
             else:
-                p_note = "Update datasheet copy + rename filename (HTTP 301)"
-            drawer_manual_rows.append(
-                f"<tr class='detail-item-manual'>"
-                f"<td><span class='badge b-manual'>Manual</span></td>"
-                f"<td><strong>Linked PDF Document #{idx}</strong></td>"
+                p_note = "Automated PDF move & link swap + HTTP 301"
+            drawer_auto_rows.append(
+                f"<tr class='detail-item-auto'>"
+                f"<td><span class='badge b-auto'>Auto</span></td>"
+                f"<td><strong>Linked PDF Document #{idx}</strong><div class='sub-note'>Automated PDF move &amp; page link swap</div></td>"
                 f"<td class='mono'>{a_link(fp)}</td>"
                 f"<td>{pdf_target_html}</td>"
                 f"<td>{html.escape(p_note)}</td>"
                 f"</tr>"
             )
-        manual_csv_items.append(f"[MANUAL: LINKED PDFS ({len(live_pdfs)})] " + ", ".join(pdf_csv_parts))
+        auto_csv_items.append(f"[AUTO: LINKED PDF DOCUMENT MOVES ({len(live_pdfs)})] " + ", ".join(pdf_csv_parts))
 
     # G. Localized Flagship Native Grammar Review (Manual L10n Task on 10 non-English flagship pages)
     if loc_code in ("de", "fr", "fr-ca", "es", "latam", "br", "it", "nl", "jp", "kr") and "products/ai-control-tower.html" in u:
@@ -1487,7 +1488,7 @@ def build_split_page_breakdowns(r):
         )
         manual_csv_items.append(f"[MANUAL: L10N GRAMMAR REVIEW ({loc_code.upper()})] Verify gender/article agreement on translated flagship page")
 
-    auto_edit_count = auto_text_meta_alt_cnt + auto_link_cnt + len(auto_imgs) + len(baked_imgs)
+    auto_edit_count = auto_text_meta_alt_cnt + auto_link_cnt + len(auto_imgs) + len(baked_imgs) + len(live_pdfs)
     if auto_edit_count == 0:
         auto_edit_count = max(1, r["true_body"] + r.get("raw_localized", 0))
 
@@ -1495,7 +1496,6 @@ def build_split_page_breakdowns(r):
         (1 if "m-slug" in manual_filter_tags else 0)
         + manual_copy_cnt
         + manual_context_cnt
-        + len(live_pdfs)
         + (1 if "m-l10n" in manual_filter_tags else 0)
     )
 
@@ -1529,6 +1529,7 @@ def build_split_page_breakdowns(r):
         "auto_text_meta_alt_cnt": auto_text_meta_alt_cnt,
         "auto_link_cnt": auto_link_cnt,
         "auto_img_cnt": len(auto_imgs) + len(baked_imgs),
+        "auto_pdf_cnt": len(live_pdfs),
         "si_short_cnt": si_short_cnt,
         "manual_csv": manual_csv_str,
         "manual_task_count": manual_task_count,
@@ -1918,14 +1919,17 @@ for page_idx, r in enumerate(unique_body_pages, 1):
     man_total_cnt = sp["manual_task_count"]
     link_cnt = sp["auto_link_cnt"]
     img_cnt = sp["auto_img_cnt"]
+    pdf_cnt = sp.get("auto_pdf_cnt", 0)
 
     auto_sub_parts = []
-    if (link_cnt > 0 or img_cnt > 0) and auto_copy_cnt > 0:
+    if (link_cnt > 0 or img_cnt > 0 or pdf_cnt > 0) and auto_copy_cnt > 0:
         auto_sub_parts.append(f"{auto_copy_cnt} copy")
     if link_cnt > 0:
         auto_sub_parts.append(f"{link_cnt} link{'s' if link_cnt != 1 else ''}")
     if img_cnt > 0:
         auto_sub_parts.append(f"{img_cnt} image swap{'s' if img_cnt != 1 else ''}")
+    if pdf_cnt > 0:
+        auto_sub_parts.append(f"{pdf_cnt} PDF move{'s' if pdf_cnt != 1 else ''}")
     if sp["si_short_cnt"] > 0:
         auto_sub_parts.append(f"{sp['si_short_cnt']} 'Control Tower' CTA{'s' if sp['si_short_cnt'] != 1 else ''}")
     auto_sub_html = f"<div class='sub-note'>{', '.join(auto_sub_parts)}</div>" if auto_sub_parts else "<div class='sub-note'>Groovy bulk swap</div>"
@@ -2085,12 +2089,12 @@ for old_pdf in pdf_slug_candidates:
     redirect_rows_html.append(f"""
     <tr data-rtype="pdf" data-rloc="{p_loc}">
       <td data-label="#"><strong>#{redirect_idx}</strong></td>
-      <td data-label="Type &amp; Wave"><span class="badge b-manual">DAM PDF</span> {w_badge} <span class="badge b-loc">{loc_lbl}</span></td>
+      <td data-label="Type &amp; Wave"><span class="badge b-auto">DAM PDF</span> {w_badge} <span class="badge b-loc">{loc_lbl}</span></td>
       <td data-label="Old Live URL (301 Source)" class="mono">{a_link(old_pdf)}</td>
       <td data-label="New Target URL (301 Destination)" class="mono"><code>{html.escape(new_pdf)}</code></td>
       <td data-label="Technical Action">
         <span class="badge b-neutral">HTTP 301</span>
-        <div class="sub-note" style="margin-top:3px;">Publish updated PDF at new DAM path + 301 redirect</div>
+        <div class="sub-note" style="margin-top:3px;">Automated DAM PDF move + page link swap &amp; 301</div>
       </td>
     </tr>""")
 
@@ -2253,24 +2257,24 @@ media_rows_html.append(f"""
   <td data-label="Required Action"><strong>Zero graphic design work needed.</strong> Script renames DAM filenames (<code>ai-control-tower</code> &rarr; <code>super-intelligence-control-tower</code>) with HTTP 301 redirect and updates HTML <code>alt</code> attributes.</td>
 </tr>
 <tr data-mfilter="pdf">
-  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual PDF</span><div class="sub-note" style="margin-top:4px;">6 OCR / Meta Matches</div><span class="badge b-loc" style="margin-top:4px;display:inline-block;">Rename Filename + 301</span></td>
+  <td data-label="Track &amp; Group"><span class="badge b-manual">PDF Copy Update</span><div class="sub-note" style="margin-top:4px;">6 OCR / Meta Matches</div><span class="badge b-auto" style="margin-top:4px;display:inline-block;">Auto PDF Move &amp; Page Link Swap + 301</span></td>
   <td data-label="DAM Asset URL &amp; Host Pages" class="mono">
     <div><strong>Current:</strong> {a_link('https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/resource-center/e-book/ebk-aict-discovery-playbook.pdf')}<br><strong>New Target:</strong> <code>https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/resource-center/e-book/ebk-sict-discovery-playbook.pdf</code></div>
-    <div class="sub-note" style="margin-top:4px;"><strong>Linked from:</strong> {a_link('https://www.servicenow.com/standard/resource-center/ebook/ebk-aict-discovery-playbook.html')}</div>
+    <div class="sub-note" style="margin-top:4px;"><strong>Auto-swapped on:</strong> {a_link('https://www.servicenow.com/standard/resource-center/ebook/ebk-aict-discovery-playbook.html')}</div>
   </td>
   <td data-label="Specs">11 Pages, PDF<br>(231 MB)</td>
   <td data-label="Detected Text (OCR)">Meta title <code>AICT-DISCOVERY-PLAYBOOK-02</code> &rarr; <code>SICT-DISCOVERY-PLAYBOOK-02</code> + 5 vector text matches on Pages 5, 8, 9</td>
-  <td data-label="Required Action">Re-export InDesign source with <strong>Super Intelligence Control Tower (SICT)</strong>, update metadata title to <code>SICT-DISCOVERY-PLAYBOOK-02</code>, rename PDF filename to <code>ebk-sict-discovery-playbook.pdf</code>, and add HTTP 301 redirect.</td>
+  <td data-label="Required Action">Re-export InDesign source with <strong>Super Intelligence Control Tower (SICT)</strong> and metadata title <code>SICT-DISCOVERY-PLAYBOOK-02</code>. <strong>DAM PDF move &amp; page link swap to <code>ebk-sict-discovery-playbook.pdf</code> are 100% Automated</strong> + HTTP 301 redirect.</td>
 </tr>
 <tr data-mfilter="pdf">
-  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual Legal PDF</span><div class="sub-note" style="margin-top:4px;">7 Text Matches</div><span class="badge b-loc" style="margin-top:4px;display:inline-block;">Rename Filename + 301</span></td>
+  <td data-label="Track &amp; Group"><span class="badge b-manual">Legal PDF Copy Update</span><div class="sub-note" style="margin-top:4px;">7 Text Matches</div><span class="badge b-auto" style="margin-top:4px;display:inline-block;">Auto PDF Move &amp; Page Link Swap + 301</span></td>
   <td data-label="DAM Asset URL &amp; Host Pages" class="mono">
     <div><strong>Current:</strong> {a_link('https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/legal/ai-control-tower-servicenow-subscription-unit-overview.pdf')}<br><strong>New Target:</strong> <code>https://www.servicenow.com/content/dam/servicenow-assets/public/en-us/doc-type/legal/super-intelligence-control-tower-servicenow-subscription-unit-overview.pdf</code></div>
-    <div class="sub-note" style="margin-top:4px;"><strong>Linked from:</strong> {a_link('https://www.servicenow.com/products/entitlements-packages.html')}</div>
+    <div class="sub-note" style="margin-top:4px;"><strong>Auto-swapped on:</strong> {a_link('https://www.servicenow.com/products/entitlements-packages.html')}</div>
   </td>
   <td data-label="Specs">4 Pages, PDF<br>(109.7 KB)</td>
   <td data-label="Detected Text (OCR)">Page 1 Title/TOC + Page 3 Section Header &amp; 4 Legal clauses</td>
-  <td data-label="Required Action">Coordinate with Legal to publish updated Subscription Unit Overview PDF at renamed DAM filename and configure HTTP 301 redirect.</td>
+  <td data-label="Required Action">Coordinate with Legal on updated Subscription Unit Overview PDF copy. <strong>DAM PDF move &amp; page link swap are 100% Automated</strong> + HTTP 301 redirect.</td>
 </tr>
 """)
 
@@ -2290,19 +2294,19 @@ for p in audited_pdfs:
         new_purl = re.sub(r"(?i)ai-control-tower", "super-intelligence-control-tower", purl)
         new_purl = re.sub(r"(?i)aict", "sict", new_purl)
         pdf_url_block = f"<div><strong>Current:</strong> {a_link(purl)}<br><strong>New Target:</strong> <code>{html.escape(new_purl)}</code></div>"
-        pdf_slug_badge = '<span class="badge b-loc" style="margin-top:4px;display:inline-block;">Rename Filename + 301</span>'
-        pdf_act_tail = "rename PDF filename (<code>ai-control-tower</code> &rarr; <code>super-intelligence-control-tower</code>, <code>aict</code> &rarr; <code>sict</code>), and add HTTP 301 redirect."
+        pdf_slug_badge = '<span class="badge b-auto" style="margin-top:4px;display:inline-block;">Auto PDF Move &amp; Page Link Swap + 301</span>'
+        pdf_act_tail = "<strong>DAM PDF move &amp; page link swap (<code>ai-control-tower</code> &rarr; <code>super-intelligence-control-tower</code>, <code>aict</code> &rarr; <code>sict</code>) are 100% Automated</strong> + HTTP 301 redirect."
     else:
         pdf_url_block = f"<div>{a_link(purl)}</div>"
-        pdf_slug_badge = ""
+        pdf_slug_badge = '<span class="badge b-auto" style="margin-top:4px;display:inline-block;">Same DAM Path</span>'
         pdf_act_tail = "and republish at same DAM path."
     media_rows_html.append(f"""
 <tr data-mfilter="pdf">
-  <td data-label="Track &amp; Group"><span class="badge b-manual">Manual PDF</span><div class="sub-note" style="margin-top:4px;">{m_cnt} Text Matches</div>{pdf_slug_badge}</td>
-  <td data-label="DAM Asset URL &amp; Host Pages" class="mono">{pdf_url_block}<div class="sub-note" style="margin-top:4px;"><strong>Linked from:</strong> {host_links}</div></td>
+  <td data-label="Track &amp; Group"><span class="badge b-manual">PDF Copy Update</span><div class="sub-note" style="margin-top:4px;">{m_cnt} Text Matches</div>{pdf_slug_badge}</td>
+  <td data-label="DAM Asset URL &amp; Host Pages" class="mono">{pdf_url_block}<div class="sub-note" style="margin-top:4px;"><strong>Auto-swapped on:</strong> {host_links}</div></td>
   <td data-label="Specs">{p.get('pages', 0)} Pages, PDF<br>({p.get('bytes', 0)//1024:,} KB)</td>
   <td data-label="Detected Text (OCR)"><strong>Meta Title:</strong> <code>{mt}</code><br><strong>Snippet:</strong> <code>{sn}</code></td>
-  <td data-label="Required Action">Update source PDF text &amp; metadata title to <strong>Super Intelligence Control Tower</strong> (and <code>AICT</code> &rarr; <code>SICT</code>), {pdf_act_tail}</td>
+  <td data-label="Required Action">Update source PDF text &amp; metadata title to <strong>Super Intelligence Control Tower</strong> (and <code>AICT</code> &rarr; <code>SICT</code>). {pdf_act_tail}</td>
 </tr>""")
 
 # ---------------------------------------------------------------------------
@@ -3037,10 +3041,10 @@ window.setPageViewMode = function(mode, updateTopTab, skipUrlSync) {{
       bannerDesc.textContent = 'Showing all {len(unique_body_pages)} pages. Product Marketing Rule: use "Super Intelligence Control Tower" everywhere (no "SI Control Tower"), use "Control Tower" for buttons, include Manual Context Bridge copy on Awareness & first-mention CTA pages ({manual_type_counts["m-context"]} pages), and flag constrained headings/titles where the full 32-char name is too long.';
     }} else if (mode === 'auto') {{
       bannerTitle.textContent = 'Automated Updates Only ({total_auto_instances:,} Scripted Swaps Across {len(unique_body_pages)} Pages)';
-      bannerDesc.textContent = 'Showing only automated DOM, metadata, CTA button ("Control Tower"), link, alt-text, and DAM image path swaps executed by the AEM Groovy script. Manual tasks are hidden inside expanded rows.';
+      bannerDesc.textContent = 'Showing only automated DOM, metadata, CTA button ("Control Tower"), link, alt-text, DAM image path, and linked PDF document moves executed by the AEM Groovy script. Manual tasks are hidden inside expanded rows.';
     }} else if (mode === 'manual') {{
       bannerTitle.textContent = 'Manual Updates Queue Only ({pages_needing_manual} Pages with {total_manual_tasks_all} Manual Tasks)';
-      bannerDesc.textContent = 'Filtered to the {pages_needing_manual} pages requiring manual action ({manual_type_counts["m-context"]} Context Bridge awareness/CTA pages, {total_manual_copy_instances} headings/titles where "Super Intelligence Control Tower" exceeds 50/60 chars across {manual_type_counts["m-copy"]} pages, 34 page slug moves, 13 PDFs, 10 L10n reviews).';
+      bannerDesc.textContent = 'Filtered to the {pages_needing_manual} pages requiring manual action ({manual_type_counts["m-context"]} Context Bridge awareness/CTA pages, {total_manual_copy_instances} headings/titles where "Super Intelligence Control Tower" exceeds 50/60 chars across {manual_type_counts["m-copy"]} pages, 34 page slug moves, 10 L10n reviews).';
     }}
   }}
 
@@ -3322,7 +3326,7 @@ window.addEventListener('popstate', function() {{
     <div class="kpi-card" onclick="switchPrimaryTab('tab-pages', 'manual', 'btn-tab-manual')">
       <div class="kpi-label">Manual Updates Queue</div>
       <div class="kpi-value amber">{pages_needing_manual} Pages</div>
-      <div class="kpi-sub"><strong>{manual_type_counts['m-context']} Context Bridge</strong>, <strong>{total_manual_copy_instances} oversized headings/titles</strong>, 34 page moves, 13 PDFs, 10 L10n.</div>
+      <div class="kpi-sub"><strong>{manual_type_counts['m-context']} Context Bridge</strong>, <strong>{total_manual_copy_instances} oversized headings/titles</strong>, 34 page moves, 10 L10n.</div>
     </div>
     <div class="kpi-card" onclick="switchPrimaryTab('tab-redirects', null, 'btn-tab-redirects')">
       <div class="kpi-label">HTTP 301 Redirects</div>
@@ -3417,7 +3421,6 @@ window.addEventListener('popstate', function() {{
           <option value="m-context">Manual: Context Bridge (Awareness &amp; CTA) ({manual_type_counts['m-context']} pages)</option>
           <option value="m-copy">Manual: Name Too Long (&gt;Limit) ({manual_type_counts['m-copy']} pages)</option>
           <option value="m-slug">Manual: 301 URL Slug Move ({manual_type_counts['m-slug']} pages)</option>
-          <option value="m-pdf">Manual: Live/Vector PDF Update ({manual_type_counts['m-pdf']} pages)</option>
           <option value="m-l10n">Manual: L10n Grammar Review ({manual_type_counts['m-l10n']} pages)</option>
         </optgroup>
         <optgroup label="Page Category">
@@ -3956,17 +3959,21 @@ println "Total properties updated: ${{updatedProps}} (dryRun=${{dryRun}})"</pre>
 """
 
 open(OUT_HTML, "w", encoding="utf-8").write(full_html)
+REPO_DIR = "/Users/tamer.mina/Documents/Antigravity/servicenow-si-control-tower-rebrand"
+if os.path.isdir(REPO_DIR):
+    open(os.path.join(REPO_DIR, "index.html"), "w", encoding="utf-8").write(full_html)
+    open(os.path.join(REPO_DIR, "aict-rebrand-interactive-report.html"), "w", encoding="utf-8").write(full_html)
 
 OUT_MD = "/Users/tamer.mina/.gemini/antigravity-cli/brain/37667ee2-9f2b-4c38-a3b2-645e77963657/aict_rebrand_plan.md"
 plan_md = f"""# Super Intelligence Control Tower — Global & Regional Rebrand Handoff Plan
 
 > [!IMPORTANT]
-> **Product Marketing Naming & Automation Direction Applied Across All {len(unique_body_pages)} Pages (US + 13 Regional Locales + 63 Audited DAM Images)**
+> **Product Marketing Naming & Automation Direction Applied Across All {len(unique_body_pages)} Pages (US + 13 Regional Locales + 63 Audited DAM Images + 13 PDFs)**
 > - **Standard Product Name**: **`Super Intelligence Control Tower`** (32 chars). We do **not** use `SI Control Tower` anywhere—all full-name instances of `AI Control Tower` transition to `Super Intelligence Control Tower`.
 > - **Acronym Mapping (`AICT` &rarr; `SICT`)**: All 36 occurrences of the `AICT` / `aict` acronym across body copy, parenthetical acronyms (`AI Control Tower (AICT)` &rarr; `Super Intelligence Control Tower (SICT)` and `AICT (Ai Control Tower)` &rarr; `SICT (Super Intelligence Control Tower)`), `<meta description>` tags (`AICT KPI root cause` &rarr; `SICT KPI root cause`), URL/PDF slugs (`/contact-us-aict.html` &rarr; `/contact-us-sict.html`, `/ebk-aict-discovery-playbook.html` &rarr; `/ebk-sict-discovery-playbook.html`, `ebk-aict-discovery-playbook.pdf` &rarr; `ebk-sict-discovery-playbook.pdf`), PDF document IDs (`AICT-DISCOVERY-PLAYBOOK-02` &rarr; `SICT-DISCOVERY-PLAYBOOK-02`), and JSON component data attributes cleanly map to **`SICT`** / **`sict`**.
 > - **CTA Button Name**: **`Control Tower`** (13 chars) on buttons (e.g., `See Control Tower` [17/25 chars], `Explore Control Tower` [21/25 chars], `Extend Control Tower` [20/25 chars], and localized button equivalents).
 > - **Awareness & First-Mention CTA Context Bridge Standard (`Manual: Context Bridge`)**: Across **{manual_type_counts['m-context']} pages** (all awareness-categorized pages—`Homepage`, `What is ServiceNow`, `Platform - Main Page`, `Impact Pages`, `Events - AI Summits Hub Page`, and tagline-only `Solutions` pages—plus first-mention `Control Tower` CTA button pages across US + 13 locales), a **Manual Context Bridge** copy update is queued to introduce `Super Intelligence Control Tower` in the surrounding Marquee/Feature paragraph (e.g., Homepage Marquee: *"Most companies have AI but few have the data to ground it, the workflows to deploy it, and the security to govern it. Super Intelligence Control Tower is built for all of it. So AI doesn't just think, it acts."*).
-> - **All On-Page Image Swaps Are Automated (`Auto`)**: Once updated image copies are uploaded to the new DAM paths (`super-intelligence-control-tower`), the AEM Groovy automation script swaps out the old image paths and puts in the new image paths across all webpages automatically.
+> - **All On-Page Image Swaps AND Linked PDF Document Moves Are Automated (`Auto`)**: Once updated image copies and updated PDF copies are uploaded to the new DAM paths (`super-intelligence-control-tower` / `sict`), the AEM Groovy automation script swaps out the old image/PDF paths and puts in the new paths across all webpages automatically.
 > - **WWSG Body Copy & FAQ Accordion Questions/Answers Skipped for Length Flagging**: Body copy, Marquee lead descriptions, FAQ Accordion Questions (`<arc-accordion-item> > <arc-heading slot="heading">`), and FAQ Answers are 100% automated direct swaps (`AI Control Tower` &rarr; `Super Intelligence Control Tower`, `AICT` &rarr; `SICT`) to minimize manual work.
 > - **Oversized Section/Card Headings & Titles Flagged for Manual Decision**: **{total_manual_copy_instances} instances across {manual_type_counts['m-copy']} pages** are flagged as `Manual: Name Too Long` where `Super Intelligence Control Tower` causes a constrained section/card heading (`<h2>`/`<h3>`/`<h4>`, card heading, or tab label >50 chars) or compound `<title>` (>60 chars) to exceed its character limit.
 > - **Interactive Dashboard**: [aict-rebrand-interactive-report.html](file:///Users/tamer.mina/Documents/Antigravity/aict-rebrand-interactive-report.html)
@@ -3979,11 +3986,11 @@ plan_md = f"""# Super Intelligence Control Tower — Global & Regional Rebrand H
 | Track & Owner | Scope | Action Summary |
 | :--- | :--- | :--- |
 | **Track A1: Automated Global Nav XF**<br>*Owner: AEM Platform Admin* | **2 Centralized XFs** ({len(ssi_only_pages):,} pages) | Single Experience Fragment update swaps `"AI Control Tower"` to `"Super Intelligence Control Tower"` and updates the nav link across US + 13 locales. |
-| **Track A2: Automated AEM Groovy Swap**<br>*Owner: AEM Engineering* | **All {len(unique_body_pages)} Pages** ({pages_100pct_auto} Pure Auto + {pages_needing_manual} Hybrid)<br>**{total_auto_instances:,} Automated Swaps** | Updates `<title>`, `<meta>`, `<h1>` Hero headings (`Super Intelligence Control Tower`, 32/50 chars), all body copy, FAQ Accordion Questions & Answers (`AI Control Tower` &rarr; `Super Intelligence Control Tower`, `AICT` &rarr; `SICT`), CTA buttons (`See Control Tower`, `Explore Control Tower`, `Extend Control Tower`), company taglines (`ServiceNow is the Super Intelligence Control Tower for business reinvention`), internal links, **all on-page DAM image paths (`old image -> new image copy`)**, and image `alt` tags. |
+| **Track A2: Automated AEM Groovy Swap**<br>*Owner: AEM Engineering* | **All {len(unique_body_pages)} Pages** ({pages_100pct_auto} Pure Auto + {pages_needing_manual} Hybrid)<br>**{total_auto_instances:,} Automated Swaps** | Updates `<title>`, `<meta>`, `<h1>` Hero headings (`Super Intelligence Control Tower`, 32/50 chars), all body copy, FAQ Accordion Questions & Answers (`AI Control Tower` &rarr; `Super Intelligence Control Tower`, `AICT` &rarr; `SICT`), CTA buttons (`See Control Tower`, `Explore Control Tower`, `Extend Control Tower`), company taglines (`ServiceNow is the Super Intelligence Control Tower for business reinvention`), internal links, **all on-page DAM image paths**, **all linked PDF document moves (`old PDF -> new PDF copy`)**, and image `alt` tags. |
 | **Track M0: Awareness & CTA Context Bridge Copy**<br>*Owner: Digital UX Copywriter / PMM* | **{manual_type_counts['m-context']} Pages** (US + 13 locales) | Update Marquee/Feature lead paragraphs on awareness-categorized pages (`Homepage`, `Platform`, `What is ServiceNow`, `Impact`, `AI Summits`, `Solutions`) and first-mention `Control Tower` CTA button pages so `Super Intelligence Control Tower` is explicitly introduced in context. |
 | **Track M1: Flagged Oversized Headings & `<title>` Tags**<br>*Owner: Digital UX Copywriter / PMM* | **{total_manual_copy_instances} Flagged Instances** across **{manual_type_counts['m-copy']} pages** | Review constrained section/card headings (>50 chars) and compound `<title>` tags (>60 chars) where `"Super Intelligence Control Tower"` is too long and decide the replacement text. |
 | **Track M2: Manual AEM Move & 301 Redirects**<br>*Owner: AEM Authoring & Web Ops* | **{total_redirects_count} Total 301 Redirects** ({webpage_redirect_cnt} Webpages + {pdf_redirect_cnt} PDFs + {img_redirect_cnt} Images) | Move AEM page nodes (`/products/ai-control-tower.html` &rarr; `/products/super-intelligence-control-tower.html`, `/contact-us-aict.html` &rarr; `/contact-us-sict.html`, `/ebk-aict-discovery-playbook.html` &rarr; `/ebk-sict-discovery-playbook.html`) and deploy Apache Dispatcher / Akamai 301 rules. |
-| **Track M3: DAM Graphic Copy Upload & PDF Updates**<br>*Owner: Creative, Docs & Legal* | **{total_baked_images_count} Baked-In Image Copies ({total_baked_designs_count} Visual Designs)** + **13 PDFs** | Upload updated graphic copies at new `super-intelligence-control-tower` DAM filenames (page swaps are 100% automated) and update 13 live/vector PDFs (including `ebk-aict-discovery-playbook.pdf` &rarr; `ebk-sict-discovery-playbook.pdf` and `AICT-DISCOVERY-PLAYBOOK-02` &rarr; `SICT-DISCOVERY-PLAYBOOK-02`). |
+| **Track M3: DAM Graphic & PDF Source Copy Updates**<br>*Owner: Creative, Docs & Legal* | **{total_baked_images_count} Baked-In Image Copies ({total_baked_designs_count} Visual Designs)** + **13 PDF Copies** | Update baked-in graphic copies and 13 PDF source copies (including `ebk-aict-discovery-playbook.pdf` &rarr; `ebk-sict-discovery-playbook.pdf` and `AICT-DISCOVERY-PLAYBOOK-02` &rarr; `SICT-DISCOVERY-PLAYBOOK-02`). Once updated copies are uploaded, DAM moves and on-page path swaps are 100% automated. |
 | **Track M4: Manual Localization QA**<br>*Owner: Regional Web Leads* | **10 Non-English Flagship Pages** | Linguistic review of gender/article agreement on DE, FR, FR-CA, ES, LATAM, BR, IT, NL, JP, and KR flagship product pages. |
 """
 
