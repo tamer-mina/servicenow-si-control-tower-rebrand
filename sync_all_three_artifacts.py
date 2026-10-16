@@ -986,7 +986,192 @@ def build_split_page_breakdowns(r):
         if meta_manual_csv_parts:
             manual_csv_items.append(f"[MANUAL: FLAGGED OVERSIZED TITLE ({len(meta_manual_csv_parts)})] " + " || ".join(meta_manual_csv_parts))
 
-    # C. Visible Body Copy Instances — Automated by default; Flagged Manual ONLY when Super Intelligence Control Tower is way too big for a heading/accordion
+    # C. Visible Body Copy Instances + Awareness & First-Mention CTA Context Bridge Recommendations
+    manual_context_cnt = 0
+    context_bridge_csv = []
+    is_homepage = bool(cat == "Homepage" or re.search(r"^https://www\.servicenow\.com(/(?:uk|au|in|de|fr-ca|fr|es|latam|br|it|nl|jp|kr))?/$", u))
+
+    # 1. Context Bridge for Homepage & Awareness / First-Mention CTA Pages
+    if is_homepage:
+        manual_context_cnt += 1
+        cb_loc = "Hero Marquee Lead Paragraph (Context Bridge)"
+        cb_old = "Most companies have AI. Few have the data to ground it, the workflows to deploy it, and the security to govern it. ServiceNow® is the only platform built for all of it, so AI doesn't just think. It acts."
+        cb_new = "Most companies have AI but few have the data to ground it, the workflows to deploy it, and the security to govern it. Super Intelligence Control Tower is built for all of it. So AI doesn't just think, it acts."
+        cb_note = "Awareness & CTA Context Bridge: Introduces 'Super Intelligence Control Tower' in the marquee body text so context is laid down for visitors before the 'Control Tower' CTA button."
+        drawer_manual_rows.append(
+            f"<tr class='detail-item-manual'>"
+            f"<td><span class='badge b-manual'>Manual</span></td>"
+            f"<td><strong>{html.escape(cb_loc)}</strong><div class='sub-note'>Awareness Page &amp; First-Mention CTA Context Bridge</div></td>"
+            f"<td>{html.escape(cb_old)}</td>"
+            f"<td><strong>{html.escape(cb_new)}</strong></td>"
+            f"<td>{html.escape(cb_note)}</td>"
+            f"</tr>"
+        )
+        context_bridge_csv.append(f"[MANUAL_CONTEXT_BRIDGE | {cb_loc}] \"{cb_old}\" -> \"{cb_new}\" ({cb_note})")
+        wwsg_csv_notes.append("Awareness & CTA Context Bridge: Introduce 'Super Intelligence Control Tower' in Hero Marquee body copy before 'Control Tower' CTA button")
+
+    elif u.endswith("/products/it-asset-management.html"):
+        manual_context_cnt += 1
+        cb_loc = "Feature Tab Paragraph Preceding CTA (Context Bridge)"
+        cb_old = "Compare AI and machine learning cloud spending across providers. Monitor AI performance metrics to reduce risk and support ethical and regulatory compliance."
+        cb_new = "Compare AI and machine learning cloud spending across providers. Monitor AI performance with Super Intelligence Control Tower to reduce risk and support compliance."
+        cb_note = "CTA Context Bridge: Introduces 'Super Intelligence Control Tower' in the feature paragraph right before the 'See Control Tower' CTA button."
+        drawer_manual_rows.append(
+            f"<tr class='detail-item-manual'>"
+            f"<td><span class='badge b-manual'>Manual</span></td>"
+            f"<td><strong>{html.escape(cb_loc)}</strong><div class='sub-note'>First-Mention CTA Context Bridge</div></td>"
+            f"<td>{html.escape(cb_old)}</td>"
+            f"<td><strong>{html.escape(cb_new)}</strong></td>"
+            f"<td>{html.escape(cb_note)}</td>"
+            f"</tr>"
+        )
+        context_bridge_csv.append(f"[MANUAL_CONTEXT_BRIDGE | {cb_loc}] \"{cb_old}\" -> \"{cb_new}\" ({cb_note})")
+        wwsg_csv_notes.append("CTA Context Bridge: Introduce 'Super Intelligence Control Tower' in paragraph preceding 'See Control Tower' button")
+
+    elif u.endswith("/products/context-engine.html"):
+        manual_context_cnt += 1
+        cb_loc = "Card Paragraph Preceding CTA (Context Bridge)"
+        cb_old = "Ground AI decisions in your policies and rules, enforced automatically with explainable audit trails and manual approval when needed."
+        cb_new = "Ground AI decisions in your policies and rules with Super Intelligence Control Tower—enforced automatically with explainable audit trails and manual approval when needed."
+        cb_note = "CTA Context Bridge: Introduces 'Super Intelligence Control Tower' in the card paragraph right before the 'Explore Control Tower' CTA button."
+        drawer_manual_rows.append(
+            f"<tr class='detail-item-manual'>"
+            f"<td><span class='badge b-manual'>Manual</span></td>"
+            f"<td><strong>{html.escape(cb_loc)}</strong><div class='sub-note'>First-Mention CTA Context Bridge</div></td>"
+            f"<td>{html.escape(cb_old)}</td>"
+            f"<td><strong>{html.escape(cb_new)}</strong></td>"
+            f"<td>{html.escape(cb_note)}</td>"
+            f"</tr>"
+        )
+        context_bridge_csv.append(f"[MANUAL_CONTEXT_BRIDGE | {cb_loc}] \"{cb_old}\" -> \"{cb_new}\" ({cb_note})")
+        wwsg_csv_notes.append("CTA Context Bridge: Introduce 'Super Intelligence Control Tower' in paragraph preceding 'Explore Control Tower' button")
+
+    elif u.endswith("/platform.html"):
+        manual_context_cnt += 1
+        cb_loc = "Platform Hub Section Intro Copy (Context Bridge)"
+        cb_old = "The AI control tower for business reinvention (Standalone section heading without introductory body paragraph)"
+        cb_new = "Connect your data, workflows, and AI on one governed platform with ServiceNow Super Intelligence Control Tower—so AI doesn't just think, it acts."
+        cb_note = "Awareness Page Context Bridge: Introduces 'Super Intelligence Control Tower' in the platform lead copy beneath 'The Super Intelligence Control Tower for business reinvention' heading."
+        drawer_manual_rows.append(
+            f"<tr class='detail-item-manual'>"
+            f"<td><span class='badge b-manual'>Manual</span></td>"
+            f"<td><strong>{html.escape(cb_loc)}</strong><div class='sub-note'>Awareness Page Context Bridge</div></td>"
+            f"<td>{html.escape(cb_old)}</td>"
+            f"<td><strong>{html.escape(cb_new)}</strong></td>"
+            f"<td>{html.escape(cb_note)}</td>"
+            f"</tr>"
+        )
+        context_bridge_csv.append(f"[MANUAL_CONTEXT_BRIDGE | {cb_loc}] \"{cb_old}\" -> \"{cb_new}\" ({cb_note})")
+        wwsg_csv_notes.append("Awareness Page Context Bridge: Introduce 'Super Intelligence Control Tower' in Platform hub section intro copy")
+
+    elif u.endswith("/what-is-servicenow.html"):
+        manual_context_cnt += 1
+        cb_loc = "Primary Awareness Section Intro Copy (Context Bridge)"
+        cb_old = "ServiceNow is the AI control tower for business reinvention—and it all begins with workflows."
+        cb_new = "ServiceNow is the Super Intelligence Control Tower for business reinvention—grounding AI in your data, workflows, and governance so AI doesn't just think, it acts."
+        cb_note = "Awareness Page Context Bridge: Lay down foundational context for 'Super Intelligence Control Tower' (data, workflows, governance) for top-of-funnel visitors."
+        drawer_manual_rows.append(
+            f"<tr class='detail-item-manual'>"
+            f"<td><span class='badge b-manual'>Manual</span></td>"
+            f"<td><strong>{html.escape(cb_loc)}</strong><div class='sub-note'>Awareness Page Context Bridge</div></td>"
+            f"<td>{html.escape(cb_old)}</td>"
+            f"<td><strong>{html.escape(cb_new)}</strong></td>"
+            f"<td>{html.escape(cb_note)}</td>"
+            f"</tr>"
+        )
+        context_bridge_csv.append(f"[MANUAL_CONTEXT_BRIDGE | {cb_loc}] \"{cb_old}\" -> \"{cb_new}\" ({cb_note})")
+        wwsg_csv_notes.append("Awareness Page Context Bridge: Expand section intro copy to contextualize 'Super Intelligence Control Tower' for first-time visitors")
+
+    elif u.endswith("/impact.html"):
+        manual_context_cnt += 1
+        cb_loc = "Impact Feature Lead Copy (Context Bridge)"
+        cb_old = "Create a blueprint to drive business outcomes and put the AI control tower for business reinvention to work faster."
+        cb_new = "Create a blueprint to drive business outcomes and put ServiceNow Super Intelligence Control Tower—connecting your AI, data, and workflows—to work faster."
+        cb_note = "Awareness Page Context Bridge: Contextualizes 'Super Intelligence Control Tower' for visitors on the Impact overview page."
+        drawer_manual_rows.append(
+            f"<tr class='detail-item-manual'>"
+            f"<td><span class='badge b-manual'>Manual</span></td>"
+            f"<td><strong>{html.escape(cb_loc)}</strong><div class='sub-note'>Awareness Page Context Bridge</div></td>"
+            f"<td>{html.escape(cb_old)}</td>"
+            f"<td><strong>{html.escape(cb_new)}</strong></td>"
+            f"<td>{html.escape(cb_note)}</td>"
+            f"</tr>"
+        )
+        context_bridge_csv.append(f"[MANUAL_CONTEXT_BRIDGE | {cb_loc}] \"{cb_old}\" -> \"{cb_new}\" ({cb_note})")
+        wwsg_csv_notes.append("Awareness Page Context Bridge: Contextualize 'Super Intelligence Control Tower' on Impact overview page")
+
+    elif u.endswith("/events/ai-summits.html"):
+        manual_context_cnt += 1
+        cb_loc = "Event Hub Section Intro Copy (Context Bridge)"
+        cb_old = "Join us to see how ServiceNow acts as the AI control tower and learn how to put AI to work for you."
+        cb_new = "Join us to see how ServiceNow Super Intelligence Control Tower grounds AI in your data, workflows, and governance—and learn how to put AI to work for you."
+        cb_note = "Awareness Page Context Bridge: Introduces 'Super Intelligence Control Tower' context in the AI Summits hub lead paragraph."
+        drawer_manual_rows.append(
+            f"<tr class='detail-item-manual'>"
+            f"<td><span class='badge b-manual'>Manual</span></td>"
+            f"<td><strong>{html.escape(cb_loc)}</strong><div class='sub-note'>Awareness Page Context Bridge</div></td>"
+            f"<td>{html.escape(cb_old)}</td>"
+            f"<td><strong>{html.escape(cb_new)}</strong></td>"
+            f"<td>{html.escape(cb_note)}</td>"
+            f"</tr>"
+        )
+        context_bridge_csv.append(f"[MANUAL_CONTEXT_BRIDGE | {cb_loc}] \"{cb_old}\" -> \"{cb_new}\" ({cb_note})")
+        wwsg_csv_notes.append("Awareness Page Context Bridge: Introduce 'Super Intelligence Control Tower' context on AI Summits hub")
+
+    elif u.endswith("/solutions/business-transformation.html"):
+        manual_context_cnt += 1
+        cb_loc = "Solutions Card Body Copy (Context Bridge)"
+        cb_old = "The AI control tower for business reinvention (Standalone card heading without introductory context for Super Intelligence Control Tower)"
+        cb_new = "Unite AI, data, and workflows on one governed platform with ServiceNow Super Intelligence Control Tower to accelerate business reinvention."
+        cb_note = "Awareness Page Context Bridge: Introduces 'Super Intelligence Control Tower' context beneath the standalone card heading."
+        drawer_manual_rows.append(
+            f"<tr class='detail-item-manual'>"
+            f"<td><span class='badge b-manual'>Manual</span></td>"
+            f"<td><strong>{html.escape(cb_loc)}</strong><div class='sub-note'>Awareness Page Context Bridge</div></td>"
+            f"<td>{html.escape(cb_old)}</td>"
+            f"<td><strong>{html.escape(cb_new)}</strong></td>"
+            f"<td>{html.escape(cb_note)}</td>"
+            f"</tr>"
+        )
+        context_bridge_csv.append(f"[MANUAL_CONTEXT_BRIDGE | {cb_loc}] \"{cb_old}\" -> \"{cb_new}\" ({cb_note})")
+        wwsg_csv_notes.append("Awareness Page Context Bridge: Add introductory context for 'Super Intelligence Control Tower' beneath card heading")
+
+    elif u.endswith("/products/ai-agents.html") and not body_text_instances:
+        manual_context_cnt += 1
+        cb_loc = "Section Intro Copy Preceding CTA (Context Bridge)"
+        cb_old = "Unify third party AI agents and tools from any platform with ServiceNow Action Fabric. Manage, monitor, and optimize all of them in a single place."
+        cb_new = "Unify third party AI agents and tools from any platform with ServiceNow Action Fabric. Manage, monitor, and optimize any AI from a central intelligent hub with ServiceNow Super Intelligence Control Tower."
+        cb_note = "CTA Context Bridge: Introduces 'Super Intelligence Control Tower' in the section intro right before the 'Explore Control Tower' CTA button."
+        drawer_manual_rows.append(
+            f"<tr class='detail-item-manual'>"
+            f"<td><span class='badge b-manual'>Manual</span></td>"
+            f"<td><strong>{html.escape(cb_loc)}</strong><div class='sub-note'>First-Mention CTA Context Bridge</div></td>"
+            f"<td>{html.escape(cb_old)}</td>"
+            f"<td><strong>{html.escape(cb_new)}</strong></td>"
+            f"<td>{html.escape(cb_note)}</td>"
+            f"</tr>"
+        )
+        context_bridge_csv.append(f"[MANUAL_CONTEXT_BRIDGE | {cb_loc}] \"{cb_old}\" -> \"{cb_new}\" ({cb_note})")
+        wwsg_csv_notes.append("CTA Context Bridge: Introduce 'Super Intelligence Control Tower' before 'Explore Control Tower' button")
+
+    elif u.endswith("/products/public-sector-digital-services.html") and not body_text_instances:
+        manual_context_cnt += 1
+        cb_loc = "Feature Tab Copy Preceding CTA (Context Bridge)"
+        cb_old = "Public Sector Digital Services is government's CRM — purpose-built to manage constituent relationships, cases, and service delivery on a single platform. Our solutions connect agency data, workflows, and compliance controls to resolve requests faster and deliver services at scale."
+        cb_new = "Public Sector Digital Services is government's CRM — purpose-built to manage constituent relationships, cases, and service delivery on a single platform. Our solutions connect agency data, workflows, and compliance controls to resolve requests faster and deliver services at scale. Running inside the Super Intelligence Control Tower, agencies centralize visibility and control to scale AI confidently across every mission."
+        cb_note = "CTA Context Bridge: Introduces 'Super Intelligence Control Tower' in the feature tab copy right before the 'Explore Control Tower' CTA button."
+        drawer_manual_rows.append(
+            f"<tr class='detail-item-manual'>"
+            f"<td><span class='badge b-manual'>Manual</span></td>"
+            f"<td><strong>{html.escape(cb_loc)}</strong><div class='sub-note'>First-Mention CTA Context Bridge</div></td>"
+            f"<td>{html.escape(cb_old)}</td>"
+            f"<td><strong>{html.escape(cb_new)}</strong></td>"
+            f"<td>{html.escape(cb_note)}</td>"
+            f"</tr>"
+        )
+        context_bridge_csv.append(f"[MANUAL_CONTEXT_BRIDGE | {cb_loc}] \"{cb_old}\" -> \"{cb_new}\" ({cb_note})")
+        wwsg_csv_notes.append("CTA Context Bridge: Introduce 'Super Intelligence Control Tower' before 'Explore Control Tower' button")
+
     if body_text_instances:
         auto_body_csv = []
         manual_body_csv = []
@@ -996,6 +1181,47 @@ def build_split_page_breakdowns(r):
             b_loc = b.get("location", "Body Copy")
             b_old = b.get("current_text", "")
             b_new = b.get("target_text", "")
+
+            # In-place Context Bridge paragraphs on ai-agents.html (#2) and public-sector-digital-services.html (#1)
+            # where the live paragraph above the 'Explore Control Tower' button does not currently contain 'AI Control Tower'
+            if u.endswith("/products/ai-agents.html") and b_idx == 2:
+                manual_context_cnt += 1
+                cb_loc = "Section Intro Copy Preceding CTA (Context Bridge)"
+                cb_old = "Unify third party AI agents and tools from any platform with ServiceNow Action Fabric. Manage, monitor, and optimize all of them in a single place."
+                cb_new = "Unify third party AI agents and tools from any platform with ServiceNow Action Fabric. Manage, monitor, and optimize any AI from a central intelligent hub with ServiceNow Super Intelligence Control Tower."
+                cb_note = "CTA Context Bridge: Introduces 'Super Intelligence Control Tower' in the section intro right before the 'Explore Control Tower' CTA button."
+                drawer_manual_rows.append(
+                    f"<tr class='detail-item-manual'>"
+                    f"<td><span class='badge b-manual'>Manual</span></td>"
+                    f"<td><strong>{html.escape(cb_loc)}</strong><div class='sub-note'>First-Mention CTA Context Bridge</div></td>"
+                    f"<td>{html.escape(cb_old)}</td>"
+                    f"<td><strong>{html.escape(cb_new)}</strong></td>"
+                    f"<td>{html.escape(cb_note)}</td>"
+                    f"</tr>"
+                )
+                context_bridge_csv.append(f"#{b_idx} [MANUAL_CONTEXT_BRIDGE | {cb_loc}] \"{cb_old}\" -> \"{cb_new}\" ({cb_note})")
+                wwsg_csv_notes.append(f"Body #{b_idx}: CTA Context Bridge before 'Explore Control Tower' button")
+                continue
+
+            if u.endswith("/products/public-sector-digital-services.html") and b_idx == 1:
+                manual_context_cnt += 1
+                cb_loc = "Feature Tab Copy Preceding CTA (Context Bridge)"
+                cb_old = "Public Sector Digital Services is government's CRM — purpose-built to manage constituent relationships, cases, and service delivery on a single platform. Our solutions connect agency data, workflows, and compliance controls to resolve requests faster and deliver services at scale."
+                cb_new = "Public Sector Digital Services is government's CRM — purpose-built to manage constituent relationships, cases, and service delivery on a single platform. Our solutions connect agency data, workflows, and compliance controls to resolve requests faster and deliver services at scale. Running inside the Super Intelligence Control Tower, agencies centralize visibility and control to scale AI confidently across every mission."
+                cb_note = "CTA Context Bridge: Introduces 'Super Intelligence Control Tower' in the feature tab copy right before the 'Explore Control Tower' CTA button."
+                drawer_manual_rows.append(
+                    f"<tr class='detail-item-manual'>"
+                    f"<td><span class='badge b-manual'>Manual</span></td>"
+                    f"<td><strong>{html.escape(cb_loc)}</strong><div class='sub-note'>First-Mention CTA Context Bridge</div></td>"
+                    f"<td>{html.escape(cb_old)}</td>"
+                    f"<td><strong>{html.escape(cb_new)}</strong></td>"
+                    f"<td>{html.escape(cb_note)}</td>"
+                    f"</tr>"
+                )
+                context_bridge_csv.append(f"#{b_idx} [MANUAL_CONTEXT_BRIDGE | {cb_loc}] \"{cb_old}\" -> \"{cb_new}\" ({cb_note})")
+                wwsg_csv_notes.append(f"Body #{b_idx}: CTA Context Bridge before 'Explore Control Tower' button")
+                continue
+
             w_res = audit_wwsg_instance(b, u)
             b_loc = w_res.get("display_loc", b_loc)
             if w_res["used_si_short"]:
@@ -1057,6 +1283,11 @@ def build_split_page_breakdowns(r):
         )
         auto_csv_items.append(f"[AUTO: BODY COMPONENT COPY ({cnt}x)] Update AI Control Tower / AICT -> 'Super Intelligence Control Tower' (or 'Control Tower' on CTA buttons)")
 
+    if context_bridge_csv:
+        manual_filter_tags.add("m-context")
+        manual_csv_items.append(f"[MANUAL: CONTEXT BRIDGE ({len(context_bridge_csv)})] " + " || ".join(context_bridge_csv))
+    if manual_context_cnt > 0:
+        manual_reasons.append(f"Context Bridge ({manual_context_cnt})")
     if manual_copy_cnt > 0:
         manual_reasons.append(f"Name Too Long ({manual_copy_cnt})")
 
@@ -1249,6 +1480,7 @@ def build_split_page_breakdowns(r):
     manual_task_count = (
         (1 if "m-slug" in manual_filter_tags else 0)
         + manual_copy_cnt
+        + manual_context_cnt
         + len(live_pdfs)
         + (1 if "m-l10n" in manual_filter_tags else 0)
     )
@@ -1287,6 +1519,7 @@ def build_split_page_breakdowns(r):
         "manual_csv": manual_csv_str,
         "manual_task_count": manual_task_count,
         "manual_copy_cnt": manual_copy_cnt,
+        "manual_context_cnt": manual_context_cnt,
         "manual_reasons": manual_reasons,
         "manual_filter_tags": sorted(manual_filter_tags),
         "combined_csv": combined_csv_str,
@@ -1619,7 +1852,7 @@ with open(OUT_CSV, "w", newline="", encoding="utf-8") as f:
 pages_table_rows_html = []
 
 manual_wave_counts = {"w1": 0, "w2": 0, "w3": 0}
-manual_type_counts = {"m-copy": 0, "m-slug": 0, "m-img": 0, "m-pdf": 0, "m-l10n": 0}
+manual_type_counts = {"m-context": 0, "m-copy": 0, "m-slug": 0, "m-img": 0, "m-pdf": 0, "m-l10n": 0}
 
 for page_idx, r in enumerate(unique_body_pages, 1):
     u = full_url(r["url"])
@@ -2786,13 +3019,13 @@ window.setPageViewMode = function(mode, updateTopTab, skipUrlSync) {{
   if (bannerTitle && bannerDesc) {{
     if (mode === 'all') {{
       bannerTitle.textContent = 'All Updates Combined (Auto + Manual per Page)';
-      bannerDesc.textContent = 'Showing all {len(unique_body_pages)} pages. Product Marketing Rule: use "Super Intelligence Control Tower" everywhere (no "SI Control Tower"), use "Control Tower" for buttons, skip WWSG body copy edits, and flag constrained headings/titles where the full 32-char name is too long.';
+      bannerDesc.textContent = 'Showing all {len(unique_body_pages)} pages. Product Marketing Rule: use "Super Intelligence Control Tower" everywhere (no "SI Control Tower"), use "Control Tower" for buttons, include Manual Context Bridge copy on Awareness & first-mention CTA pages ({manual_type_counts["m-context"]} pages), and flag constrained headings/titles where the full 32-char name is too long.';
     }} else if (mode === 'auto') {{
       bannerTitle.textContent = 'Automated Updates Only ({total_auto_instances:,} Scripted Swaps Across {len(unique_body_pages)} Pages)';
-      bannerDesc.textContent = 'Showing only automated DOM, metadata, CTA button ("Control Tower"), link, alt-text, and zero-pixel DAM swaps executed by the AEM Groovy script. Manual tasks are hidden inside expanded rows.';
+      bannerDesc.textContent = 'Showing only automated DOM, metadata, CTA button ("Control Tower"), link, alt-text, and DAM image path swaps executed by the AEM Groovy script. Manual tasks are hidden inside expanded rows.';
     }} else if (mode === 'manual') {{
       bannerTitle.textContent = 'Manual Updates Queue Only ({pages_needing_manual} Pages with {total_manual_tasks_all} Manual Tasks)';
-      bannerDesc.textContent = 'Filtered to the {pages_needing_manual} pages requiring manual action ({total_manual_copy_instances} headings/titles where "Super Intelligence Control Tower" exceeds 50/60 chars across {manual_type_counts["m-copy"]} pages, 34 page slug moves, {total_baked_images_count} baked-in images across {total_baked_designs_count} visual designs, 13 PDFs, 10 L10n reviews).';
+      bannerDesc.textContent = 'Filtered to the {pages_needing_manual} pages requiring manual action ({manual_type_counts["m-context"]} Context Bridge awareness/CTA pages, {total_manual_copy_instances} headings/titles where "Super Intelligence Control Tower" exceeds 50/60 chars across {manual_type_counts["m-copy"]} pages, 34 page slug moves, 13 PDFs, 10 L10n reviews).';
     }}
   }}
 
@@ -3074,7 +3307,7 @@ window.addEventListener('popstate', function() {{
     <div class="kpi-card" onclick="switchPrimaryTab('tab-pages', 'manual', 'btn-tab-manual')">
       <div class="kpi-label">Manual Updates Queue</div>
       <div class="kpi-value amber">{pages_needing_manual} Pages</div>
-      <div class="kpi-sub"><strong>{total_manual_copy_instances} oversized headings/titles</strong>, 34 page moves, <strong>{total_baked_images_count} images ({total_baked_designs_count} designs)</strong>, 13 PDFs, 10 L10n.</div>
+      <div class="kpi-sub"><strong>{manual_type_counts['m-context']} Context Bridge</strong>, <strong>{total_manual_copy_instances} oversized headings/titles</strong>, 34 page moves, 13 PDFs, 10 L10n.</div>
     </div>
     <div class="kpi-card" onclick="switchPrimaryTab('tab-redirects', null, 'btn-tab-redirects')">
       <div class="kpi-label">HTTP 301 Redirects</div>
@@ -3118,7 +3351,7 @@ window.addEventListener('popstate', function() {{
       <div>
         <strong id="pagesBannerTitle">All Updates Combined (Auto + Manual per Page)</strong>
         <div id="pagesBannerDesc" style="color:var(--muted);font-size:12.5px;margin-top:2px;">
-          Showing all {len(unique_body_pages)} pages. Product Marketing Rule: use "Super Intelligence Control Tower" everywhere (no "SI Control Tower"), use "Control Tower" for buttons, skip WWSG body copy edits, and flag constrained headings/titles where the full 32-char name is too long.
+          Showing all {len(unique_body_pages)} pages. Product Marketing Rule: use "Super Intelligence Control Tower" everywhere (no "SI Control Tower"), use "Control Tower" for buttons, include Manual Context Bridge copy on Awareness &amp; first-mention CTA pages ({manual_type_counts['m-context']} pages), and flag constrained headings/titles where the full 32-char name is too long.
         </div>
       </div>
     </div>
@@ -3166,6 +3399,7 @@ window.addEventListener('popstate', function() {{
           <option value="pure-auto">100% Automated Only ({pages_100pct_auto} pages)</option>
         </optgroup>
         <optgroup label="Manual Task Type">
+          <option value="m-context">Manual: Context Bridge (Awareness &amp; CTA) ({manual_type_counts['m-context']} pages)</option>
           <option value="m-copy">Manual: Name Too Long (&gt;Limit) ({manual_type_counts['m-copy']} pages)</option>
           <option value="m-slug">Manual: 301 URL Slug Move ({manual_type_counts['m-slug']} pages)</option>
           <option value="m-pdf">Manual: Live/Vector PDF Update ({manual_type_counts['m-pdf']} pages)</option>
@@ -3384,16 +3618,16 @@ RewriteRule ^/adobe/assets/urn:aaid:aem:([^/]+)/as/(.*)(ai-control-tower|aict)(.
               <td>100% automated direct replacement of <code>AI Control Tower</code> and <code>AICT</code> with <code>Super Intelligence Control Tower</code>. WWSG body copy trimming is skipped for this update to reduce manual work.</td>
             </tr>
             <tr>
-              <td><strong>CTA Buttons Across All Pages</strong><br>{a_link('https://www.servicenow.com/')}</td>
-              <td>CTA: &le; 25 chars</td>
-              <td><span class="badge b-auto">Control Tower</span> (Buttons)</td>
-              <td><span class="badge b-auto">Auto CTA</span></td>
+              <td><strong>CTA Buttons &amp; Awareness Context Bridge Standard</strong><br>{a_link('https://www.servicenow.com/')}<br>{a_link('https://www.servicenow.com/platform.html')}<br>{a_link('https://www.servicenow.com/what-is-servicenow.html')}</td>
+              <td>CTA: &le; 25 chars<br>Body: &le; 175–250</td>
+              <td><span class="badge b-auto">Control Tower</span> (Buttons)<br><span class="badge b-manual">Context Bridge</span> (Lead Copy)</td>
+              <td><span class="badge b-auto">Auto CTA</span> +<br><span class="badge b-manual">Manual Context</span></td>
               <td>
                 Per Product Marketing direction, CTA buttons use <code>Control Tower</code>:<br>
                 &bull; <code>See AI Control Tower</code> &rarr; <strong><code>See Control Tower</code></strong> (17/25 chars)<br>
                 &bull; <code>Explore AI Control Tower</code> &rarr; <strong><code>Explore Control Tower</code></strong> (21/25 chars)<br>
                 &bull; <code>Extend AI Control Tower</code> &rarr; <strong><code>Extend Control Tower</code></strong> (20/25 chars)<br>
-                Because the button uses <code>See Control Tower</code> (no <code>SI</code> acronym), no manual Hero paragraph context bridge is needed on the Homepage.
+                <strong>Awareness &amp; First-Mention CTA Context Bridge Standard ({manual_type_counts['m-context']} pages):</strong> Whenever a page is an awareness-categorized entry point (<code>Homepage</code>, <code>What is ServiceNow</code>, <code>Platform - Main Page</code>, <code>Impact Pages</code>, <code>Events - AI Summits Hub Page</code>, tagline-only <code>Solutions</code> pages) or uses a short <code>Control Tower</code> CTA button without prior context, a <strong>Manual Context Bridge</strong> copy update is queued to introduce <strong><code>Super Intelligence Control Tower</code></strong> in the surrounding Marquee/Feature paragraph (e.g., Homepage Marquee: <em>&ldquo;Most companies have AI but few have the data to ground it, the workflows to deploy it, and the security to govern it. Super Intelligence Control Tower is built for all of it. So AI doesn't just think, it acts.&rdquo;</em>).
               </td>
             </tr>
             <tr>
@@ -3695,6 +3929,7 @@ plan_md = f"""# Super Intelligence Control Tower — Global & Regional Rebrand H
 > **Product Marketing Naming & Automation Direction Applied Across All {len(unique_body_pages)} Pages (US + 13 Regional Locales + 63 Audited DAM Images)**
 > - **Standard Product Name**: **`Super Intelligence Control Tower`** (32 chars). We do **not** use `SI Control Tower` anywhere—all copy, headings, metadata, and former `AICT` acronyms transition to `Super Intelligence Control Tower`.
 > - **CTA Button Name**: **`Control Tower`** (13 chars) on buttons (e.g., `See Control Tower` [17/25 chars], `Explore Control Tower` [21/25 chars], `Extend Control Tower` [20/25 chars], and localized button equivalents).
+> - **Awareness & First-Mention CTA Context Bridge Standard (`Manual: Context Bridge`)**: Across **{manual_type_counts['m-context']} pages** (all awareness-categorized pages—`Homepage`, `What is ServiceNow`, `Platform - Main Page`, `Impact Pages`, `Events - AI Summits Hub Page`, and tagline-only `Solutions` pages—plus first-mention `Control Tower` CTA button pages across US + 13 locales), a **Manual Context Bridge** copy update is queued to introduce `Super Intelligence Control Tower` in the surrounding Marquee/Feature paragraph (e.g., Homepage Marquee: *"Most companies have AI but few have the data to ground it, the workflows to deploy it, and the security to govern it. Super Intelligence Control Tower is built for all of it. So AI doesn't just think, it acts."*).
 > - **All On-Page Image Swaps Are Automated (`Auto`)**: Once updated image copies are uploaded to the new DAM paths (`super-intelligence-control-tower`), the AEM Groovy automation script swaps out the old image paths and puts in the new image paths across all webpages automatically.
 > - **WWSG Body Copy Edits Skipped**: Body copy, Marquee lead descriptions, and FAQ answers are 100% automated direct swaps (`AI Control Tower` -> `Super Intelligence Control Tower`) to minimize manual work.
 > - **Oversized Headings & Titles Flagged for Manual Decision**: **{total_manual_copy_instances} instances across {manual_type_counts['m-copy']} pages** are flagged as `Manual: Name Too Long` where `Super Intelligence Control Tower` causes a constrained heading (`<h2>`/`<h3>`/`<h4>`, card heading, FAQ question title, or tab label >50 chars) or compound `<title>` (>60 chars) to exceed its character limit.
@@ -3709,6 +3944,7 @@ plan_md = f"""# Super Intelligence Control Tower — Global & Regional Rebrand H
 | :--- | :--- | :--- |
 | **Track A1: Automated Global Nav XF**<br>*Owner: AEM Platform Admin* | **2 Centralized XFs** ({len(ssi_only_pages):,} pages) | Single Experience Fragment update swaps `"AI Control Tower"` to `"Super Intelligence Control Tower"` and updates the nav link across US + 13 locales. |
 | **Track A2: Automated AEM Groovy Swap**<br>*Owner: AEM Engineering* | **All {len(unique_body_pages)} Pages** ({pages_100pct_auto} Pure Auto + {pages_needing_manual} Hybrid)<br>**{total_auto_instances:,} Automated Swaps** | Updates `<title>`, `<meta>`, `<h1>` Hero headings (`Super Intelligence Control Tower`, 32/50 chars), all body copy & FAQ answers, CTA buttons (`See Control Tower`, `Explore Control Tower`, `Extend Control Tower`), company taglines (`ServiceNow is the Super Intelligence Control Tower for business reinvention`), internal links, **all on-page DAM image paths (`old image -> new image copy`)**, and image `alt` tags. |
+| **Track M0: Awareness & CTA Context Bridge Copy**<br>*Owner: Digital UX Copywriter / PMM* | **{manual_type_counts['m-context']} Pages** (US + 13 locales) | Update Marquee/Feature lead paragraphs on awareness-categorized pages (`Homepage`, `Platform`, `What is ServiceNow`, `Impact`, `AI Summits`, `Solutions`) and first-mention `Control Tower` CTA button pages so `Super Intelligence Control Tower` is explicitly introduced in context. |
 | **Track M1: Flagged Oversized Headings & `<title>` Tags**<br>*Owner: Digital UX Copywriter / PMM* | **{total_manual_copy_instances} Flagged Instances** across **{manual_type_counts['m-copy']} pages** | Review constrained headings (>50 chars) and compound `<title>` tags (>60 chars) where `"Super Intelligence Control Tower"` is too long and decide the replacement text. |
 | **Track M2: Manual AEM Move & 301 Redirects**<br>*Owner: AEM Authoring & Web Ops* | **{total_redirects_count} Total 301 Redirects** ({webpage_redirect_cnt} Webpages + {pdf_redirect_cnt} PDFs + {img_redirect_cnt} Images) | Move AEM page nodes (`/products/ai-control-tower.html` -> `/products/super-intelligence-control-tower.html`) and deploy Apache Dispatcher / Akamai 301 rules. |
 | **Track M3: DAM Graphic Copy Upload & PDF Updates**<br>*Owner: Creative, Docs & Legal* | **{total_baked_images_count} Baked-In Image Copies ({total_baked_designs_count} Visual Designs)** + **13 PDFs** | Upload updated graphic copies at new `super-intelligence-control-tower` DAM filenames (page swaps are 100% automated) and update 13 live/vector PDFs. |
@@ -3718,7 +3954,7 @@ plan_md = f"""# Super Intelligence Control Tower — Global & Regional Rebrand H
 open(OUT_MD, "w", encoding="utf-8").write(plan_md)
 print(f"Successfully generated clean enterprise light handoff dashboard {OUT_HTML}, {OUT_CSV}, and {OUT_MD}")
 print(f"Total Body-Match Pages: {len(unique_body_pages)} (US: {us_pages_total} + Regional: {regional_pages_total})")
-print(f"Pages 100% Auto: {pages_100pct_auto} | Pages Needing Manual: {pages_needing_manual} | Auto Instances: {total_auto_instances} | Flagged Name-Too-Long Instances: {total_manual_copy_instances} (across {manual_type_counts['m-copy']} pages) | Manual Tasks All: {total_manual_tasks_all} | Button CTAs ('Control Tower'): {total_si_short_saves}")
+print(f"Pages 100% Auto: {pages_100pct_auto} | Pages Needing Manual: {pages_needing_manual} | Auto Instances: {total_auto_instances} | Context Bridge Pages: {manual_type_counts['m-context']} | Flagged Name-Too-Long Instances: {total_manual_copy_instances} (across {manual_type_counts['m-copy']} pages) | Manual Tasks All: {total_manual_tasks_all} | Button CTAs ('Control Tower'): {total_si_short_saves}")
 print(f"Total 301 Redirects: {total_redirects_count} (Webpages: {webpage_redirect_cnt}, PDFs: {pdf_redirect_cnt}, Images: {img_redirect_cnt})")
 
 
