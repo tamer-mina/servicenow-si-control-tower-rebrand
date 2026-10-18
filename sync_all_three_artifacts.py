@@ -466,6 +466,8 @@ def audit_wwsg_instance(inst, page_url=""):
         comp_name = "Next steps action item"
     elif "arc-universal-group" in loc and "<p>" in loc:
         comp_name = "Card description"
+    elif "arc-universal-group" in loc and ("heading" in loc.lower() or "Heading" in loc):
+        comp_name = "Benefits card heading"
     elif ("Heading" in loc or "H1" in loc or "H2" in loc or "H3" in loc) and "Body Copy" not in loc:
         limit = 50
         comp_name = "UI / Section heading"
